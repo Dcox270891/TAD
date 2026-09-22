@@ -10,6 +10,7 @@ namespace TAD.UI
     [DisallowMultipleComponent]
     public sealed class FoodStoreHud : MonoBehaviour
     {
+        [SerializeField] private UnityEngine.UI.Image backgroundImage;
         [SerializeField] private UnityEngine.UI.Image fillImage;
         [SerializeField] private UnityEngine.UI.Text amountText;
         [SerializeField] private Color depletedColor = new(0.88f, 0.18f, 0.16f, 1f);
@@ -21,6 +22,7 @@ namespace TAD.UI
         private void Awake()
         {
             ConfigureLeftToRightFill();
+            ConfigureEmptyBar();
         }
 
         /// <summary>Binds this display to the supplied Food Store and immediately presents its current state.</summary>
@@ -99,7 +101,7 @@ namespace TAD.UI
 
             if (amountText != null)
             {
-                amountText.text = $"Food store: {currentFood:0.#} / {maximumFood:0.#}";
+                amountText.text = $"Food store: {currentFood:0.#} / {maximumFood:0.#} ({normalizedFood:P0})";
             }
         }
 
@@ -113,6 +115,14 @@ namespace TAD.UI
             fillImage.type = UnityEngine.UI.Image.Type.Filled;
             fillImage.fillMethod = UnityEngine.UI.Image.FillMethod.Horizontal;
             fillImage.fillOrigin = (int)UnityEngine.UI.Image.OriginHorizontal.Left;
+        }
+
+        private void ConfigureEmptyBar()
+        {
+            if (backgroundImage != null)
+            {
+                backgroundImage.color = Color.black;
+            }
         }
     }
 }

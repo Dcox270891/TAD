@@ -46,7 +46,7 @@ namespace TAD.UI
 
             spawnedPlayButton.Bind(waveController);
 
-            if (eventSystem != null && spawnedPlayButton.gameObject.activeInHierarchy)
+            if (eventSystem != null && spawnedPlayButton.SelectableGameObject.activeInHierarchy)
             {
                 eventSystem.SetSelectedGameObject(spawnedPlayButton.SelectableGameObject);
             }

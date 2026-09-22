@@ -98,6 +98,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d53311fbc88d0a548bd83a24a98b6bb7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TAD.UI.FoodStoreHud
+  backgroundImage: {fileID: 4049182572139803563}
   fillImage: {fileID: 7689837303785172080}
   amountText: {fileID: 7373673606987350594}
   depletedColor: {r: 0.88, g: 0.18, b: 0.16, a: 1}
@@ -198,7 +199,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.08, g: 0.1, b: 0.08, a: 0.88}
+  m_Color: {r: 0, g: 0, b: 0, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1

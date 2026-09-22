@@ -124,9 +124,18 @@ namespace TAD.UI
                 return;
             }
 
-            playButton.interactable = waveController != null &&
-                                      waveController.CanStartNextWave &&
-                                      !ModalOverlay.IsGameplayInputBlocked;
+            var isReadyToPlay = waveController != null &&
+                                waveController.CanStartNextWave &&
+                                !ModalOverlay.IsGameplayInputBlocked;
+
+            // Keep this presenter enabled so it can receive the completion event that makes the
+            // button visible again. The nested button owns the visual and interaction state.
+            if (playButton.gameObject != gameObject)
+            {
+                playButton.gameObject.SetActive(isReadyToPlay);
+            }
+
+            playButton.interactable = isReadyToPlay;
         }
     }
 }
