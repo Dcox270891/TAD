@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1569693026300897906}
   - component: {fileID: 592288151473745849}
+  - component: {fileID: 465870676978708901}
   m_Layer: 8
   m_Name: SpawnPool
   m_TagString: Untagged
@@ -49,8 +50,26 @@ MonoBehaviour:
     prefab: {fileID: 2873045118861995736, guid: 2de21738b2dad7a44a6ca93751e72e83, type: 3}
     initialCapacity: 5
   - objectType: 1
-    prefab: {fileID: 0}
+    prefab: {fileID: 1396477453823266386, guid: 4c99c4a4f94ca3749b8f88c3f81e3163, type: 3}
     initialCapacity: 5
   - objectType: 2
     prefab: {fileID: 0}
     initialCapacity: 5
+--- !u!114 &465870676978708901
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8974110545092134639}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fb4c0b839a947924893412070d93752a, type: 3}
+  m_Name: FarmHandPlacementController
+  m_EditorClassIdentifier: Assembly-CSharp::TAD.Defenders.FarmHandPlacementController
+  farmHandPrefab: {fileID: 5875131552720761380, guid: 4c99c4a4f94ca3749b8f88c3f81e3163, type: 3}
+  placementUiPrefab: {fileID: 3840638929522613190, guid: 725ddcd66b2056745877c723a5ac73bd, type: 3}
+  controllerPlacementSpeed: 5
+  previewOpacity: 0.5
+  previewSortingOrder: 3
+  routeMapper: {fileID: 0}
