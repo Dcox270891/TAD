@@ -46,29 +46,55 @@ namespace TAD.Attackers
             }
 
             routeMapper ??= Object.FindAnyObjectByType<FarmRouteMapper>();
-            if (routeMapper != null)
+            if (routeMapper == null || !TryClampToVisibleMap())
             {
-                if (!routeMapper.TryGetNextDirection(body.position, Size, out var mappedDirection))
-                {
-                    return;
-                }
-
-                moveDirection = mappedDirection;
+                return;
             }
+
+            if (!routeMapper.TryGetNextDirection(body.position, Size, out var mappedDirection))
+            {
+                return;
+            }
+
+            moveDirection = mappedDirection;
 
             if (moveDirection == Vector2.zero)
             {
                 return;
             }
 
-            body.MovePosition(body.position + (moveDirection * definition.MovementSpeed * Time.fixedDeltaTime));
+            var nextPosition = body.position + (moveDirection * definition.MovementSpeed * Time.fixedDeltaTime);
+            if (routeMapper.TryClampToVisibleMap(nextPosition, out var constrainedNextPosition))
+            {
+                body.MovePosition(constrainedNextPosition);
+            }
         }
 
         /// <summary>Assigns the map used to navigate this attacker toward the Food Store.</summary>
         public void SetRouteMapper(FarmRouteMapper mapper)
         {
             routeMapper = mapper;
+            TryClampToVisibleMap();
         }
+
+        /// <summary>Constrain this active animal to the mapper's visible play area.</summary>
+        public bool TryClampToVisibleMap()
+        {
+            if (body == null || routeMapper == null || !routeMapper.TryClampToVisibleMap(body.position, out var constrainedPosition))
+            {
+                return false;
+            }
+
+            if (body.position != constrainedPosition)
+            {
+                body.position = constrainedPosition;
+            }
+
+            return true;
+        }
+
+        /// <summary>The position currently used by this attacker's physics body.</summary>
+        public Vector2 CurrentPosition => body != null ? body.position : (Vector2)transform.position;
 
         /// <summary>Sets the current path direction. A zero vector stops the attacker.</summary>
         public void SetMoveDirection(Vector2 direction)

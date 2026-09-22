@@ -16,6 +16,7 @@ namespace TAD.Navigation
         private const int NoHoleRouteKey = -1;
         private const float SizeKeyScale = 1000f;
         private const int MaxRecoveryCellRadius = 8;
+        private const float MapBoundaryEpsilon = 0.0001f;
 
         [SerializeField]
         [Tooltip("The target all attacking animals try to reach. If blank, the first Food Store in the scene is used.")]
@@ -34,7 +35,7 @@ namespace TAD.Navigation
         private float cellSize = 0.25f;
 
         [SerializeField]
-        [Tooltip("World-space width and height covered by the route map, centered on this object.")]
+        [Tooltip("Fallback size shown before routes are built. At runtime, the route map uses the Main Camera's visible area.")]
         private Vector2 mapSize = new(20f, 12f);
 
         [SerializeField, Min(0f)]
@@ -48,12 +49,19 @@ namespace TAD.Navigation
         private int columns;
         private int rows;
         private Vector2 gridMinimum;
+        private Vector2 runtimeMapSize;
         private Vector2 actualCellSize;
         private bool hasBuiltMap;
 
         public FoodStore FoodStore => foodStore;
 
-        public Vector2 MapSize => mapSize;
+        /// <summary>The world-space dimensions mapped from the Main Camera's visible area.</summary>
+        public Vector2 MapSize => hasBuiltMap ? runtimeMapSize : mapSize;
+
+        /// <summary>The camera-visible rectangle used by the latest route-map build.</summary>
+        public Rect VisibleMapBounds => hasBuiltMap
+            ? new Rect(gridMinimum, runtimeMapSize)
+            : new Rect((Vector2)transform.position - (mapSize * 0.5f), mapSize);
 
         /// <summary>Number of immutable route fields prepared for this level.</summary>
         public int CachedRouteFieldCount => routeFields.Count;
@@ -177,15 +185,19 @@ namespace TAD.Navigation
                 return false;
             }
 
-            mapSize.x = Mathf.Max(cellSize, mapSize.x);
-            mapSize.y = Mathf.Max(cellSize, mapSize.y);
             cellSize = Mathf.Max(0.05f, cellSize);
             defaultAttackerSize = Mathf.Max(0.01f, defaultAttackerSize);
 
-            columns = Mathf.Max(1, Mathf.CeilToInt(mapSize.x / cellSize));
-            rows = Mathf.Max(1, Mathf.CeilToInt(mapSize.y / cellSize));
+            if (!TryGetMainCameraBounds(out gridMinimum, out runtimeMapSize))
+            {
+                hasBuiltMap = false;
+                return false;
+            }
 
-            // Keeping odd counts puts a cell exactly at the mapper's origin, making central wall openings reliable.
+            columns = Mathf.Max(1, Mathf.CeilToInt(runtimeMapSize.x / cellSize));
+            rows = Mathf.Max(1, Mathf.CeilToInt(runtimeMapSize.y / cellSize));
+
+            // Keeping odd counts puts a cell at the visible camera centre, making central wall openings reliable.
             if (columns % 2 == 0)
             {
                 columns++;
@@ -196,8 +208,7 @@ namespace TAD.Navigation
                 rows++;
             }
 
-            actualCellSize = new Vector2(mapSize.x / columns, mapSize.y / rows);
-            gridMinimum = (Vector2)transform.position - (mapSize * 0.5f);
+            actualCellSize = new Vector2(runtimeMapSize.x / columns, runtimeMapSize.y / rows);
             walls = UnityEngine.Object.FindObjectsByType<FarmWall>(FindObjectsInactive.Exclude);
             foreach (var wall in walls)
             {
@@ -208,6 +219,29 @@ namespace TAD.Navigation
             CollectStartupRouteData();
             hasBuiltMap = true;
             BuildStartupRouteFields();
+            return true;
+        }
+
+        /// <summary>
+        /// Keeps a world position inside the Main Camera area used by the route mapper.
+        /// Returns false when a route map cannot be built, so callers never fall back to moving off-screen.
+        /// </summary>
+        public bool TryClampToVisibleMap(Vector2 position, out Vector2 clampedPosition)
+        {
+            clampedPosition = position;
+            if (!hasBuiltMap && !RebuildRoutes())
+            {
+                return false;
+            }
+
+            var maximum = gridMinimum + runtimeMapSize;
+            var minimumX = gridMinimum.x + MapBoundaryEpsilon;
+            var minimumY = gridMinimum.y + MapBoundaryEpsilon;
+            var maximumX = maximum.x - MapBoundaryEpsilon;
+            var maximumY = maximum.y - MapBoundaryEpsilon;
+            clampedPosition = new Vector2(
+                Mathf.Clamp(position.x, minimumX, maximumX),
+                Mathf.Clamp(position.y, minimumY, maximumY));
             return true;
         }
 
@@ -228,8 +262,9 @@ namespace TAD.Navigation
 
             if (!TryGetCellIndex(currentPosition, out var currentIndex))
             {
-                // A mapper boundary should not freeze an otherwise unobstructed attacker.
-                return TryGetClearDirectDirection(currentPosition, radius, requiredHoleSize, out direction);
+                // Attackers are clamped before lookup. Reject positions beyond the displayed map rather than
+                // using a direct fallback that could send an animal outside the camera view.
+                return false;
             }
 
             var routeKey = new RouteFieldKey(attackerSizeKey, requiredHoleSizeKey);
@@ -414,6 +449,11 @@ namespace TAD.Navigation
 
         private bool IsWalkable(Vector2 worldPosition, float radius, float requiredHoleSize)
         {
+            if (!IsWithinVisibleMap(worldPosition))
+            {
+                return false;
+            }
+
             foreach (var wall in walls)
             {
                 if (wall != null && wall.gameObject.activeInHierarchy && wall.BlocksCircleForRoute(worldPosition, radius, requiredHoleSize))
@@ -423,6 +463,60 @@ namespace TAD.Navigation
             }
 
             return true;
+        }
+
+        private bool TryGetMainCameraBounds(out Vector2 minimum, out Vector2 size)
+        {
+            minimum = Vector2.zero;
+            size = Vector2.zero;
+
+            var mainCamera = Camera.main;
+            if (mainCamera == null)
+            {
+                Debug.LogWarning("Farm Route Mapper needs a Main Camera to map the visible play area.", this);
+                return false;
+            }
+
+            var mapPlane = new Plane(Vector3.forward, transform.position);
+            if (!TryGetCameraViewportPoint(mainCamera, mapPlane, Vector2.zero, out var lowerLeft) ||
+                !TryGetCameraViewportPoint(mainCamera, mapPlane, Vector2.right, out var lowerRight) ||
+                !TryGetCameraViewportPoint(mainCamera, mapPlane, Vector2.up, out var upperLeft) ||
+                !TryGetCameraViewportPoint(mainCamera, mapPlane, Vector2.one, out var upperRight))
+            {
+                Debug.LogWarning("Farm Route Mapper could not project the Main Camera onto its 2D map plane.", this);
+                return false;
+            }
+
+            minimum = Vector2.Min(Vector2.Min(lowerLeft, lowerRight), Vector2.Min(upperLeft, upperRight));
+            var maximum = Vector2.Max(Vector2.Max(lowerLeft, lowerRight), Vector2.Max(upperLeft, upperRight));
+            size = maximum - minimum;
+            if (size.x < cellSize || size.y < cellSize)
+            {
+                Debug.LogWarning("Farm Route Mapper found a Main Camera view that is too small to build a route map.", this);
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryGetCameraViewportPoint(Camera camera, Plane mapPlane, Vector2 viewportPoint, out Vector2 worldPoint)
+        {
+            var ray = camera.ViewportPointToRay(viewportPoint);
+            if (!mapPlane.Raycast(ray, out var distance))
+            {
+                worldPoint = Vector2.zero;
+                return false;
+            }
+
+            worldPoint = ray.GetPoint(distance);
+            return true;
+        }
+
+        private bool IsWithinVisibleMap(Vector2 worldPosition)
+        {
+            var maximum = gridMinimum + runtimeMapSize;
+            return worldPosition.x >= gridMinimum.x && worldPosition.x <= maximum.x &&
+                   worldPosition.y >= gridMinimum.y && worldPosition.y <= maximum.y;
         }
 
         private bool TryGetRecoveryDirection(
@@ -620,7 +714,9 @@ namespace TAD.Navigation
         private void OnDrawGizmosSelected()
         {
             Gizmos.color = new Color(0.2f, 0.8f, 0.3f, 0.8f);
-            Gizmos.DrawWireCube(transform.position, mapSize);
+            var displayedMapSize = hasBuiltMap ? runtimeMapSize : mapSize;
+            var centre = hasBuiltMap ? gridMinimum + (runtimeMapSize * 0.5f) : (Vector2)transform.position;
+            Gizmos.DrawWireCube(centre, displayedMapSize);
         }
 
         private sealed class RouteField
