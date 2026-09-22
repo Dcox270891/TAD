@@ -6,7 +6,7 @@
 
 - Project root: `C:\Users\Daniel\OneDrive\Desktop\Unity\TAD`
 - Last analyzed: 2026-09-22
-- Last analyzed commit: `8300c69` (`Initial TAD project with wall prefabs`).
+- Last analyzed commit: `c03139e` (`Add chicken attacker and spawn pool`), with navigation changes in the current working tree.
 - Purpose: Tower Attack or Defend (TAD), a single-player 2D/2.5D farm tower-defence game.
 
 ## Confirmed Environment
@@ -52,7 +52,9 @@
 | Environment data | `FarmWall` owns one wall's cover and hole configuration | Confirmed | `Assets/TAD/Scripts/Environment/FarmWall.cs` |
 | Food objective | `FoodStore` begins with 200 food, consumes food on attacker arrival, and exposes food-state events | Confirmed | `Assets/TAD/Scripts/Environment/FoodStore.cs` |
 | Attacker data | `AttackerDefinition` owns configurable attacker stats; `ChickenDefinition` is the first data asset | Confirmed | `Assets/TAD/Scripts/Attackers/AttackerDefinition.cs` |
-| Attacker runtime | `BasicAttacker` moves in its assigned direction, has health, and returns itself to a pool on defeat or food arrival | Confirmed | `Assets/TAD/Scripts/Attackers/BasicAttacker.cs` |
+| Navigation | `FarmRouteMapper` builds size-aware 2D flow fields from the Food Store at startup and caches one field per attacker size | Confirmed | `Assets/TAD/Scripts/Navigation/FarmRouteMapper.cs` |
+| Attacker runtime | `BasicAttacker` asks the route mapper for its next movement direction, has health, and returns itself to a pool on defeat or food arrival | Confirmed | `Assets/TAD/Scripts/Attackers/BasicAttacker.cs` |
+| Wall passages | `FarmWall` splits its collision into two runtime segments around a configured hole; the mapper checks a circle matching the animal's size | Confirmed | `Assets/TAD/Scripts/Environment/FarmWall.cs` |
 | Reuse | `SpawnPool` has attacker, defender, and projectile prefab inputs, prewarms five objects per configured type, and expands when exhausted | Confirmed | `Assets/TAD/Scripts/Pooling/SpawnPool.cs` |
 | Gameplay architecture | Reusable environment, attacker, and pool components are established; waves, defenders, combat rewards, and economy systems are not yet implemented | Confirmed | `Assets/TAD` |
 | Data-driven content | Attacker stats are data-driven through `AttackerDefinition`; weapons and other content are not implemented yet | Confirmed | `Assets/TAD/Data/Attackers/ChickenDefinition.asset` |
@@ -93,8 +95,9 @@
 ## Unknowns And Confidence
 
 - The intended low-poly Blender asset import conventions, camera angle, and lighting setup are not established.
-- No navigation, defender combat, economy, or upgrade implementation exists yet. `BasicAttacker` currently moves in its authorable starting direction until the navigation system supplies path directions.
-- The wall hole is authoring and pathfinding data only for now; its visual opening and split collision geometry will be added with the navigation system.
+- Defender combat, economy, and upgrade systems are not implemented yet.
+- Navigation deliberately uses a custom 2D grid instead of a NavMesh package: the game uses 2D physics and needs a different fastest route for each animal diameter. The mapper defaults to a 20 x 12 world-unit area with 0.25-unit cells; configure its bounds to include the spawn and Food Store areas.
+- Wall holes have matching runtime collision and route logic. The farm-wall art remains visually solid until a future Blender art pass adds a visible cutout.
 
 ## Source Files Inspected
 
@@ -108,6 +111,7 @@
 - `Assets/TAD/Scripts/Environment/FoodStore.cs`
 - `Assets/TAD/Scripts/Attackers/AttackerDefinition.cs`
 - `Assets/TAD/Scripts/Attackers/BasicAttacker.cs`
+- `Assets/TAD/Scripts/Navigation/FarmRouteMapper.cs`
 - `Assets/TAD/Scripts/Pooling/SpawnPool.cs`
 - `Assets/TAD/Scripts/Pooling/PooledInstance.cs`
 - `Assets/TAD/Prefabs/Environment/FullCoverWall.prefab`
@@ -116,5 +120,6 @@
 - `Assets/TAD/Data/Attackers/ChickenDefinition.asset`
 - `Assets/TAD/Prefabs/Attackers/Chicken.prefab`
 - `Assets/TAD/Prefabs/Pooling/SpawnPool.prefab`
+- `Assets/TAD/Prefabs/Navigation/FarmRouteMapper.prefab`
 
 <!-- unity-onboarding:generated:end -->

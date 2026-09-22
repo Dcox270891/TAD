@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace TAD.Environment
@@ -16,6 +17,8 @@ namespace TAD.Environment
     [RequireComponent(typeof(BoxCollider2D))]
     public sealed class FarmWall : MonoBehaviour
     {
+        private const string GeneratedCollisionRootName = "Runtime Hole Collision";
+
         [SerializeField]
         [Tooltip("Half cover allows a farmhand's ranged weapon or trap to attack across it. Full cover blocks all attacks across it.")]
         private FarmWallCover cover = FarmWallCover.Full;
@@ -32,7 +35,7 @@ namespace TAD.Environment
 
         public bool HasHole => hasHole;
 
-        public float HoleSize => hasHole ? holeSize : 0f;
+        public float HoleSize => hasHole ? GetEffectiveHoleSize() : 0f;
 
         public bool BlocksAllAttacks => cover == FarmWallCover.Full;
 
@@ -40,13 +43,154 @@ namespace TAD.Environment
 
         public bool CanAnimalPassThrough(float animalDiameter)
         {
-            return hasHole && animalDiameter >= 0f && animalDiameter <= holeSize;
+            return hasHole && animalDiameter >= 0f && animalDiameter <= HoleSize;
+        }
+
+        private BoxCollider2D sourceCollider;
+        private Transform generatedCollisionRoot;
+        private readonly List<BoxCollider2D> collisionSegments = new();
+        private bool collisionGeometryPrepared;
+
+        private void Awake()
+        {
+            PrepareCollisionGeometry();
+        }
+
+        /// <summary>
+        /// Creates collision segments around an opening. This runs once when the scene starts,
+        /// leaving a physical gap that matches the navigation rule.
+        /// </summary>
+        public void PrepareCollisionGeometry()
+        {
+            if (collisionGeometryPrepared)
+            {
+                return;
+            }
+
+            sourceCollider = GetComponent<BoxCollider2D>();
+            collisionSegments.Clear();
+
+            if (sourceCollider == null)
+            {
+                collisionGeometryPrepared = true;
+                return;
+            }
+
+            if (!hasHole || holeSize <= 0f)
+            {
+                sourceCollider.enabled = true;
+                collisionSegments.Add(sourceCollider);
+                collisionGeometryPrepared = true;
+                return;
+            }
+
+            sourceCollider.enabled = false;
+            generatedCollisionRoot = transform.Find(GeneratedCollisionRootName);
+            if (generatedCollisionRoot == null)
+            {
+                var root = new GameObject(GeneratedCollisionRootName);
+                generatedCollisionRoot = root.transform;
+                generatedCollisionRoot.SetParent(transform, false);
+            }
+
+            var worldSize = GetWorldColliderSize();
+            var splitAlongX = worldSize.x >= worldSize.y;
+            var localAxisLength = splitAlongX ? sourceCollider.size.x : sourceCollider.size.y;
+            var worldAxisLength = splitAlongX ? worldSize.x : worldSize.y;
+            var openingWorldLength = Mathf.Min(holeSize, worldAxisLength);
+            var localOpeningLength = worldAxisLength > 0f
+                ? openingWorldLength * (localAxisLength / worldAxisLength)
+                : 0f;
+            var remainingLength = Mathf.Max(0f, localAxisLength - localOpeningLength);
+
+            if (remainingLength > 0.0001f)
+            {
+                var segmentLength = remainingLength * 0.5f;
+                var offset = (localOpeningLength * 0.5f) + (segmentLength * 0.5f);
+                CreateCollisionSegment("Lower Wall", splitAlongX, segmentLength, -offset);
+                CreateCollisionSegment("Upper Wall", splitAlongX, segmentLength, offset);
+            }
+
+            collisionSegments.AddRange(generatedCollisionRoot.GetComponentsInChildren<BoxCollider2D>());
+            collisionGeometryPrepared = true;
+        }
+
+        /// <summary>Returns whether a circle at the supplied position overlaps this wall's solid collision.</summary>
+        public bool BlocksCircle(Vector2 worldPosition, float radius)
+        {
+            PrepareCollisionGeometry();
+            var safeRadius = Mathf.Max(0f, radius);
+            var safeRadiusSquared = safeRadius * safeRadius;
+
+            foreach (var segment in collisionSegments)
+            {
+                if (segment == null || !segment.enabled || !segment.gameObject.activeInHierarchy)
+                {
+                    continue;
+                }
+
+                var closestPoint = GetClosestPointOnBox(segment, worldPosition);
+                // Touching the edge of an exact-size opening is allowed; overlapping it is not.
+                if ((closestPoint - worldPosition).sqrMagnitude + 0.0001f < safeRadiusSquared)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static Vector2 GetClosestPointOnBox(BoxCollider2D collider, Vector2 worldPosition)
+        {
+            var localPoint = (Vector2)collider.transform.InverseTransformPoint(worldPosition) - collider.offset;
+            var halfSize = collider.size * 0.5f;
+            var closestLocalPoint = collider.offset + new Vector2(
+                Mathf.Clamp(localPoint.x, -halfSize.x, halfSize.x),
+                Mathf.Clamp(localPoint.y, -halfSize.y, halfSize.y));
+            return collider.transform.TransformPoint(closestLocalPoint);
+        }
+
+        private void CreateCollisionSegment(string segmentName, bool splitAlongX, float segmentLength, float axisOffset)
+        {
+            var segment = new GameObject(segmentName).transform;
+            segment.SetParent(generatedCollisionRoot, false);
+            segment.localPosition = sourceCollider.offset + (splitAlongX
+                ? Vector2.right * axisOffset
+                : Vector2.up * axisOffset);
+
+            var collider = segment.gameObject.AddComponent<BoxCollider2D>();
+            collider.size = splitAlongX
+                ? new Vector2(segmentLength, sourceCollider.size.y)
+                : new Vector2(sourceCollider.size.x, segmentLength);
+            collider.isTrigger = sourceCollider.isTrigger;
+            collider.sharedMaterial = sourceCollider.sharedMaterial;
+        }
+
+        private float GetEffectiveHoleSize()
+        {
+            sourceCollider ??= GetComponent<BoxCollider2D>();
+            if (sourceCollider == null)
+            {
+                return holeSize;
+            }
+
+            var worldSize = GetWorldColliderSize();
+            return Mathf.Min(holeSize, Mathf.Max(worldSize.x, worldSize.y));
+        }
+
+        private Vector2 GetWorldColliderSize()
+        {
+            var scale = transform.lossyScale;
+            return new Vector2(
+                Mathf.Abs(sourceCollider.size.x * scale.x),
+                Mathf.Abs(sourceCollider.size.y * scale.y));
         }
 
 #if UNITY_EDITOR
         private void OnValidate()
         {
             holeSize = Mathf.Max(0f, holeSize);
+            collisionGeometryPrepared = false;
         }
 #endif
     }

@@ -1,4 +1,5 @@
 using TAD.Environment;
+using TAD.Navigation;
 using TAD.Pooling;
 using UnityEngine;
 
@@ -16,6 +17,7 @@ namespace TAD.Attackers
 
         private Rigidbody2D body;
         private PooledInstance pooledInstance;
+        private FarmRouteMapper routeMapper;
         private Vector2 moveDirection;
         private float currentHealth;
         private bool hasReachedFoodStore;
@@ -38,12 +40,34 @@ namespace TAD.Attackers
 
         private void FixedUpdate()
         {
-            if (definition == null || hasReachedFoodStore || currentHealth <= 0f || moveDirection == Vector2.zero)
+            if (definition == null || hasReachedFoodStore || currentHealth <= 0f)
+            {
+                return;
+            }
+
+            routeMapper ??= Object.FindAnyObjectByType<FarmRouteMapper>();
+            if (routeMapper != null)
+            {
+                if (!routeMapper.TryGetNextDirection(body.position, Size, out var mappedDirection))
+                {
+                    return;
+                }
+
+                moveDirection = mappedDirection;
+            }
+
+            if (moveDirection == Vector2.zero)
             {
                 return;
             }
 
             body.MovePosition(body.position + (moveDirection * definition.MovementSpeed * Time.fixedDeltaTime));
+        }
+
+        /// <summary>Assigns the map used to navigate this attacker toward the Food Store.</summary>
+        public void SetRouteMapper(FarmRouteMapper mapper)
+        {
+            routeMapper = mapper;
         }
 
         /// <summary>Sets the current path direction. A zero vector stops the attacker.</summary>
