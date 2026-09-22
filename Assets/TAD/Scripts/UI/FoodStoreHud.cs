@@ -18,6 +18,11 @@ namespace TAD.UI
         private FoodStore foodStore;
         private bool isSubscribed;
 
+        private void Awake()
+        {
+            ConfigureLeftToRightFill();
+        }
+
         /// <summary>Binds this display to the supplied Food Store and immediately presents its current state.</summary>
         public void Bind(FoodStore source)
         {
@@ -87,6 +92,7 @@ namespace TAD.UI
 
             if (fillImage != null)
             {
+                ConfigureLeftToRightFill();
                 fillImage.fillAmount = normalizedFood;
                 fillImage.color = Color.Lerp(depletedColor, fullColor, normalizedFood);
             }
@@ -95,6 +101,18 @@ namespace TAD.UI
             {
                 amountText.text = $"Food store: {currentFood:0.#} / {maximumFood:0.#}";
             }
+        }
+
+        private void ConfigureLeftToRightFill()
+        {
+            if (fillImage == null)
+            {
+                return;
+            }
+
+            fillImage.type = UnityEngine.UI.Image.Type.Filled;
+            fillImage.fillMethod = UnityEngine.UI.Image.FillMethod.Horizontal;
+            fillImage.fillOrigin = (int)UnityEngine.UI.Image.OriginHorizontal.Left;
         }
     }
 }

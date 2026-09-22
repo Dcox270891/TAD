@@ -12,11 +12,20 @@ namespace TAD.UI
         [SerializeField] private UnityEngine.UI.Button playButton;
 
         private WaveController waveController;
+        private bool isSubscribed;
 
         /// <summary>Provides the Wave Controller this button should start.</summary>
         public void Bind(WaveController controller)
         {
+            if (waveController == controller)
+            {
+                RefreshInteractableState();
+                return;
+            }
+
+            UnsubscribeFromWaveController();
             waveController = controller;
+            SubscribeToWaveController();
             RefreshInteractableState();
         }
 
@@ -34,6 +43,9 @@ namespace TAD.UI
             {
                 playButton.onClick.AddListener(HandlePlayPressed);
             }
+
+            SubscribeToWaveController();
+            RefreshInteractableState();
         }
 
         private void Start()
@@ -47,6 +59,8 @@ namespace TAD.UI
             {
                 playButton.onClick.RemoveListener(HandlePlayPressed);
             }
+
+            UnsubscribeFromWaveController();
         }
 
         private void HandlePlayPressed()
@@ -56,13 +70,50 @@ namespace TAD.UI
                 return;
             }
 
-            if (waveController.StartWaves())
+            // StartNextWave assigns its coroutine before returning, so this locks immediately,
+            // including a configured pre-wave delay before the first attacker appears.
+            waveController.StartNextWave();
+            RefreshInteractableState();
+        }
+
+        private void SubscribeToWaveController()
+        {
+            if (isSubscribed || waveController == null)
             {
-                // The first wave is underway; hide the one-shot control to prevent a duplicate sequence.
-                gameObject.SetActive(false);
                 return;
             }
 
+            waveController.WaveStarted += HandleWaveStateChanged;
+            waveController.WaveRunFinished += HandleWaveRunFinished;
+            waveController.AllWavesCompleted += HandleAllWavesCompleted;
+            isSubscribed = true;
+        }
+
+        private void UnsubscribeFromWaveController()
+        {
+            if (!isSubscribed || waveController == null)
+            {
+                return;
+            }
+
+            waveController.WaveStarted -= HandleWaveStateChanged;
+            waveController.WaveRunFinished -= HandleWaveRunFinished;
+            waveController.AllWavesCompleted -= HandleAllWavesCompleted;
+            isSubscribed = false;
+        }
+
+        private void HandleWaveStateChanged(int waveNumber, int attackerCount)
+        {
+            RefreshInteractableState();
+        }
+
+        private void HandleWaveRunFinished(bool completed)
+        {
+            RefreshInteractableState();
+        }
+
+        private void HandleAllWavesCompleted()
+        {
             RefreshInteractableState();
         }
 
@@ -74,9 +125,7 @@ namespace TAD.UI
             }
 
             playButton.interactable = waveController != null &&
-                                      !waveController.IsRunning &&
-                                      !waveController.HasCompletedAllWaves &&
-                                      waveController.TotalWaveCount > 0 &&
+                                      waveController.CanStartNextWave &&
                                       !ModalOverlay.IsGameplayInputBlocked;
         }
     }

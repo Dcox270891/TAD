@@ -13,27 +13,34 @@ namespace TAD.UI
         [SerializeField] private FoodStoreHud hudPrefab;
 
         private FoodStoreHud spawnedHud;
+        private bool ownsSpawnedHud;
 
         private void Start()
         {
-            if (hudPrefab == null)
-            {
-                return;
-            }
-
             var foodStore = GetComponent<FoodStore>();
             if (foodStore == null)
             {
                 return;
             }
 
-            spawnedHud = Instantiate(hudPrefab);
+            spawnedHud = Object.FindFirstObjectByType<FoodStoreHud>(FindObjectsInactive.Include);
+            if (spawnedHud == null)
+            {
+                if (hudPrefab == null)
+                {
+                    return;
+                }
+
+                spawnedHud = Instantiate(hudPrefab);
+                ownsSpawnedHud = true;
+            }
+
             spawnedHud.Bind(foodStore);
         }
 
         private void OnDestroy()
         {
-            if (spawnedHud != null)
+            if (ownsSpawnedHud && spawnedHud != null)
             {
                 Destroy(spawnedHud.gameObject);
             }

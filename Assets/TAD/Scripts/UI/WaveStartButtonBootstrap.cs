@@ -16,6 +16,7 @@ namespace TAD.UI
 
         private WaveController waveController;
         private WaveStartButton spawnedPlayButton;
+        private bool ownsSpawnedPlayButton;
 
         private void Awake()
         {
@@ -25,13 +26,24 @@ namespace TAD.UI
 
         private void Start()
         {
-            if (playButtonPrefab == null || waveController == null)
+            if (waveController == null)
             {
                 return;
             }
 
             var eventSystem = EnsureEventSystem();
-            spawnedPlayButton = Instantiate(playButtonPrefab);
+            spawnedPlayButton = Object.FindFirstObjectByType<WaveStartButton>(FindObjectsInactive.Include);
+            if (spawnedPlayButton == null)
+            {
+                if (playButtonPrefab == null)
+                {
+                    return;
+                }
+
+                spawnedPlayButton = Instantiate(playButtonPrefab);
+                ownsSpawnedPlayButton = true;
+            }
+
             spawnedPlayButton.Bind(waveController);
 
             if (eventSystem != null && spawnedPlayButton.gameObject.activeInHierarchy)
@@ -42,7 +54,7 @@ namespace TAD.UI
 
         private void OnDestroy()
         {
-            if (spawnedPlayButton != null)
+            if (ownsSpawnedPlayButton && spawnedPlayButton != null)
             {
                 Destroy(spawnedPlayButton.gameObject);
             }

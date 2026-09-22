@@ -83,6 +83,7 @@ namespace TAD.Waves
         private readonly List<GameObject> activeAttackers = new();
         private Coroutine waveRoutine;
         private int currentWaveNumber;
+        private int nextWaveIndex;
         private int spawnedInCurrentWave;
         private bool hasCompletedAllWaves;
         private bool isSubscribedToFoodStore;
@@ -99,6 +100,13 @@ namespace TAD.Waves
         public bool IsRunning => waveRoutine != null;
 
         public bool HasCompletedAllWaves => hasCompletedAllWaves;
+
+        /// <summary>Whether a manually-started numbered wave can begin now.</summary>
+        public bool CanStartNextWave => waveRoutine == null &&
+                                        !hasCompletedAllWaves &&
+                                        waves != null &&
+                                        nextWaveIndex < waves.Length &&
+                                        (foodStore == null || !foodStore.IsDepleted);
 
         /// <summary>Prevents automatic startup so a player-facing control can start the sequence instead.</summary>
         public void RequireManualStart()
@@ -117,6 +125,9 @@ namespace TAD.Waves
 
         /// <summary>Raised after the final configured wave has been cleared while food remains.</summary>
         public event Action AllWavesCompleted;
+
+        /// <summary>Raised after a running wave sequence or manually-started wave has fully stopped.</summary>
+        public event Action<bool> WaveRunFinished;
 
         private void Start()
         {
@@ -158,6 +169,7 @@ namespace TAD.Waves
             }
 
             currentWaveNumber = 0;
+            nextWaveIndex = 0;
             spawnedInCurrentWave = 0;
             hasCompletedAllWaves = false;
             activeAttackers.Clear();
@@ -166,16 +178,63 @@ namespace TAD.Waves
             return true;
         }
 
+        /// <summary>
+        /// Starts exactly one configured wave. Once its attackers have all returned to the pool,
+        /// this method can be called again to deploy the next numbered wave.
+        /// </summary>
+        public bool StartNextWave()
+        {
+            if (!CanStartNextWave)
+            {
+                return false;
+            }
+
+            if (!TryResolveDependencies())
+            {
+                return false;
+            }
+
+            if (foodStore.IsDepleted)
+            {
+                return false;
+            }
+
+            if (!routeMapper.RebuildRoutes())
+            {
+                Debug.LogError("Wave Controller could not build a route to the Food Store before sending attackers.", this);
+                return false;
+            }
+
+            var waveIndex = nextWaveIndex;
+            if (waveIndex < 0 || waveIndex >= waves.Length || waves[waveIndex] == null)
+            {
+                Debug.LogWarning("Wave Controller cannot start the next wave because its settings are missing.", this);
+                return false;
+            }
+
+            spawnedInCurrentWave = 0;
+            activeAttackers.Clear();
+            SubscribeToFoodStore();
+            waveRoutine = StartCoroutine(RunSingleWave(waveIndex));
+            return true;
+        }
+
         /// <summary>Stops scheduling future attackers. Attackers already released by the pool are left unchanged.</summary>
         public void StopWaves()
         {
-            if (waveRoutine != null)
+            var wasRunning = waveRoutine != null;
+            if (wasRunning)
             {
                 StopCoroutine(waveRoutine);
                 waveRoutine = null;
             }
 
             activeAttackers.Clear();
+
+            if (wasRunning)
+            {
+                WaveRunFinished?.Invoke(false);
+            }
         }
 
         private IEnumerator RunWaves()
@@ -208,6 +267,7 @@ namespace TAD.Waves
                 }
 
                 currentWaveNumber = waveIndex + 1;
+                nextWaveIndex = currentWaveNumber;
                 spawnedInCurrentWave = 0;
                 activeAttackers.Clear();
                 WaveStarted?.Invoke(currentWaveNumber, wave.AttackerCount);
@@ -250,7 +310,80 @@ namespace TAD.Waves
             hasCompletedAllWaves = completedSequence && !foodStore.IsDepleted;
             waveRoutine = null;
 
+            WaveRunFinished?.Invoke(hasCompletedAllWaves);
+
             if (hasCompletedAllWaves)
+            {
+                AllWavesCompleted?.Invoke();
+            }
+        }
+
+        private IEnumerator RunSingleWave(int waveIndex)
+        {
+            var wave = waves[waveIndex];
+            if (foodStore.IsDepleted)
+            {
+                CompleteSingleWave(false);
+                yield break;
+            }
+
+            if (wave.DelayBeforeWave > 0f)
+            {
+                yield return new WaitForSeconds(wave.DelayBeforeWave);
+            }
+
+            if (foodStore.IsDepleted)
+            {
+                CompleteSingleWave(false);
+                yield break;
+            }
+
+            currentWaveNumber = waveIndex + 1;
+            spawnedInCurrentWave = 0;
+            activeAttackers.Clear();
+            WaveStarted?.Invoke(currentWaveNumber, wave.AttackerCount);
+
+            var failedToSpawn = false;
+            for (var attackerIndex = 0; attackerIndex < wave.AttackerCount; attackerIndex++)
+            {
+                if (foodStore.IsDepleted)
+                {
+                    break;
+                }
+
+                if (!SpawnAttacker())
+                {
+                    failedToSpawn = true;
+                    break;
+                }
+
+                spawnedInCurrentWave++;
+
+                if (attackerIndex < wave.AttackerCount - 1 && wave.SpawnInterval > 0f)
+                {
+                    yield return new WaitForSeconds(wave.SpawnInterval);
+                }
+            }
+
+            yield return WaitForActiveAttackers();
+
+            var completed = !foodStore.IsDepleted && !failedToSpawn;
+            if (completed)
+            {
+                nextWaveIndex = waveIndex + 1;
+                hasCompletedAllWaves = nextWaveIndex >= waves.Length;
+                WaveCompleted?.Invoke(currentWaveNumber);
+            }
+
+            CompleteSingleWave(completed);
+        }
+
+        private void CompleteSingleWave(bool completed)
+        {
+            waveRoutine = null;
+            WaveRunFinished?.Invoke(completed);
+
+            if (completed && hasCompletedAllWaves)
             {
                 AllWavesCompleted?.Invoke();
             }
