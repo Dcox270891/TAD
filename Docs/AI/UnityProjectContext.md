@@ -51,8 +51,11 @@
 | --- | --- | --- | --- |
 | Environment data | `FarmWall` owns one wall's cover and hole configuration | Confirmed | `Assets/TAD/Scripts/Environment/FarmWall.cs` |
 | Food objective | `FoodStore` begins with 200 food, consumes food on attacker arrival, and exposes food-state events | Confirmed | `Assets/TAD/Scripts/Environment/FoodStore.cs` |
-| Gameplay architecture | Reusable environment components and prefabs are established; attackers, waves, combat, and economy systems are not yet implemented | Confirmed | `Assets/TAD` |
-| Data-driven content | Intended for TAD; not implemented yet | Confirmed | Project brief |
+| Attacker data | `AttackerDefinition` owns configurable attacker stats; `ChickenDefinition` is the first data asset | Confirmed | `Assets/TAD/Scripts/Attackers/AttackerDefinition.cs` |
+| Attacker runtime | `BasicAttacker` moves in its assigned direction, has health, and returns itself to a pool on defeat or food arrival | Confirmed | `Assets/TAD/Scripts/Attackers/BasicAttacker.cs` |
+| Reuse | `SpawnPool` has attacker, defender, and projectile prefab inputs, prewarms five objects per configured type, and expands when exhausted | Confirmed | `Assets/TAD/Scripts/Pooling/SpawnPool.cs` |
+| Gameplay architecture | Reusable environment, attacker, and pool components are established; waves, defenders, combat rewards, and economy systems are not yet implemented | Confirmed | `Assets/TAD` |
+| Data-driven content | Attacker stats are data-driven through `AttackerDefinition`; weapons and other content are not implemented yet | Confirmed | `Assets/TAD/Data/Attackers/ChickenDefinition.asset` |
 
 ## Coding Conventions
 
@@ -90,7 +93,7 @@
 ## Unknowns And Confidence
 
 - The intended low-poly Blender asset import conventions, camera angle, and lighting setup are not established.
-- No navigation, pooling, combat, economy, or upgrade implementation exists yet. Future animal prefabs will implement `IFoodStoreRaider` so `FoodStore` can deduct their remaining health on arrival.
+- No navigation, defender combat, economy, or upgrade implementation exists yet. `BasicAttacker` currently moves in its authorable starting direction until the navigation system supplies path directions.
 - The wall hole is authoring and pathfinding data only for now; its visual opening and split collision geometry will be added with the navigation system.
 
 ## Source Files Inspected
@@ -103,8 +106,15 @@
 - `Assets/Settings/Renderer2D.asset`
 - `Assets/TAD/Scripts/Environment/FarmWall.cs`
 - `Assets/TAD/Scripts/Environment/FoodStore.cs`
+- `Assets/TAD/Scripts/Attackers/AttackerDefinition.cs`
+- `Assets/TAD/Scripts/Attackers/BasicAttacker.cs`
+- `Assets/TAD/Scripts/Pooling/SpawnPool.cs`
+- `Assets/TAD/Scripts/Pooling/PooledInstance.cs`
 - `Assets/TAD/Prefabs/Environment/FullCoverWall.prefab`
 - `Assets/TAD/Prefabs/Environment/HalfCoverWall.prefab`
 - `Assets/TAD/Prefabs/Environment/FoodStore.prefab`
+- `Assets/TAD/Data/Attackers/ChickenDefinition.asset`
+- `Assets/TAD/Prefabs/Attackers/Chicken.prefab`
+- `Assets/TAD/Prefabs/Pooling/SpawnPool.prefab`
 
 <!-- unity-onboarding:generated:end -->
