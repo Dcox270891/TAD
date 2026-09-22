@@ -6,7 +6,7 @@
 
 - Project root: `C:\Users\Daniel\OneDrive\Desktop\Unity\TAD`
 - Last analyzed: 2026-09-22
-- Last analyzed commit: none; Git is initialized locally and has no commits yet.
+- Last analyzed commit: `8300c69` (`Initial TAD project with wall prefabs`).
 - Purpose: Tower Attack or Defend (TAD), a single-player 2D/2.5D farm tower-defence game.
 
 ## Confirmed Environment
@@ -50,7 +50,8 @@
 | Pattern | Finding | Confidence | Evidence |
 | --- | --- | --- | --- |
 | Environment data | `FarmWall` owns one wall's cover and hole configuration | Confirmed | `Assets/TAD/Scripts/Environment/FarmWall.cs` |
-| Gameplay architecture | Initial environment component and prefabs are established; other gameplay systems are not yet implemented | Confirmed | `Assets/TAD` |
+| Food objective | `FoodStore` begins with 200 food, consumes food on attacker arrival, and exposes food-state events | Confirmed | `Assets/TAD/Scripts/Environment/FoodStore.cs` |
+| Gameplay architecture | Reusable environment components and prefabs are established; attackers, waves, combat, and economy systems are not yet implemented | Confirmed | `Assets/TAD` |
 | Data-driven content | Intended for TAD; not implemented yet | Confirmed | Project brief |
 
 ## Coding Conventions
@@ -71,10 +72,10 @@
 | `unity.editor.version` | available from project metadata | `ProjectSettings/ProjectVersion.txt` |
 | `unity.buildsettings.read` | available from serialized project settings | `ProjectSettings/EditorBuildSettings.asset` |
 | `unity.package.read` | available from project files | `Packages/manifest.json` |
-| `unity.scene.list` | unverified | No live Pipeline connection |
-| `unity.scene.inspect` | unverified | No live Pipeline connection |
-| `unity.console.read` | unverified | No live Pipeline connection |
-| `unity.asset.search` | unverified | No live Pipeline connection |
+| `unity.scene.list` | available | Live Pipeline connection |
+| `unity.scene.inspect` | available | Live Pipeline connection |
+| `unity.console.read` | available | Live Pipeline connection |
+| `unity.asset.search` | available | Live Pipeline connection |
 | `unity.tests.list` | unverified | No live Pipeline connection |
 | `unity.tests.run` | unverified | No live Pipeline connection |
 | `unity.playmode.read` | unverified | No live Pipeline connection |
@@ -83,13 +84,13 @@
 ## Important Constraints
 
 - Do not manually edit scene, prefab, or ScriptableObject YAML while a live Editor connection is available.
-- Git is configured locally with Git LFS rules for Blender and exported art. The initial commit remains to be made.
+- Git is configured locally with Git LFS rules for Blender and exported art.
 - Do not enable monetization in the prototype; ads and an ad-removal purchase are later-release work.
 
 ## Unknowns And Confidence
 
 - The intended low-poly Blender asset import conventions, camera angle, and lighting setup are not established.
-- No navigation, pooling, combat, economy, or upgrade implementation exists yet.
+- No navigation, pooling, combat, economy, or upgrade implementation exists yet. Future animal prefabs will implement `IFoodStoreRaider` so `FoodStore` can deduct their remaining health on arrival.
 - The wall hole is authoring and pathfinding data only for now; its visual opening and split collision geometry will be added with the navigation system.
 
 ## Source Files Inspected
@@ -101,7 +102,9 @@
 - `Packages/packages-lock.json`
 - `Assets/Settings/Renderer2D.asset`
 - `Assets/TAD/Scripts/Environment/FarmWall.cs`
+- `Assets/TAD/Scripts/Environment/FoodStore.cs`
 - `Assets/TAD/Prefabs/Environment/FullCoverWall.prefab`
 - `Assets/TAD/Prefabs/Environment/HalfCoverWall.prefab`
+- `Assets/TAD/Prefabs/Environment/FoodStore.prefab`
 
 <!-- unity-onboarding:generated:end -->
