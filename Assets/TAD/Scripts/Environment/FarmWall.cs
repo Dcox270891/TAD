@@ -94,6 +94,9 @@ namespace TAD.Environment
                 generatedCollisionRoot.SetParent(transform, false);
             }
 
+            // Runtime collision helpers belong to the same Environment layer as their parent wall.
+            generatedCollisionRoot.gameObject.layer = gameObject.layer;
+
             var worldSize = GetWorldColliderSize();
             var splitAlongX = worldSize.x >= worldSize.y;
             var localAxisLength = splitAlongX ? sourceCollider.size.x : sourceCollider.size.y;
@@ -178,6 +181,7 @@ namespace TAD.Environment
         private void CreateCollisionSegment(string segmentName, bool splitAlongX, float segmentLength, float axisOffset)
         {
             var segment = new GameObject(segmentName).transform;
+            segment.gameObject.layer = gameObject.layer;
             segment.SetParent(generatedCollisionRoot, false);
             segment.localPosition = sourceCollider.offset + (splitAlongX
                 ? Vector2.right * axisOffset

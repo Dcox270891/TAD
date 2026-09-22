@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2474162864332338128}
   - component: {fileID: 7840862293572466701}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: FarmRouteMapper
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -46,6 +46,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TAD.Navigation.FarmRouteMapper
   foodStore: {fileID: 0}
   defaultAttackerSize: 1
+  attackerDefinitionsToPrecompute: []
   cellSize: 0.25
   mapSize: {x: 20, y: 12}
   obstaclePadding: 0

@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 4338179915958666350}
   - component: {fileID: 4031747557503582945}
   - component: {fileID: 4853736465031467944}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Chicken
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -146,7 +146,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8026184853587430636}
   - component: {fileID: 9151525428898726877}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Comb
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -238,7 +238,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5396846481310002016}
   - component: {fileID: 7604296610242428945}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Visual
   m_TagString: Untagged
   m_Icon: {fileID: 0}

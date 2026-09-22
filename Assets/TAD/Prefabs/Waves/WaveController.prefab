@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2684102460878317581}
   - component: {fileID: 7753717080277469554}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: WaveController
   m_TagString: Untagged
   m_Icon: {fileID: 0}

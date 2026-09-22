@@ -127,6 +127,8 @@ namespace TAD.Pooling
                 }
 
                 var inactiveContainer = new GameObject($"{settings.ObjectType} Pool").transform;
+                // Containers are runtime infrastructure, so they inherit this Background-layer pool's layer.
+                inactiveContainer.gameObject.layer = gameObject.layer;
                 inactiveContainer.SetParent(transform, false);
 
                 var pool = new PoolBucket(settings.Prefab, settings.ObjectType, inactiveContainer);
