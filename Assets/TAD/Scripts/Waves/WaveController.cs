@@ -100,6 +100,9 @@ namespace TAD.Waves
 
         public bool HasCompletedAllWaves => hasCompletedAllWaves;
 
+        /// <summary>The exact source position used when this controller releases an attacker.</summary>
+        public Vector3 SpawnPosition => (spawnPoint != null ? spawnPoint : transform).position;
+
         /// <summary>Raised with the one-based wave number and its requested attacker count.</summary>
         public event Action<int, int> WaveStarted;
 

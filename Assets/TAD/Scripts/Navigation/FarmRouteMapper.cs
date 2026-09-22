@@ -61,6 +61,104 @@ namespace TAD.Navigation
         /// <summary>Number of attacker sizes with routes cached during the latest level scan.</summary>
         public int PrecomputedAttackerSizeCount => precomputedAttackerSizeKeys.Count;
 
+        /// <summary>
+        /// Copies the attacker diameters whose route fields were prepared during the latest level scan.
+        /// This is useful for editor-only route visualisation without exposing the mutable cache itself.
+        /// </summary>
+        public int CopyPrecomputedAttackerSizes(List<float> results)
+        {
+            if (results == null)
+            {
+                throw new ArgumentNullException(nameof(results));
+            }
+
+            results.Clear();
+            foreach (var sizeKey in precomputedAttackerSizeKeys)
+            {
+                results.Add(GetSizeFromKey(sizeKey));
+            }
+
+            return results.Count;
+        }
+
+        /// <summary>
+        /// Creates the cached fastest route from a position to the Food Store for the specified attacker diameter.
+        /// The method only reads the startup route cache; it never rebuilds the map during rendering.
+        /// </summary>
+        public bool TryGetFastestRoute(Vector3 startingPosition, float attackerSize, List<Vector3> routePoints)
+        {
+            if (routePoints == null)
+            {
+                throw new ArgumentNullException(nameof(routePoints));
+            }
+
+            routePoints.Clear();
+            if (!hasBuiltMap || foodStore == null)
+            {
+                return false;
+            }
+
+            var safeAttackerSize = Mathf.Max(0.01f, attackerSize);
+            var attackerSizeKey = GetSizeKey(safeAttackerSize);
+            var requiredHoleSizeKey = GetRequiredHoleSizeKey(attackerSizeKey);
+            var requiredHoleSize = GetRequiredHoleSize(requiredHoleSizeKey);
+            var radius = (safeAttackerSize * 0.5f) + obstaclePadding;
+            var startPosition2D = (Vector2)startingPosition;
+            var destination = foodStore.transform.position;
+
+            if (!TryGetCellIndex(startPosition2D, out var currentIndex))
+            {
+                if (!IsClearSegment(startPosition2D, destination, radius, requiredHoleSize))
+                {
+                    return false;
+                }
+
+                routePoints.Add(startingPosition);
+                routePoints.Add(destination);
+                return true;
+            }
+
+            var routeKey = new RouteFieldKey(attackerSizeKey, requiredHoleSizeKey);
+            if (!routeFields.TryGetValue(routeKey, out var field) || !field.Walkable[currentIndex] || field.GoalIndex < 0)
+            {
+                return false;
+            }
+
+            routePoints.Add(startingPosition);
+            var remainingSteps = field.NextIndices.Length;
+            while (currentIndex != field.GoalIndex && remainingSteps-- > 0)
+            {
+                var nextIndex = field.NextIndices[currentIndex];
+                if (nextIndex < 0)
+                {
+                    routePoints.Clear();
+                    return false;
+                }
+
+                currentIndex = nextIndex;
+                var nextCell = GetCellCenter(currentIndex);
+                var nextPoint = new Vector3(nextCell.x, nextCell.y, startingPosition.z);
+                if ((routePoints[^1] - nextPoint).sqrMagnitude > 0.0001f)
+                {
+                    routePoints.Add(nextPoint);
+                }
+            }
+
+            if (currentIndex != field.GoalIndex ||
+                !IsClearSegment(GetCellCenter(currentIndex), destination, radius, requiredHoleSize))
+            {
+                routePoints.Clear();
+                return false;
+            }
+
+            if ((routePoints[^1] - destination).sqrMagnitude > 0.0001f)
+            {
+                routePoints.Add(destination);
+            }
+
+            return routePoints.Count >= 2;
+        }
+
         private void Start()
         {
             RebuildRoutes();
@@ -250,6 +348,8 @@ namespace TAD.Navigation
                 Debug.LogWarning("Farm Route Mapper found no walkable route cell near the Food Store.", this);
                 return field;
             }
+
+            field.GoalIndex = goalIndex;
 
             var distances = new float[field.Walkable.Length];
             Array.Fill(distances, float.PositiveInfinity);
@@ -535,6 +635,8 @@ namespace TAD.Navigation
             public bool[] Walkable { get; }
 
             public int[] NextIndices { get; }
+
+            public int GoalIndex { get; set; } = -1;
         }
 
         private readonly struct RouteFieldKey : IEquatable<RouteFieldKey>
