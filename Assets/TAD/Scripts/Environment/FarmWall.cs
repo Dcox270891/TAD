@@ -18,6 +18,7 @@ namespace TAD.Environment
     public sealed class FarmWall : MonoBehaviour
     {
         private const string GeneratedCollisionRootName = "Runtime Hole Collision";
+        private const float HoleCollisionPadding = 0.25f;
 
         [SerializeField]
         [Tooltip("Half cover allows a farmhand's ranged weapon or trap to attack across it. Full cover blocks all attacks across it.")]
@@ -43,7 +44,7 @@ namespace TAD.Environment
 
         public bool CanAnimalPassThrough(float animalDiameter)
         {
-            return hasHole && animalDiameter >= 0f && animalDiameter <= HoleSize;
+            return hasHole && animalDiameter >= 0f && animalDiameter <= HoleSize + 0.0001f;
         }
 
         private BoxCollider2D sourceCollider;
@@ -97,7 +98,9 @@ namespace TAD.Environment
             var splitAlongX = worldSize.x >= worldSize.y;
             var localAxisLength = splitAlongX ? sourceCollider.size.x : sourceCollider.size.y;
             var worldAxisLength = splitAlongX ? worldSize.x : worldSize.y;
-            var openingWorldLength = Mathf.Min(holeSize, worldAxisLength);
+            // The gameplay rule still uses the authored Hole Size exactly. The small invisible collision margin
+            // lets an equal-size animal follow grid cells through the opening instead of snagging on its edges.
+            var openingWorldLength = Mathf.Min(holeSize + HoleCollisionPadding, worldAxisLength);
             var localOpeningLength = worldAxisLength > 0f
                 ? openingWorldLength * (localAxisLength / worldAxisLength)
                 : 0f;
@@ -118,26 +121,48 @@ namespace TAD.Environment
         /// <summary>Returns whether a circle at the supplied position overlaps this wall's solid collision.</summary>
         public bool BlocksCircle(Vector2 worldPosition, float radius)
         {
+            return BlocksCircleForRoute(worldPosition, radius, 0f);
+        }
+
+        /// <summary>
+        /// Returns whether a circle overlaps this wall for a route whose allowed openings must be at least
+        /// <paramref name="requiredHoleSize"/> wide. Passing positive infinity deliberately closes every hole,
+        /// which lets the route mapper keep its all-walls baseline separate from its opening-aware routes.
+        /// </summary>
+        public bool BlocksCircleForRoute(Vector2 worldPosition, float radius, float requiredHoleSize)
+        {
             PrepareCollisionGeometry();
             var safeRadius = Mathf.Max(0f, radius);
             var safeRadiusSquared = safeRadius * safeRadius;
 
+            // The original collider is disabled at runtime when the wall has an opening. Navigation still needs
+            // to be able to treat that same wall as solid while it builds the initial no-hole route.
+            if (!CanAnimalPassThrough(requiredHoleSize))
+            {
+                return ColliderBlocksCircle(sourceCollider, worldPosition, safeRadiusSquared, hasHole);
+            }
+
             foreach (var segment in collisionSegments)
             {
-                if (segment == null || !segment.enabled || !segment.gameObject.activeInHierarchy)
-                {
-                    continue;
-                }
-
-                var closestPoint = GetClosestPointOnBox(segment, worldPosition);
-                // Touching the edge of an exact-size opening is allowed; overlapping it is not.
-                if ((closestPoint - worldPosition).sqrMagnitude + 0.0001f < safeRadiusSquared)
+                if (ColliderBlocksCircle(segment, worldPosition, safeRadiusSquared))
                 {
                     return true;
                 }
             }
 
             return false;
+        }
+
+        private static bool ColliderBlocksCircle(BoxCollider2D collider, Vector2 worldPosition, float radiusSquared, bool treatDisabledColliderAsSolid = false)
+        {
+            if (collider == null || !collider.gameObject.activeInHierarchy || (!collider.enabled && !treatDisabledColliderAsSolid))
+            {
+                return false;
+            }
+
+            var closestPoint = GetClosestPointOnBox(collider, worldPosition);
+            // Touching the edge of an exact-size opening is allowed; overlapping it is not.
+            return (closestPoint - worldPosition).sqrMagnitude + 0.0001f < radiusSquared;
         }
 
         private static Vector2 GetClosestPointOnBox(BoxCollider2D collider, Vector2 worldPosition)

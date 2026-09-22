@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using TAD.Attackers;
 using TAD.Environment;
 using UnityEngine;
 
@@ -12,6 +13,10 @@ namespace TAD.Navigation
     [DisallowMultipleComponent]
     public sealed class FarmRouteMapper : MonoBehaviour
     {
+        private const int NoHoleRouteKey = -1;
+        private const float SizeKeyScale = 1000f;
+        private const int MaxRecoveryCellRadius = 8;
+
         [SerializeField]
         [Tooltip("The target all attacking animals try to reach. If blank, the first Food Store in the scene is used.")]
         private FoodStore foodStore;
@@ -19,6 +24,10 @@ namespace TAD.Navigation
         [SerializeField, Min(0.01f)]
         [Tooltip("The attacker diameter used to build the startup route field.")]
         private float defaultAttackerSize = 1f;
+
+        [SerializeField]
+        [Tooltip("Optional attacker data to cache at level startup. Basic Attackers prewarmed by a Spawn Pool are discovered automatically as well.")]
+        private AttackerDefinition[] attackerDefinitionsToPrecompute = Array.Empty<AttackerDefinition>();
 
         [SerializeField, Min(0.05f)]
         [Tooltip("The desired spacing between route cells. Smaller values make tighter routes at a higher startup cost.")]
@@ -32,7 +41,9 @@ namespace TAD.Navigation
         [Tooltip("Extra clearance left around walls, in world units.")]
         private float obstaclePadding;
 
-        private readonly Dictionary<int, RouteField> routeFields = new();
+        private readonly Dictionary<RouteFieldKey, RouteField> routeFields = new();
+        private readonly List<int> precomputedAttackerSizeKeys = new();
+        private readonly List<int> holeSizeKeys = new();
         private FarmWall[] walls = Array.Empty<FarmWall>();
         private int columns;
         private int rows;
@@ -43,6 +54,12 @@ namespace TAD.Navigation
         public FoodStore FoodStore => foodStore;
 
         public Vector2 MapSize => mapSize;
+
+        /// <summary>Number of immutable route fields prepared for this level.</summary>
+        public int CachedRouteFieldCount => routeFields.Count;
+
+        /// <summary>Number of attacker sizes with routes cached during the latest level scan.</summary>
+        public int PrecomputedAttackerSizeCount => precomputedAttackerSizeKeys.Count;
 
         private void Start()
         {
@@ -83,15 +100,16 @@ namespace TAD.Navigation
 
             actualCellSize = new Vector2(mapSize.x / columns, mapSize.y / rows);
             gridMinimum = (Vector2)transform.position - (mapSize * 0.5f);
-            walls = UnityEngine.Object.FindObjectsByType<FarmWall>();
+            walls = UnityEngine.Object.FindObjectsByType<FarmWall>(FindObjectsInactive.Exclude);
             foreach (var wall in walls)
             {
                 wall.PrepareCollisionGeometry();
             }
 
             routeFields.Clear();
+            CollectStartupRouteData();
             hasBuiltMap = true;
-            GetOrCreateRouteField(defaultAttackerSize);
+            BuildStartupRouteFields();
             return true;
         }
 
@@ -104,41 +122,126 @@ namespace TAD.Navigation
                 return false;
             }
 
+            var safeAttackerSize = Mathf.Max(0.01f, attackerSize);
+            var attackerSizeKey = GetSizeKey(safeAttackerSize);
+            var requiredHoleSizeKey = GetRequiredHoleSizeKey(attackerSizeKey);
+            var requiredHoleSize = GetRequiredHoleSize(requiredHoleSizeKey);
+            var radius = (safeAttackerSize * 0.5f) + obstaclePadding;
+
             if (!TryGetCellIndex(currentPosition, out var currentIndex))
             {
-                return false;
+                // A mapper boundary should not freeze an otherwise unobstructed attacker.
+                return TryGetClearDirectDirection(currentPosition, radius, requiredHoleSize, out direction);
             }
 
-            var field = GetOrCreateRouteField(Mathf.Max(0.01f, attackerSize));
-            var nextIndex = field.NextIndices[currentIndex];
-            if (nextIndex < 0)
+            var routeKey = new RouteFieldKey(attackerSizeKey, requiredHoleSizeKey);
+            if (routeFields.TryGetValue(routeKey, out var field))
             {
-                return false;
+                if (field.Walkable[currentIndex])
+                {
+                    var nextIndex = field.NextIndices[currentIndex];
+                    if (nextIndex >= 0)
+                    {
+                        direction = (GetCellCenter(nextIndex) - currentPosition).normalized;
+                        return direction.sqrMagnitude > 0f;
+                    }
+                }
+                else if (TryGetRecoveryDirection(currentPosition, currentIndex, field, radius, requiredHoleSize, out direction))
+                {
+                    return true;
+                }
             }
 
-            direction = (GetCellCenter(nextIndex) - currentPosition).normalized;
-            return direction.sqrMagnitude > 0f;
+            // Only terminal or unexpectedly unmapped positions take this small sampled fallback. It keeps the
+            // normal movement path to an O(1) flow-field lookup while ensuring an animal continues into the
+            // Food Store whenever a clear line is available.
+            return TryGetClearDirectDirection(currentPosition, radius, requiredHoleSize, out direction);
         }
 
-        private RouteField GetOrCreateRouteField(float attackerSize)
+        private void CollectStartupRouteData()
         {
-            var sizeKey = Mathf.RoundToInt(attackerSize * 1000f);
-            if (!routeFields.TryGetValue(sizeKey, out var field))
+            precomputedAttackerSizeKeys.Clear();
+            holeSizeKeys.Clear();
+
+            AddUniqueKey(precomputedAttackerSizeKeys, GetSizeKey(defaultAttackerSize));
+
+            if (attackerDefinitionsToPrecompute != null)
             {
-                field = BuildRouteField(sizeKey / 1000f);
-                routeFields.Add(sizeKey, field);
+                foreach (var definition in attackerDefinitionsToPrecompute)
+                {
+                    if (definition != null)
+                    {
+                        AddUniqueKey(precomputedAttackerSizeKeys, GetSizeKey(definition.Size));
+                    }
+                }
+            }
+
+            // Spawn Pool prewarming occurs in Awake, before this component's Start, so inactive pooled animals
+            // are available to the initial scan without making the pool navigation-specific.
+            var pooledAttackers = UnityEngine.Object.FindObjectsByType<BasicAttacker>(FindObjectsInactive.Include);
+            foreach (var attacker in pooledAttackers)
+            {
+                if (attacker != null && attacker.Definition != null)
+                {
+                    AddUniqueKey(precomputedAttackerSizeKeys, GetSizeKey(attacker.Size));
+                }
+            }
+
+            foreach (var wall in walls)
+            {
+                if (wall != null && wall.gameObject.activeInHierarchy && wall.HasHole && wall.HoleSize > 0f)
+                {
+                    AddUniqueKey(holeSizeKeys, GetSizeKey(wall.HoleSize));
+                }
+            }
+
+            precomputedAttackerSizeKeys.Sort();
+            holeSizeKeys.Sort();
+        }
+
+        private void BuildStartupRouteFields()
+        {
+            // Build the all-walls baseline first, before considering a single hole. It remains cached even when
+            // a shorter eligible-opening route is also available.
+            foreach (var attackerSizeKey in precomputedAttackerSizeKeys)
+            {
+                GetOrCreateRouteField(attackerSizeKey, NoHoleRouteKey);
+            }
+
+            // One field for a hole threshold evaluates every opening at least that wide in one Dijkstra pass.
+            // That makes the selected field naturally choose the fastest size-2 hole over any size-1 hole when
+            // it is the shorter overall route.
+            foreach (var holeSizeKey in holeSizeKeys)
+            {
+                foreach (var attackerSizeKey in precomputedAttackerSizeKeys)
+                {
+                    if (attackerSizeKey <= holeSizeKey)
+                    {
+                        GetOrCreateRouteField(attackerSizeKey, holeSizeKey);
+                    }
+                }
+            }
+        }
+
+        private RouteField GetOrCreateRouteField(int attackerSizeKey, int requiredHoleSizeKey)
+        {
+            var routeKey = new RouteFieldKey(attackerSizeKey, requiredHoleSizeKey);
+            if (!routeFields.TryGetValue(routeKey, out var field))
+            {
+                field = BuildRouteField(GetSizeFromKey(attackerSizeKey), GetRequiredHoleSize(requiredHoleSizeKey));
+                routeFields.Add(routeKey, field);
             }
 
             return field;
         }
 
-        private RouteField BuildRouteField(float attackerSize)
+        private RouteField BuildRouteField(float attackerSize, float requiredHoleSize)
         {
             var field = new RouteField(columns * rows);
             var radius = (attackerSize * 0.5f) + obstaclePadding;
             for (var index = 0; index < field.Walkable.Length; index++)
             {
-                field.Walkable[index] = IsWalkable(GetCellCenter(index), radius);
+                field.Walkable[index] = IsWalkable(GetCellCenter(index), radius, requiredHoleSize);
             }
 
             var goalIndex = FindClosestWalkableCell(foodStore.transform.position, field.Walkable);
@@ -172,7 +275,7 @@ namespace TAD.Navigation
                             continue;
                         }
 
-                        if (!field.Walkable[neighbour] || !CanTraverse(neighbour, current.Index, xOffset, yOffset, radius, field.Walkable))
+                        if (!field.Walkable[neighbour] || !CanTraverse(neighbour, current.Index, xOffset, yOffset, radius, requiredHoleSize, field.Walkable))
                         {
                             continue;
                         }
@@ -193,7 +296,7 @@ namespace TAD.Navigation
             return field;
         }
 
-        private bool CanTraverse(int fromIndex, int toIndex, int xOffset, int yOffset, float radius, bool[] walkable)
+        private bool CanTraverse(int fromIndex, int toIndex, int xOffset, int yOffset, float radius, float requiredHoleSize, bool[] walkable)
         {
             if (xOffset != 0 && yOffset != 0)
             {
@@ -206,20 +309,152 @@ namespace TAD.Navigation
             }
 
             var midpoint = (GetCellCenter(fromIndex) + GetCellCenter(toIndex)) * 0.5f;
-            return IsWalkable(midpoint, radius);
+            return IsWalkable(midpoint, radius, requiredHoleSize);
         }
 
-        private bool IsWalkable(Vector2 worldPosition, float radius)
+        private bool IsWalkable(Vector2 worldPosition, float radius, float requiredHoleSize)
         {
             foreach (var wall in walls)
             {
-                if (wall != null && wall.gameObject.activeInHierarchy && wall.BlocksCircle(worldPosition, radius))
+                if (wall != null && wall.gameObject.activeInHierarchy && wall.BlocksCircleForRoute(worldPosition, radius, requiredHoleSize))
                 {
                     return false;
                 }
             }
 
             return true;
+        }
+
+        private bool TryGetRecoveryDirection(
+            Vector2 currentPosition,
+            int currentIndex,
+            RouteField field,
+            float radius,
+            float requiredHoleSize,
+            out Vector2 direction)
+        {
+            direction = Vector2.zero;
+            var currentColumn = currentIndex % columns;
+            var currentRow = currentIndex / columns;
+            var minimumCellSize = Mathf.Max(0.01f, Mathf.Min(actualCellSize.x, actualCellSize.y));
+            var searchRadius = Mathf.Min(MaxRecoveryCellRadius, Mathf.CeilToInt(radius / minimumCellSize) + 2);
+            var closestDistance = float.PositiveInfinity;
+            var closestCell = Vector2.zero;
+
+            for (var rowOffset = -searchRadius; rowOffset <= searchRadius; rowOffset++)
+            {
+                var candidateRow = currentRow + rowOffset;
+                if (candidateRow < 0 || candidateRow >= rows)
+                {
+                    continue;
+                }
+
+                for (var columnOffset = -searchRadius; columnOffset <= searchRadius; columnOffset++)
+                {
+                    var candidateColumn = currentColumn + columnOffset;
+                    if (candidateColumn < 0 || candidateColumn >= columns)
+                    {
+                        continue;
+                    }
+
+                    var candidateIndex = (candidateRow * columns) + candidateColumn;
+                    if (!field.Walkable[candidateIndex] || field.NextIndices[candidateIndex] < 0)
+                    {
+                        continue;
+                    }
+
+                    var candidateCell = GetCellCenter(candidateIndex);
+                    var distance = (candidateCell - currentPosition).sqrMagnitude;
+                    if (distance <= 0.0001f || distance >= closestDistance ||
+                        !IsClearSegment(currentPosition, candidateCell, radius, requiredHoleSize))
+                    {
+                        continue;
+                    }
+
+                    closestDistance = distance;
+                    closestCell = candidateCell;
+                }
+            }
+
+            if (closestDistance == float.PositiveInfinity)
+            {
+                return false;
+            }
+
+            direction = (closestCell - currentPosition).normalized;
+            return direction.sqrMagnitude > 0f;
+        }
+
+        private bool TryGetClearDirectDirection(Vector2 currentPosition, float radius, float requiredHoleSize, out Vector2 direction)
+        {
+            direction = Vector2.zero;
+            var destination = (Vector2)foodStore.transform.position;
+            var delta = destination - currentPosition;
+            if (delta.sqrMagnitude <= 0.0001f)
+            {
+                return false;
+            }
+
+            if (!IsClearSegment(currentPosition, destination, radius, requiredHoleSize))
+            {
+                return false;
+            }
+
+            direction = delta.normalized;
+            return true;
+        }
+
+        private bool IsClearSegment(Vector2 startPosition, Vector2 destination, float radius, float requiredHoleSize)
+        {
+            var delta = destination - startPosition;
+            var sampleSpacing = Mathf.Max(0.01f, Mathf.Min(actualCellSize.x, actualCellSize.y) * 0.5f);
+            var sampleCount = Mathf.Max(1, Mathf.CeilToInt(delta.magnitude / sampleSpacing));
+            for (var sampleIndex = 0; sampleIndex <= sampleCount; sampleIndex++)
+            {
+                var samplePosition = Vector2.Lerp(startPosition, destination, sampleIndex / (float)sampleCount);
+                if (!IsWalkable(samplePosition, radius, requiredHoleSize))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private int GetRequiredHoleSizeKey(int attackerSizeKey)
+        {
+            foreach (var holeSizeKey in holeSizeKeys)
+            {
+                if (holeSizeKey >= attackerSizeKey)
+                {
+                    return holeSizeKey;
+                }
+            }
+
+            return NoHoleRouteKey;
+        }
+
+        private static float GetRequiredHoleSize(int requiredHoleSizeKey)
+        {
+            return requiredHoleSizeKey == NoHoleRouteKey ? float.PositiveInfinity : GetSizeFromKey(requiredHoleSizeKey);
+        }
+
+        private static int GetSizeKey(float size)
+        {
+            return Mathf.Max(1, Mathf.RoundToInt(Mathf.Max(0.001f, size) * SizeKeyScale));
+        }
+
+        private static float GetSizeFromKey(int sizeKey)
+        {
+            return sizeKey / SizeKeyScale;
+        }
+
+        private static void AddUniqueKey(List<int> keys, int key)
+        {
+            if (!keys.Contains(key))
+            {
+                keys.Add(key);
+            }
         }
 
         private int FindClosestWalkableCell(Vector2 position, bool[] walkable)
@@ -300,6 +535,34 @@ namespace TAD.Navigation
             public bool[] Walkable { get; }
 
             public int[] NextIndices { get; }
+        }
+
+        private readonly struct RouteFieldKey : IEquatable<RouteFieldKey>
+        {
+            public RouteFieldKey(int attackerSizeKey, int requiredHoleSizeKey)
+            {
+                AttackerSizeKey = attackerSizeKey;
+                RequiredHoleSizeKey = requiredHoleSizeKey;
+            }
+
+            public int AttackerSizeKey { get; }
+
+            public int RequiredHoleSizeKey { get; }
+
+            public bool Equals(RouteFieldKey other)
+            {
+                return AttackerSizeKey == other.AttackerSizeKey && RequiredHoleSizeKey == other.RequiredHoleSizeKey;
+            }
+
+            public override bool Equals(object obj)
+            {
+                return obj is RouteFieldKey other && Equals(other);
+            }
+
+            public override int GetHashCode()
+            {
+                return (AttackerSizeKey * 397) ^ RequiredHoleSizeKey;
+            }
         }
 
         private readonly struct HeapNode
