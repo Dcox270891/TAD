@@ -6,7 +6,7 @@
 
 - Project root: `C:\Users\Daniel\OneDrive\Desktop\Unity\TAD`
 - Last analyzed: 2026-09-22
-- Last analyzed commit: `c03139e` (`Add chicken attacker and spawn pool`), with navigation changes in the current working tree.
+- Last analyzed revision: current `main` HEAD (`Add AI attacker wave controller`).
 - Purpose: Tower Attack or Defend (TAD), a single-player 2D/2.5D farm tower-defence game.
 
 ## Confirmed Environment
@@ -56,7 +56,8 @@
 | Attacker runtime | `BasicAttacker` asks the route mapper for its next movement direction, has health, and returns itself to a pool on defeat or food arrival | Confirmed | `Assets/TAD/Scripts/Attackers/BasicAttacker.cs` |
 | Wall passages | `FarmWall` splits its collision into two runtime segments around a configured hole; the mapper checks a circle matching the animal's size | Confirmed | `Assets/TAD/Scripts/Environment/FarmWall.cs` |
 | Reuse | `SpawnPool` has attacker, defender, and projectile prefab inputs, prewarms five objects per configured type, and expands when exhausted | Confirmed | `Assets/TAD/Scripts/Pooling/SpawnPool.cs` |
-| Gameplay architecture | Reusable environment, attacker, and pool components are established; waves, defenders, combat rewards, and economy systems are not yet implemented | Confirmed | `Assets/TAD` |
+| Waves | `WaveController` sends configurable, sequential AI waves through the attacker pool, waits for each wave to resolve, and stops future waves when food is depleted | Confirmed | `Assets/TAD/Scripts/Waves/WaveController.cs` |
+| Gameplay architecture | Reusable environment, attacker, route, pool, and wave components are established; defenders, combat rewards, and economy systems are not yet implemented | Confirmed | `Assets/TAD` |
 | Data-driven content | Attacker stats are data-driven through `AttackerDefinition`; weapons and other content are not implemented yet | Confirmed | `Assets/TAD/Data/Attackers/ChickenDefinition.asset` |
 
 ## Coding Conventions
@@ -95,7 +96,7 @@
 ## Unknowns And Confidence
 
 - The intended low-poly Blender asset import conventions, camera angle, and lighting setup are not established.
-- Defender combat, economy, and upgrade systems are not implemented yet.
+- Defender combat, economy, and upgrade systems are not implemented yet. The wave system currently varies attacker counts only because `SpawnPool` has one attacker prefab bucket; add type-keyed attacker pools before introducing mixed-animal waves.
 - Navigation deliberately uses a custom 2D grid instead of a NavMesh package: the game uses 2D physics and needs a different fastest route for each animal diameter. The mapper defaults to a 20 x 12 world-unit area with 0.25-unit cells; configure its bounds to include the spawn and Food Store areas.
 - Wall holes have matching runtime collision and route logic. The farm-wall art remains visually solid until a future Blender art pass adds a visible cutout.
 
@@ -112,6 +113,7 @@
 - `Assets/TAD/Scripts/Attackers/AttackerDefinition.cs`
 - `Assets/TAD/Scripts/Attackers/BasicAttacker.cs`
 - `Assets/TAD/Scripts/Navigation/FarmRouteMapper.cs`
+- `Assets/TAD/Scripts/Waves/WaveController.cs`
 - `Assets/TAD/Scripts/Pooling/SpawnPool.cs`
 - `Assets/TAD/Scripts/Pooling/PooledInstance.cs`
 - `Assets/TAD/Prefabs/Environment/FullCoverWall.prefab`
@@ -121,5 +123,6 @@
 - `Assets/TAD/Prefabs/Attackers/Chicken.prefab`
 - `Assets/TAD/Prefabs/Pooling/SpawnPool.prefab`
 - `Assets/TAD/Prefabs/Navigation/FarmRouteMapper.prefab`
+- `Assets/TAD/Prefabs/Waves/WaveController.prefab`
 
 <!-- unity-onboarding:generated:end -->
