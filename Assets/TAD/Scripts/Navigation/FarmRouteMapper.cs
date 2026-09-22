@@ -42,6 +42,10 @@ namespace TAD.Navigation
         [Tooltip("Extra clearance left around walls, in world units.")]
         private float obstaclePadding;
 
+        [SerializeField, Range(1, 32)]
+        [Tooltip("Maximum flow-field cells a route may skip when a clear line smooths a wall corner.")]
+        private int cornerSmoothingLookAheadCells = 8;
+
         private readonly Dictionary<RouteFieldKey, RouteField> routeFields = new();
         private readonly List<int> precomputedAttackerSizeKeys = new();
         private readonly List<int> holeSizeKeys = new();
@@ -136,15 +140,35 @@ namespace TAD.Navigation
             var remainingSteps = field.NextIndices.Length;
             while (currentIndex != field.GoalIndex && remainingSteps-- > 0)
             {
-                var nextIndex = field.NextIndices[currentIndex];
+                var nextIndex = field.SmoothedNextIndices[currentIndex];
                 if (nextIndex < 0)
                 {
                     routePoints.Clear();
                     return false;
                 }
 
+                var nextCell = GetCellCenter(nextIndex);
+                // Smoothed links are generated from cell centres, while this first segment may begin
+                // at an arbitrary spawn position. Verify the actual segment before committing to it so
+                // a diagonal cannot cut across the corner of a wall.
+                if (!IsClearSegment(routePoints[^1], nextCell, radius, requiredHoleSize))
+                {
+                    nextIndex = field.NextIndices[currentIndex];
+                    if (nextIndex < 0)
+                    {
+                        routePoints.Clear();
+                        return false;
+                    }
+
+                    nextCell = GetCellCenter(nextIndex);
+                    if (!IsClearSegment(routePoints[^1], nextCell, radius, requiredHoleSize))
+                    {
+                        routePoints.Clear();
+                        return false;
+                    }
+                }
+
                 currentIndex = nextIndex;
-                var nextCell = GetCellCenter(currentIndex);
                 var nextPoint = new Vector3(nextCell.x, nextCell.y, startingPosition.z);
                 if ((routePoints[^1] - nextPoint).sqrMagnitude > 0.0001f)
                 {
@@ -153,7 +177,7 @@ namespace TAD.Navigation
             }
 
             if (currentIndex != field.GoalIndex ||
-                !IsClearSegment(GetCellCenter(currentIndex), destination, radius, requiredHoleSize))
+                !IsClearSegment(routePoints[^1], destination, radius, requiredHoleSize))
             {
                 routePoints.Clear();
                 return false;
@@ -187,6 +211,7 @@ namespace TAD.Navigation
 
             cellSize = Mathf.Max(0.05f, cellSize);
             defaultAttackerSize = Mathf.Max(0.01f, defaultAttackerSize);
+            cornerSmoothingLookAheadCells = Mathf.Clamp(cornerSmoothingLookAheadCells, 1, 32);
 
             if (!TryGetMainCameraBounds(out gridMinimum, out runtimeMapSize))
             {
@@ -272,14 +297,31 @@ namespace TAD.Navigation
             {
                 if (field.Walkable[currentIndex])
                 {
-                    var nextIndex = field.NextIndices[currentIndex];
-                    if (nextIndex >= 0)
+                    var smoothedNextIndex = field.SmoothedNextIndices[currentIndex];
+                    if (TryGetClearDirectionToCell(
+                            currentPosition,
+                            smoothedNextIndex,
+                            radius,
+                            requiredHoleSize,
+                            out direction))
                     {
-                        direction = (GetCellCenter(nextIndex) - currentPosition).normalized;
-                        return direction.sqrMagnitude > 0f;
+                        return true;
+                    }
+
+                    var immediateNextIndex = field.NextIndices[currentIndex];
+                    if (immediateNextIndex != smoothedNextIndex &&
+                        TryGetClearDirectionToCell(
+                            currentPosition,
+                            immediateNextIndex,
+                            radius,
+                            requiredHoleSize,
+                            out direction))
+                    {
+                        return true;
                     }
                 }
-                else if (TryGetRecoveryDirection(currentPosition, currentIndex, field, radius, requiredHoleSize, out direction))
+
+                if (TryGetRecoveryDirection(currentPosition, currentIndex, field, radius, requiredHoleSize, out direction))
                 {
                     return true;
                 }
@@ -428,7 +470,42 @@ namespace TAD.Navigation
                 }
             }
 
+            BuildSmoothedNextIndices(field, radius, requiredHoleSize);
+
             return field;
+        }
+
+        /// <summary>
+        /// Replaces tight cell-by-cell turns with bounded, wall-safe line-of-sight waypoints.
+        /// This work runs during the level-start map build so attacker movement stays a constant-time lookup.
+        /// </summary>
+        private void BuildSmoothedNextIndices(RouteField field, float radius, float requiredHoleSize)
+        {
+            for (var index = 0; index < field.NextIndices.Length; index++)
+            {
+                var bestIndex = field.NextIndices[index];
+                if (bestIndex < 0)
+                {
+                    continue;
+                }
+
+                var currentIndex = bestIndex;
+                var origin = GetCellCenter(index);
+                for (var step = 1; step < cornerSmoothingLookAheadCells; step++)
+                {
+                    var candidateIndex = field.NextIndices[currentIndex];
+                    if (candidateIndex < 0 ||
+                        !IsClearSegment(origin, GetCellCenter(candidateIndex), radius, requiredHoleSize))
+                    {
+                        break;
+                    }
+
+                    bestIndex = candidateIndex;
+                    currentIndex = candidateIndex;
+                }
+
+                field.SmoothedNextIndices[index] = bestIndex;
+            }
         }
 
         private bool CanTraverse(int fromIndex, int toIndex, int xOffset, int yOffset, float radius, float requiredHoleSize, bool[] walkable)
@@ -517,6 +594,31 @@ namespace TAD.Navigation
             var maximum = gridMinimum + runtimeMapSize;
             return worldPosition.x >= gridMinimum.x && worldPosition.x <= maximum.x &&
                    worldPosition.y >= gridMinimum.y && worldPosition.y <= maximum.y;
+        }
+
+        private bool TryGetClearDirectionToCell(
+            Vector2 currentPosition,
+            int targetIndex,
+            float radius,
+            float requiredHoleSize,
+            out Vector2 direction)
+        {
+            direction = Vector2.zero;
+            if (targetIndex < 0)
+            {
+                return false;
+            }
+
+            var target = GetCellCenter(targetIndex);
+            var delta = target - currentPosition;
+            if (delta.sqrMagnitude <= 0.0001f ||
+                !IsClearSegment(currentPosition, target, radius, requiredHoleSize))
+            {
+                return false;
+            }
+
+            direction = delta.normalized;
+            return true;
         }
 
         private bool TryGetRecoveryDirection(
@@ -725,12 +827,16 @@ namespace TAD.Navigation
             {
                 Walkable = new bool[cellCount];
                 NextIndices = new int[cellCount];
+                SmoothedNextIndices = new int[cellCount];
                 Array.Fill(NextIndices, -1);
+                Array.Fill(SmoothedNextIndices, -1);
             }
 
             public bool[] Walkable { get; }
 
             public int[] NextIndices { get; }
+
+            public int[] SmoothedNextIndices { get; }
 
             public int GoalIndex { get; set; } = -1;
         }

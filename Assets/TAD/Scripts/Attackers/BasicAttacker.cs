@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using TAD.Environment;
 using TAD.Navigation;
 using TAD.Pooling;
@@ -9,9 +10,11 @@ namespace TAD.Attackers
     /// Moves a basic animal attacker and reports its remaining health to the Food Store on arrival.
     /// </summary>
     [DisallowMultipleComponent]
-    [RequireComponent(typeof(BoxCollider2D), typeof(Rigidbody2D))]
+    [RequireComponent(typeof(PolygonCollider2D), typeof(Rigidbody2D))]
     public sealed class BasicAttacker : MonoBehaviour, IFoodStoreRaider, IPoolLifecycle
     {
+        private const float WaypointArrivalDistance = 0.04f;
+
         [SerializeField] private AttackerDefinition definition;
         [SerializeField] private Vector2 startingMoveDirection = Vector2.right;
 
@@ -21,6 +24,8 @@ namespace TAD.Attackers
         private Vector2 moveDirection;
         private float currentHealth;
         private bool hasReachedFoodStore;
+        private readonly List<Vector3> routePoints = new();
+        private int nextRoutePointIndex;
 
         public AttackerDefinition Definition => definition;
         public string AttackerId => definition != null ? definition.AttackerId : string.Empty;
@@ -51,7 +56,7 @@ namespace TAD.Attackers
                 return;
             }
 
-            if (!routeMapper.TryGetNextDirection(body.position, Size, out var mappedDirection))
+            if (!TryGetRouteDirection(body.position, out var mappedDirection))
             {
                 return;
             }
@@ -75,6 +80,7 @@ namespace TAD.Attackers
         {
             routeMapper = mapper;
             TryClampToVisibleMap();
+            BuildCachedRoute();
         }
 
         /// <summary>Constrain this active animal to the mapper's visible play area.</summary>
@@ -150,12 +156,61 @@ namespace TAD.Attackers
             currentHealth = definition != null ? definition.MaximumHealth : 0f;
             hasReachedFoodStore = false;
             moveDirection = startingMoveDirection.sqrMagnitude > 0f ? startingMoveDirection.normalized : Vector2.right;
+            routePoints.Clear();
+            nextRoutePointIndex = 0;
 
             if (body != null)
             {
                 body.linearVelocity = Vector2.zero;
                 body.angularVelocity = 0f;
             }
+        }
+
+        /// <summary>
+        /// Copies the map's already-computed fastest route once per pooled activation.
+        /// Following these sparse waypoints avoids oscillating between adjacent flow-field cells at wall corners.
+        /// </summary>
+        private bool BuildCachedRoute()
+        {
+            routePoints.Clear();
+            nextRoutePointIndex = 0;
+
+            if (body == null || routeMapper == null ||
+                !routeMapper.TryGetFastestRoute(body.position, Size, routePoints) ||
+                routePoints.Count < 2)
+            {
+                return false;
+            }
+
+            nextRoutePointIndex = 1;
+            return true;
+        }
+
+        private bool TryGetRouteDirection(Vector2 currentPosition, out Vector2 direction)
+        {
+            direction = Vector2.zero;
+            if (routePoints.Count < 2 && !BuildCachedRoute())
+            {
+                return false;
+            }
+
+            var arrivalDistanceSquared = WaypointArrivalDistance * WaypointArrivalDistance;
+            while (nextRoutePointIndex < routePoints.Count)
+            {
+                var delta = (Vector2)routePoints[nextRoutePointIndex] - currentPosition;
+                if (delta.sqrMagnitude <= arrivalDistanceSquared)
+                {
+                    nextRoutePointIndex++;
+                    continue;
+                }
+
+                direction = delta.normalized;
+                return true;
+            }
+
+            // The Food Store trigger normally returns an attacker before it reaches this fallback.
+            // Keeping it preserves movement when a route ends immediately beside a small target collider.
+            return routeMapper != null && routeMapper.TryGetNextDirection(currentPosition, Size, out direction);
         }
 
         private void ReturnToPool()
