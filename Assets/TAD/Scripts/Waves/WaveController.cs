@@ -70,7 +70,7 @@ namespace TAD.Waves
 
         [SerializeField]
         [Tooltip("Starts the configured AI wave sequence when this scene begins.")]
-        private bool startOnStart = true;
+        private bool startOnStart;
 
         [SerializeField]
         private WaveSettings[] waves =
@@ -99,6 +99,12 @@ namespace TAD.Waves
         public bool IsRunning => waveRoutine != null;
 
         public bool HasCompletedAllWaves => hasCompletedAllWaves;
+
+        /// <summary>Prevents automatic startup so a player-facing control can start the sequence instead.</summary>
+        public void RequireManualStart()
+        {
+            startOnStart = false;
+        }
 
         /// <summary>The exact source position used when this controller releases an attacker.</summary>
         public Vector3 SpawnPosition => (spawnPoint != null ? spawnPoint : transform).position;

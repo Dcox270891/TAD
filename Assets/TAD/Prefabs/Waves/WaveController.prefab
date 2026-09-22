@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2684102460878317581}
   - component: {fileID: 7753717080277469554}
+  - component: {fileID: 1359617245638505231}
   m_Layer: 8
   m_Name: WaveController
   m_TagString: Untagged
@@ -48,7 +49,7 @@ MonoBehaviour:
   routeMapper: {fileID: 0}
   foodStore: {fileID: 0}
   spawnPoint: {fileID: 0}
-  startOnStart: 1
+  startOnStart: 0
   waves:
   - attackerCount: 3
     spawnInterval: 0.5
@@ -59,3 +60,16 @@ MonoBehaviour:
   - attackerCount: 8
     spawnInterval: 0.4
     delayBeforeWave: 2.5
+--- !u!114 &1359617245638505231
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1192416457459520193}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 873ce43699051b04e99accd68904b4b1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TAD.UI.WaveStartButtonBootstrap
+  playButtonPrefab: {fileID: 4325626275830097187, guid: e6cb7e8f10b84e6458f5b3041c7fadc5, type: 3}
