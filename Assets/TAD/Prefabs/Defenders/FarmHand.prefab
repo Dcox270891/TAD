@@ -107,6 +107,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TAD.Defenders.FarmHand
   visual: {fileID: 8549633154260348502}
+  weaponDefinition: {fileID: 11400000, guid: 256372cb0ee064c4f9b81bb054aa7920, type: 2}
 --- !u!114 &4453968977288024414
 MonoBehaviour:
   m_ObjectHideFlags: 0

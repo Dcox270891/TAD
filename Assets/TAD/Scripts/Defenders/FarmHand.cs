@@ -12,9 +12,13 @@ namespace TAD.Defenders
     public sealed class FarmHand : MonoBehaviour, IPoolLifecycle
     {
         [SerializeField] private SpriteRenderer visual;
+        [SerializeField] private WeaponDefinition weaponDefinition;
 
         /// <summary>Visual used by the placement system to create a non-interactive preview.</summary>
         public SpriteRenderer Visual => visual;
+
+        /// <summary>Shared weapon data currently assigned to this farmhand.</summary>
+        public WeaponDefinition WeaponDefinition => weaponDefinition;
 
         private void Awake()
         {
