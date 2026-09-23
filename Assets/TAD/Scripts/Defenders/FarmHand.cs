@@ -137,13 +137,19 @@ namespace TAD.Defenders
         /// <summary>Awards one non-lethal helped-to-kill experience credit.</summary>
         internal void AwardHelpedToKillExperience(int expGiven)
         {
-            AddExperience(RoundToNearestTenth(expGiven * HelpedToKillExperiencePercent));
+            AddExperience(GetHelpedToKillExperience(expGiven));
         }
 
-        /// <summary>Awards a killing-blow experience credit and the matching Defender-bank gold.</summary>
-        internal void AwardKillingBlowReward(int expGiven, int killGain)
+        /// <summary>
+        /// Awards a killing blow, replacing this attacker's earlier assisted-kill experience when present,
+        /// and adds the matching gold to the Defender bank.
+        /// </summary>
+        internal void AwardKillingBlowReward(int expGiven, int killGain, bool replacesHelpedToKillExperience)
         {
-            AddExperience(expGiven);
+            var experienceAward = Mathf.Max(
+                0f,
+                expGiven - (replacesHelpedToKillExperience ? GetHelpedToKillExperience(expGiven) : 0f));
+            AddExperience(experienceAward);
             ResolveDefenderBank()?.AddGold(killGain);
         }
 
@@ -426,6 +432,11 @@ namespace TAD.Defenders
             var sortingLayerId = visual != null ? visual.sortingLayerID : 0;
             var sortingOrder = visual != null ? visual.sortingOrder - 1 : 0;
             rangeVisual.Configure(Range, sortingLayerId, sortingOrder, isRangeIndicatorVisible);
+        }
+
+        private static float GetHelpedToKillExperience(int expGiven)
+        {
+            return RoundToNearestTenth(expGiven * HelpedToKillExperiencePercent);
         }
 
         private void AddExperience(float amount)

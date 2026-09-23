@@ -121,11 +121,19 @@ namespace TAD.Defenders
 
             var expGiven = attacker.ExpGiven;
             var killGain = attacker.KillGain;
-            if (attacker.TryTakeDamage(damage, firingFarmHand, out var wasDefeated, out var helpedToKillAdded))
+            if (attacker.TryTakeDamage(
+                    damage,
+                    firingFarmHand,
+                    out var wasDefeated,
+                    out var helpedToKillAdded,
+                    out var killingBlowReplacedHelpedToKill))
             {
                 if (wasDefeated)
                 {
-                    firingFarmHand?.AwardKillingBlowReward(expGiven, killGain);
+                    firingFarmHand?.AwardKillingBlowReward(
+                        expGiven,
+                        killGain,
+                        killingBlowReplacedHelpedToKill);
                 }
                 else if (helpedToKillAdded)
                 {

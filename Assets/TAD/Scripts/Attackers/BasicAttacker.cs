@@ -126,18 +126,24 @@ namespace TAD.Attackers
         /// <summary>Applies damage and returns true when this attacker is defeated.</summary>
         public bool TakeDamage(float damage)
         {
-            TryTakeDamage(damage, null, out var wasDefeated, out _);
+            TryTakeDamage(damage, null, out var wasDefeated, out _, out _);
             return wasDefeated;
         }
 
         /// <summary>
         /// Applies damage from a defender and reports whether damage was accepted, whether it was lethal,
-        /// and whether this defender earned a new helped-to-kill credit.
+        /// whether this defender earned a new helped-to-kill credit, and whether its killing blow replaced one.
         /// </summary>
-        public bool TryTakeDamage(float damage, FarmHand defender, out bool wasDefeated, out bool helpedToKillAdded)
+        public bool TryTakeDamage(
+            float damage,
+            FarmHand defender,
+            out bool wasDefeated,
+            out bool helpedToKillAdded,
+            out bool killingBlowReplacedHelpedToKill)
         {
             wasDefeated = false;
             helpedToKillAdded = false;
+            killingBlowReplacedHelpedToKill = false;
             if (damage <= 0f || currentHealth <= 0f)
             {
                 return false;
@@ -154,7 +160,7 @@ namespace TAD.Attackers
             if (defender != null)
             {
                 // A defender with an existing assisted-kill credit receives the killing-blow reward instead.
-                helpedToKillDefenders.Remove(defender);
+                killingBlowReplacedHelpedToKill = helpedToKillDefenders.Remove(defender);
             }
 
             ReturnToPool();
