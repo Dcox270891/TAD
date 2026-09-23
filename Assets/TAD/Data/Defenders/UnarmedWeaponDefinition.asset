@@ -15,6 +15,7 @@ MonoBehaviour:
   displayName: Unarmed
   description: A farmhand's fists. No projectile is used.
   cost: 0
+  range: 5
   projectilePrefab: {fileID: 0}
   projectileSpeed: 0
   damage: 1

@@ -16,6 +16,9 @@ namespace TAD.Defenders
         [Header("Cost")]
         [SerializeField, Min(0)] private int cost;
 
+        [Header("Attack Range")]
+        [SerializeField, Min(0f)] private float range = 1f;
+
         [Header("Projectile")]
         [SerializeField] private GameObject projectilePrefab;
         [SerializeField, Min(0f)] private float projectileSpeed;
@@ -23,6 +26,7 @@ namespace TAD.Defenders
         [SerializeField, Min(0f)] private float projectileLifetime;
 
         public int Cost => cost;
+        public float Range => range;
         public GameObject ProjectilePrefab => projectilePrefab;
         public float ProjectileSpeed => projectileSpeed;
         public float Damage => damage;
@@ -34,6 +38,7 @@ namespace TAD.Defenders
         private void OnValidate()
         {
             cost = Mathf.Max(0, cost);
+            range = Mathf.Max(0f, range);
             projectileSpeed = Mathf.Max(0f, projectileSpeed);
             damage = Mathf.Max(0f, damage);
             projectileLifetime = Mathf.Max(0f, projectileLifetime);
