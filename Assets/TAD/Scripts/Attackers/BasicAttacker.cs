@@ -30,6 +30,13 @@ namespace TAD.Attackers
         public AttackerDefinition Definition => definition;
         public string AttackerId => definition != null ? definition.AttackerId : string.Empty;
         public string DisplayName => definition != null ? definition.DisplayName : string.Empty;
+
+        /// <summary>
+        /// Session-unique identity assigned by the pool when this attacker is created.
+        /// This is separate from <see cref="AttackerId"/>, which identifies the attacker type.
+        /// </summary>
+        public long InstanceId => pooledInstance != null ? pooledInstance.RuntimeInstanceId : 0L;
+
         public float RemainingHealth => currentHealth;
         public bool HasReachedFoodStore => hasReachedFoodStore;
         public float Size => definition != null ? definition.Size : 0f;
@@ -139,6 +146,11 @@ namespace TAD.Attackers
 
         void IPoolLifecycle.OnTakenFromPool()
         {
+            if (pooledInstance == null)
+            {
+                pooledInstance = GetComponent<PooledInstance>();
+            }
+
             ResetRuntimeState();
         }
 

@@ -12,15 +12,23 @@ namespace TAD.Pooling
     {
         [NonSerialized] private SpawnPool owner;
         [NonSerialized] private PooledObjectType objectType;
+        [NonSerialized] private long runtimeInstanceId;
         [NonSerialized] private MonoBehaviour[] lifecycleComponents;
 
         public SpawnPool Owner => owner;
         public PooledObjectType ObjectType => objectType;
 
-        internal void Configure(SpawnPool pool, PooledObjectType type)
+        /// <summary>
+        /// Unique session-only identity assigned when this pooled object is created.
+        /// The value is retained while the object is recycled by its pool.
+        /// </summary>
+        public long RuntimeInstanceId => runtimeInstanceId;
+
+        internal void Configure(SpawnPool pool, PooledObjectType type, long instanceId)
         {
             owner = pool;
             objectType = type;
+            runtimeInstanceId = instanceId;
             CacheLifecycleComponents();
         }
 

@@ -19,6 +19,7 @@ namespace TAD.Defenders
         [SerializeField] private Rigidbody2D rangeBody;
         [SerializeField] private DefenderRangeVisual rangeVisual;
 
+        private PooledInstance pooledInstance;
         private readonly List<BasicAttacker> attackersInRange = new();
         private bool isRangeIndicatorVisible;
 
@@ -27,6 +28,12 @@ namespace TAD.Defenders
 
         /// <summary>Shared weapon data currently assigned to this farmhand.</summary>
         public WeaponDefinition WeaponDefinition => weaponDefinition;
+
+        /// <summary>
+        /// Session-unique identity assigned by the pool when this defender is created.
+        /// The value remains the same if this farmhand is later reused from the pool.
+        /// </summary>
+        public long InstanceId => pooledInstance != null ? pooledInstance.RuntimeInstanceId : 0L;
 
         /// <summary>World-space attack range supplied by the currently assigned weapon.</summary>
         public float Range => weaponDefinition != null ? weaponDefinition.Range : 0f;
@@ -115,6 +122,8 @@ namespace TAD.Defenders
 
         void IPoolLifecycle.OnTakenFromPool()
         {
+            ResolveComponents();
+
             if (visual != null)
             {
                 visual.enabled = true;
@@ -139,6 +148,7 @@ namespace TAD.Defenders
             rangeCollider ??= GetComponent<CircleCollider2D>();
             rangeBody ??= GetComponent<Rigidbody2D>();
             rangeVisual ??= GetComponentInChildren<DefenderRangeVisual>(true);
+            pooledInstance ??= GetComponent<PooledInstance>();
         }
 
         private void TrackAttacker(Collider2D other)

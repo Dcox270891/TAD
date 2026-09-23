@@ -56,8 +56,18 @@ namespace TAD.Pooling
             new PoolSettings(PooledObjectType.Projectile)
         };
 
+        // Shared by every pool so IDs stay unique across all pooled gameplay types for one play session.
+        private static long nextRuntimeInstanceId;
+
         private readonly Dictionary<PooledObjectType, PoolBucket> pools = new();
         private bool isInitialized;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetRuntimeInstanceIdSequence()
+        {
+            // SubsystemRegistration also runs when Enter Play Mode Options disable domain reload.
+            nextRuntimeInstanceId = 0L;
+        }
 
         private void Awake()
         {
@@ -165,10 +175,20 @@ namespace TAD.Pooling
                 instance = instanceObject.AddComponent<PooledInstance>();
             }
 
-            instance.Configure(this, pool.ObjectType);
+            instance.Configure(this, pool.ObjectType, AllocateRuntimeInstanceId());
             instanceObject.SetActive(false);
             pool.Instances.Add(instance);
             return instance;
+        }
+
+        private static long AllocateRuntimeInstanceId()
+        {
+            if (nextRuntimeInstanceId == long.MaxValue)
+            {
+                throw new InvalidOperationException("The pooled runtime instance ID sequence has been exhausted.");
+            }
+
+            return ++nextRuntimeInstanceId;
         }
 
 #if UNITY_EDITOR
