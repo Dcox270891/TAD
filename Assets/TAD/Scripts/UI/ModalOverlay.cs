@@ -28,6 +28,7 @@ namespace TAD.UI
         private bool isRegisteredAsBlocker;
         private bool hasPausedGameplay;
         private bool hasAwoken;
+        private bool hasVisibilityRequestBeforeAwake;
 
         /// <summary>True while one or more visible overlays are preventing gameplay input.</summary>
         public static bool IsGameplayInputBlocked => activeBlockerCount > 0;
@@ -40,8 +41,9 @@ namespace TAD.UI
         private void Awake()
         {
             canvasGroup = GetComponent<CanvasGroup>();
+            var initialVisibility = hasVisibilityRequestBeforeAwake ? isVisible : showOnAwake;
             hasAwoken = true;
-            SetVisible(showOnAwake);
+            SetVisible(initialVisibility);
         }
 
         private void OnEnable()
@@ -90,6 +92,13 @@ namespace TAD.UI
 
         private void SetVisible(bool visible)
         {
+            if (!hasAwoken)
+            {
+                // An owner can request a freshly-instantiated overlay before Unity has delivered
+                // Awake. Preserve that request instead of overwriting it with showOnAwake later.
+                hasVisibilityRequestBeforeAwake = true;
+            }
+
             isVisible = visible;
             if (canvasGroup != null)
             {

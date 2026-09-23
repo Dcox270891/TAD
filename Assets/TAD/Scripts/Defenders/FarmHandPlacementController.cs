@@ -1,3 +1,4 @@
+using TAD.Economy;
 using TAD.Navigation;
 using TAD.Pooling;
 using TAD.UI;
@@ -16,9 +17,12 @@ namespace TAD.Defenders
     [RequireComponent(typeof(SpawnPool))]
     public sealed class FarmHandPlacementController : MonoBehaviour
     {
+        private const string InsufficientFundsMessage = "you do not you have the required amount to place this";
+
         [Header("Prefab References")]
         [SerializeField] private FarmHand farmHandPrefab;
         [SerializeField] private FarmHandPlacementUi placementUiPrefab;
+        [SerializeField] private ModalOverlayMessage insufficientFundsOverlayPrefab;
 
         [Header("Placement")]
         [SerializeField, Min(0.01f)]
@@ -39,15 +43,22 @@ namespace TAD.Defenders
 
         private SpawnPool spawnPool;
         private FarmHandPlacementUi spawnedUi;
+        private ModalOverlayMessage spawnedInsufficientFundsOverlay;
+        private ResourceBank defenderBank;
+        private FarmHand selectedFarmHand;
         private GameObject previewObject;
         private Vector2 previewPosition;
         private bool isPlacing;
         private bool ownsSpawnedUi;
+        private bool ownsInsufficientFundsOverlay;
         private bool ignoreMouseUntilReleased;
         private bool isMousePlacementLocked;
 
         /// <summary>True while a translucent farmhand is awaiting confirmation or cancellation.</summary>
         public bool IsPlacementActive => isPlacing;
+
+        /// <summary>The currently selected defender whose range circle is visible, if any.</summary>
+        public FarmHand TargetedFarmHand => selectedFarmHand;
 
         private void Awake()
         {
@@ -72,8 +83,14 @@ namespace TAD.Defenders
 
         private void Update()
         {
-            if (!isPlacing || ModalOverlay.IsGameplayInputBlocked)
+            if (ModalOverlay.IsGameplayInputBlocked)
             {
+                return;
+            }
+
+            if (!isPlacing)
+            {
+                UpdateDefenderSelection();
                 return;
             }
 
@@ -90,14 +107,21 @@ namespace TAD.Defenders
         private void OnDisable()
         {
             CancelPlacement();
+            ClearTargetedFarmHand();
         }
 
         private void OnDestroy()
         {
             DestroyPreview();
+            ClearTargetedFarmHand();
             if (ownsSpawnedUi && spawnedUi != null)
             {
                 Destroy(spawnedUi.gameObject);
+            }
+
+            if (ownsInsufficientFundsOverlay && spawnedInsufficientFundsOverlay != null)
+            {
+                Destroy(spawnedInsufficientFundsOverlay.gameObject);
             }
         }
 
@@ -116,6 +140,7 @@ namespace TAD.Defenders
                 return;
             }
 
+            ClearTargetedFarmHand();
             isPlacing = true;
             ignoreMouseUntilReleased = Mouse.current != null && Mouse.current.leftButton.isPressed;
             isMousePlacementLocked = false;
@@ -123,7 +148,7 @@ namespace TAD.Defenders
             spawnedUi?.SetPlacementActive(true);
         }
 
-        /// <summary>Spawns a pooled defender at the preview position and ends placement mode.</summary>
+        /// <summary>Spawns a paid pooled defender at the preview position and ends placement mode.</summary>
         public void ConfirmPlacement()
         {
             if (!isPlacing || ModalOverlay.IsGameplayInputBlocked || spawnPool == null)
@@ -131,9 +156,35 @@ namespace TAD.Defenders
                 return;
             }
 
+            var farmHandCost = GetFarmHandCost();
+            var bank = ResolveDefenderBank();
+            if (bank == null || !bank.CanAfford(farmHandCost))
+            {
+                ShowInsufficientFundsMessage();
+                return;
+            }
+
             var spawnedFarmHand = spawnPool.Spawn(PooledObjectType.Defender, previewPosition, Quaternion.identity);
             if (spawnedFarmHand == null)
             {
+                return;
+            }
+
+            // The check above keeps this failure path exceptional, but returning the object protects
+            // the player from a charge if another system changes the balance during the same frame.
+            if (!bank.TrySpendGold(farmHandCost))
+            {
+                var pooledInstance = spawnedFarmHand.GetComponent<PooledInstance>();
+                if (pooledInstance != null)
+                {
+                    pooledInstance.ReturnToPool();
+                }
+                else
+                {
+                    spawnedFarmHand.SetActive(false);
+                }
+
+                ShowInsufficientFundsMessage();
                 return;
             }
 
@@ -149,6 +200,108 @@ namespace TAD.Defenders
             }
 
             EndPlacement();
+        }
+
+        /// <summary>
+        /// Targets a defender for selection-based presentation. Future controller or combat targeting
+        /// systems can call this directly to use the same range circle as a mouse or touch selection.
+        /// </summary>
+        public void TargetFarmHand(FarmHand farmHand)
+        {
+            if (selectedFarmHand == farmHand)
+            {
+                selectedFarmHand?.SetRangeIndicatorVisible(true);
+                return;
+            }
+
+            if (selectedFarmHand != null)
+            {
+                selectedFarmHand.SetRangeIndicatorVisible(false);
+            }
+
+            selectedFarmHand = farmHand;
+            if (selectedFarmHand != null)
+            {
+                selectedFarmHand.SetRangeIndicatorVisible(true);
+            }
+        }
+
+        /// <summary>Clears the current farmhand target and hides its range circle.</summary>
+        public void ClearTargetedFarmHand()
+        {
+            TargetFarmHand(null);
+        }
+
+        private void UpdateDefenderSelection()
+        {
+            if (selectedFarmHand != null &&
+                (!selectedFarmHand.isActiveAndEnabled || !selectedFarmHand.gameObject.activeInHierarchy))
+            {
+                selectedFarmHand = null;
+            }
+
+            var touchscreen = Touchscreen.current;
+            if (touchscreen != null && touchscreen.primaryTouch.press.wasPressedThisFrame)
+            {
+                var touchId = touchscreen.primaryTouch.touchId.ReadValue();
+                if (!IsPointerOverUserInterface(touchId))
+                {
+                    TargetFarmHandFromScreenPosition(touchscreen.primaryTouch.position.ReadValue());
+                }
+
+                // A touch device can also synthesize a mouse event. Handle the touch once.
+                return;
+            }
+
+            var mouse = Mouse.current;
+            if (mouse != null && mouse.leftButton.wasPressedThisFrame && !IsPointerOverUserInterface())
+            {
+                TargetFarmHandFromScreenPosition(mouse.position.ReadValue());
+            }
+        }
+
+        private void TargetFarmHandFromScreenPosition(Vector2 screenPosition)
+        {
+            if (!TryGetMapPositionFromScreenPosition(screenPosition, out var worldPosition))
+            {
+                return;
+            }
+
+            TargetFarmHand(FindFarmHandAt(worldPosition));
+        }
+
+        private static FarmHand FindFarmHandAt(Vector2 worldPosition)
+        {
+            FarmHand closestFarmHand = null;
+            var closestDistanceSquared = float.PositiveInfinity;
+            var highestSortingOrder = int.MinValue;
+
+            foreach (var farmHand in Object.FindObjectsByType<FarmHand>(FindObjectsInactive.Exclude))
+            {
+                var handVisual = farmHand.Visual;
+                if (handVisual == null)
+                {
+                    continue;
+                }
+
+                var bounds = handVisual.bounds;
+                var pointAtVisualDepth = new Vector3(worldPosition.x, worldPosition.y, bounds.center.z);
+                if (!bounds.Contains(pointAtVisualDepth))
+                {
+                    continue;
+                }
+
+                var distanceSquared = ((Vector2)farmHand.transform.position - worldPosition).sqrMagnitude;
+                if (handVisual.sortingOrder > highestSortingOrder ||
+                    (handVisual.sortingOrder == highestSortingOrder && distanceSquared < closestDistanceSquared))
+                {
+                    closestFarmHand = farmHand;
+                    closestDistanceSquared = distanceSquared;
+                    highestSortingOrder = handVisual.sortingOrder;
+                }
+            }
+
+            return closestFarmHand;
         }
 
         private void UpdateTouchPreview()
@@ -308,7 +461,56 @@ namespace TAD.Defenders
             previewRenderer.flipY = sourceVisual.flipY;
             previewRenderer.sortingLayerID = sourceVisual.sortingLayerID;
             previewRenderer.sortingOrder = Mathf.Max(previewSortingOrder, sourceVisual.sortingOrder + 1);
+
+            var rangePreviewObject = new GameObject("Range Preview", typeof(SpriteRenderer), typeof(DefenderRangeVisual));
+            rangePreviewObject.layer = previewObject.layer;
+            rangePreviewObject.transform.SetParent(previewObject.transform, worldPositionStays: false);
+            var rangePreview = rangePreviewObject.GetComponent<DefenderRangeVisual>();
+            rangePreview.Configure(
+                farmHandPrefab.Range,
+                sourceVisual.sortingLayerID,
+                previewRenderer.sortingOrder - 1,
+                shouldBeVisible: true);
             return true;
+        }
+
+        private int GetFarmHandCost()
+        {
+            return farmHandPrefab != null && farmHandPrefab.WeaponDefinition != null
+                ? farmHandPrefab.WeaponDefinition.Cost
+                : 0;
+        }
+
+        private ResourceBank ResolveDefenderBank()
+        {
+            if (defenderBank != null && defenderBank.BankSide == BankSide.Defender)
+            {
+                return defenderBank;
+            }
+
+            defenderBank = null;
+            foreach (var bank in Object.FindObjectsByType<ResourceBank>(FindObjectsInactive.Include))
+            {
+                if (bank.BankSide == BankSide.Defender)
+                {
+                    defenderBank = bank;
+                    break;
+                }
+            }
+
+            return defenderBank;
+        }
+
+        private void ShowInsufficientFundsMessage()
+        {
+            EnsureInsufficientFundsOverlay();
+            if (spawnedInsufficientFundsOverlay != null)
+            {
+                spawnedInsufficientFundsOverlay.ShowMessage(InsufficientFundsMessage);
+                return;
+            }
+
+            Debug.LogWarning(InsufficientFundsMessage, this);
         }
 
         private void EndPlacement()
@@ -342,6 +544,19 @@ namespace TAD.Defenders
             }
 
             spawnedUi?.Bind(this);
+        }
+
+        private void EnsureInsufficientFundsOverlay()
+        {
+            if (spawnedInsufficientFundsOverlay == null)
+            {
+                spawnedInsufficientFundsOverlay = Object.FindAnyObjectByType<ModalOverlayMessage>(FindObjectsInactive.Include);
+                if (spawnedInsufficientFundsOverlay == null && insufficientFundsOverlayPrefab != null)
+                {
+                    spawnedInsufficientFundsOverlay = Instantiate(insufficientFundsOverlayPrefab);
+                    ownsInsufficientFundsOverlay = true;
+                }
+            }
         }
 
         private static bool IsPointerOverUserInterface(int pointerId = -1)

@@ -6,7 +6,7 @@ using UnityEngine;
 namespace TAD.Defenders
 {
     /// <summary>
-    /// Reusable defender token that owns its assigned weapon and the attackers currently in attack range.
+    /// Reusable defender token that owns its assigned weapon, range presentation, and attackers currently in attack range.
     /// Weapon selection and target-priority behaviour can be layered on without changing placement or pooling.
     /// </summary>
     [DisallowMultipleComponent]
@@ -17,8 +17,10 @@ namespace TAD.Defenders
         [SerializeField] private WeaponDefinition weaponDefinition;
         [SerializeField] private CircleCollider2D rangeCollider;
         [SerializeField] private Rigidbody2D rangeBody;
+        [SerializeField] private DefenderRangeVisual rangeVisual;
 
         private readonly List<BasicAttacker> attackersInRange = new();
+        private bool isRangeIndicatorVisible;
 
         /// <summary>Visual used by the placement system to create a non-interactive preview.</summary>
         public SpriteRenderer Visual => visual;
@@ -31,6 +33,9 @@ namespace TAD.Defenders
 
         /// <summary>The non-blocking 2D trigger used to maintain the nearby attacker collection.</summary>
         public CircleCollider2D RangeCollider => rangeCollider;
+
+        /// <summary>True while this defender's translucent range indicator is visible.</summary>
+        public bool IsRangeIndicatorVisible => isRangeIndicatorVisible;
 
         /// <summary>
         /// Attackers currently inside this farmhand's range. The collection is pruned before every read
@@ -60,26 +65,38 @@ namespace TAD.Defenders
             ResolveComponents();
             ConfigureRangeBody();
             ConfigureRangeCollider();
+            ConfigureRangeVisual();
         }
 
         private void OnEnable()
         {
             ClearAttackersInRange();
+            isRangeIndicatorVisible = false;
             ConfigureRangeBody();
             ConfigureRangeCollider();
+            ConfigureRangeVisual();
         }
 
         private void OnDisable()
         {
             ClearAttackersInRange();
+            SetRangeIndicatorVisible(false);
         }
 
-        /// <summary>Assigns a weapon and immediately updates this defender's detection range.</summary>
+        /// <summary>Assigns a weapon and immediately updates this defender's detection and visible ranges.</summary>
         public void SetWeapon(WeaponDefinition definition)
         {
             weaponDefinition = definition;
             ClearAttackersInRange();
             ConfigureRangeCollider();
+            ConfigureRangeVisual();
+        }
+
+        /// <summary>Shows or hides the red attack-range circle used when this defender is selected or targeted.</summary>
+        public void SetRangeIndicatorVisible(bool visible)
+        {
+            isRangeIndicatorVisible = visible;
+            ConfigureRangeVisual();
         }
 
         private void OnTriggerEnter2D(Collider2D other)
@@ -104,13 +121,16 @@ namespace TAD.Defenders
             }
 
             ClearAttackersInRange();
+            isRangeIndicatorVisible = false;
             ConfigureRangeBody();
             ConfigureRangeCollider();
+            ConfigureRangeVisual();
         }
 
         void IPoolLifecycle.OnReturnedToPool()
         {
             ClearAttackersInRange();
+            SetRangeIndicatorVisible(false);
         }
 
         private void ResolveComponents()
@@ -118,6 +138,7 @@ namespace TAD.Defenders
             visual ??= GetComponent<SpriteRenderer>();
             rangeCollider ??= GetComponent<CircleCollider2D>();
             rangeBody ??= GetComponent<Rigidbody2D>();
+            rangeVisual ??= GetComponentInChildren<DefenderRangeVisual>(true);
         }
 
         private void TrackAttacker(Collider2D other)
@@ -162,6 +183,18 @@ namespace TAD.Defenders
                 ? worldRange / largestWorldScale
                 : 0f;
             rangeCollider.enabled = worldRange > 0f && largestWorldScale > Mathf.Epsilon;
+        }
+
+        private void ConfigureRangeVisual()
+        {
+            if (rangeVisual == null)
+            {
+                return;
+            }
+
+            var sortingLayerId = visual != null ? visual.sortingLayerID : 0;
+            var sortingOrder = visual != null ? visual.sortingOrder - 1 : 0;
+            rangeVisual.Configure(Range, sortingLayerId, sortingOrder, isRangeIndicatorVisible);
         }
 
         private void ClearAttackersInRange()

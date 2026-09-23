@@ -69,6 +69,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TAD.Defenders.FarmHandPlacementController
   farmHandPrefab: {fileID: 5875131552720761380, guid: 4c99c4a4f94ca3749b8f88c3f81e3163, type: 3}
   placementUiPrefab: {fileID: 3840638929522613190, guid: 725ddcd66b2056745877c723a5ac73bd, type: 3}
+  insufficientFundsOverlayPrefab: {fileID: 4873677521582702159, guid: 197f26201ef53cd448b8b4a06a903a06, type: 3}
   controllerPlacementSpeed: 5
   previewOpacity: 0.5
   previewSortingOrder: 3
