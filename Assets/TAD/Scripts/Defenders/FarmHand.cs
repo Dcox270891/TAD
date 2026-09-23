@@ -19,6 +19,7 @@ namespace TAD.Defenders
         private const int LineOfSightHitCapacity = 16;
         private const float HelpedToKillExperiencePercent = 0.1f;
         private const float ExperienceDecimalMultiplier = 10f;
+        private const float LevelDamageMultiplier = 1.1f;
 
         [SerializeField] private SpriteRenderer visual;
         [SerializeField] private WeaponDefinition weaponDefinition;
@@ -28,6 +29,7 @@ namespace TAD.Defenders
         [SerializeField, Min(1)] private int expMax = 10;
 
         [System.NonSerialized] private float currentExp;
+        [System.NonSerialized] private int currentLevel = 1;
         private PooledInstance pooledInstance;
         private SpawnPool projectilePool;
         private ResourceBank defenderBank;
@@ -52,8 +54,19 @@ namespace TAD.Defenders
         /// <summary>Configured experience threshold for this farmhand.</summary>
         public int ExpMax => expMax;
 
-        /// <summary>Current runtime experience for this placed farmhand.</summary>
+        /// <summary>Current runtime experience toward this farmhand's next level.</summary>
         public float CurrentExp => currentExp;
+
+        /// <summary>Current runtime level for this placed farmhand.</summary>
+        public int CurrentLevel => currentLevel;
+
+        /// <summary>Per-farmhand damage after this farmhand's level multiplier is applied.</summary>
+        public float Damage => weaponDefinition != null
+            ? weaponDefinition.Damage * Mathf.Pow(LevelDamageMultiplier, currentLevel - 1)
+            : 0f;
+
+        /// <summary>Raised after this farmhand's experience or level changes.</summary>
+        public event System.Action ProgressionChanged;
 
         /// <summary>World-space attack range supplied by the currently assigned weapon.</summary>
         public float Range => weaponDefinition != null ? weaponDefinition.Range : 0f;
@@ -89,7 +102,7 @@ namespace TAD.Defenders
 
         private void Awake()
         {
-            ResetExperience();
+            ResetProgression();
             ResolveComponents();
             ConfigureRangeBody();
             ConfigureRangeCollider();
@@ -175,7 +188,7 @@ namespace TAD.Defenders
 
         void IPoolLifecycle.OnTakenFromPool()
         {
-            ResetExperience();
+            ResetProgression();
             ResolveComponents();
 
             if (visual != null)
@@ -236,8 +249,9 @@ namespace TAD.Defenders
             }
 
             var weapon = weaponDefinition;
+            var damage = Damage;
             if (weapon == null || weapon.ProjectilePrefab == null || weapon.ProjectileSpeed <= 0f ||
-                weapon.Damage <= 0f || weapon.ProjectileLifetime <= 0f)
+                damage <= 0f || weapon.ProjectileLifetime <= 0f)
             {
                 return;
             }
@@ -269,7 +283,7 @@ namespace TAD.Defenders
                     origin,
                     target,
                     weapon.ProjectileSpeed,
-                    weapon.Damage,
+                    damage,
                     weapon.ProjectileLifetime))
             {
                 ReturnProjectileToPool(projectileObject);
@@ -446,7 +460,15 @@ namespace TAD.Defenders
                 return;
             }
 
+            var expThreshold = Mathf.Max(1, ExpMax);
             currentExp = RoundToNearestTenth(currentExp + amount);
+            while (currentExp >= expThreshold)
+            {
+                currentExp = RoundToNearestTenth(currentExp - expThreshold);
+                currentLevel++;
+            }
+
+            ProgressionChanged?.Invoke();
         }
 
         private static float RoundToNearestTenth(float amount)
@@ -454,9 +476,11 @@ namespace TAD.Defenders
             return Mathf.Round(amount * ExperienceDecimalMultiplier) / ExperienceDecimalMultiplier;
         }
 
-        private void ResetExperience()
+        private void ResetProgression()
         {
             currentExp = 0f;
+            currentLevel = 1;
+            ProgressionChanged?.Invoke();
         }
 
         private void ClearAttackersInRange()
