@@ -22,8 +22,8 @@ namespace TAD.Defenders
         [SerializeField] private SpriteRenderer backgroundRenderer;
         [SerializeField] private SpriteRenderer fillRenderer;
         [SerializeField] private TextMesh valueText;
-        [SerializeField] private Color backgroundColor = new(0f, 0f, 0f, 0.8f);
-        [SerializeField] private Color fillColor = new(0.24f, 0.85f, 0.28f, 0.95f);
+        [SerializeField] private Color backgroundColor = Color.black;
+        [SerializeField] private Color fillColor = Color.yellow;
         [SerializeField] private Color textColor = Color.white;
 
         private MeshRenderer textRenderer;
