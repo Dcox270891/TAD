@@ -1362,6 +1362,58 @@ PrefabInstance:
       propertyPath: waves.Array.data[2].delayBeforeWave
       value: 1.5
       objectReference: {fileID: 0}
+    - target: {fileID: 7753717080277469554, guid: ab665243b9a9df140980db99e3134233, type: 3}
+      propertyPath: waves.Array.data[0].attackerGroups.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7753717080277469554, guid: ab665243b9a9df140980db99e3134233, type: 3}
+      propertyPath: waves.Array.data[1].attackerGroups.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7753717080277469554, guid: ab665243b9a9df140980db99e3134233, type: 3}
+      propertyPath: waves.Array.data[2].attackerGroups.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7753717080277469554, guid: ab665243b9a9df140980db99e3134233, type: 3}
+      propertyPath: waves.Array.data[0].attackerGroups.Array.data[0].count
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 7753717080277469554, guid: ab665243b9a9df140980db99e3134233, type: 3}
+      propertyPath: waves.Array.data[1].attackerGroups.Array.data[0].count
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 7753717080277469554, guid: ab665243b9a9df140980db99e3134233, type: 3}
+      propertyPath: waves.Array.data[1].attackerGroups.Array.data[1].count
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7753717080277469554, guid: ab665243b9a9df140980db99e3134233, type: 3}
+      propertyPath: waves.Array.data[2].attackerGroups.Array.data[0].count
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 7753717080277469554, guid: ab665243b9a9df140980db99e3134233, type: 3}
+      propertyPath: waves.Array.data[2].attackerGroups.Array.data[1].count
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 7753717080277469554, guid: ab665243b9a9df140980db99e3134233, type: 3}
+      propertyPath: waves.Array.data[0].attackerGroups.Array.data[0].attackerDefinition
+      value: 
+      objectReference: {fileID: 11400000, guid: 0c7e62b87804841479c1f46302f20646, type: 2}
+    - target: {fileID: 7753717080277469554, guid: ab665243b9a9df140980db99e3134233, type: 3}
+      propertyPath: waves.Array.data[1].attackerGroups.Array.data[0].attackerDefinition
+      value: 
+      objectReference: {fileID: 11400000, guid: 0c7e62b87804841479c1f46302f20646, type: 2}
+    - target: {fileID: 7753717080277469554, guid: ab665243b9a9df140980db99e3134233, type: 3}
+      propertyPath: waves.Array.data[1].attackerGroups.Array.data[1].attackerDefinition
+      value: 
+      objectReference: {fileID: 11400000, guid: be6926a0e819949479c7664bff6868d1, type: 2}
+    - target: {fileID: 7753717080277469554, guid: ab665243b9a9df140980db99e3134233, type: 3}
+      propertyPath: waves.Array.data[2].attackerGroups.Array.data[0].attackerDefinition
+      value: 
+      objectReference: {fileID: 11400000, guid: be6926a0e819949479c7664bff6868d1, type: 2}
+    - target: {fileID: 7753717080277469554, guid: ab665243b9a9df140980db99e3134233, type: 3}
+      propertyPath: waves.Array.data[2].attackerGroups.Array.data[1].attackerDefinition
+      value: 
+      objectReference: {fileID: 11400000, guid: 7b39b5039e7cb9144888bccf4b9d025e, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

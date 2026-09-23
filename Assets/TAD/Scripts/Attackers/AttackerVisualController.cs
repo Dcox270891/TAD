@@ -1,0 +1,173 @@
+using System.Collections;
+using TAD.Pooling;
+using UnityEngine;
+
+namespace TAD.Attackers
+{
+    /// <summary>
+    /// Renders an attacker from 16 directional sprite sequences without an Animator state-machine per animal.
+    /// </summary>
+    [DisallowMultipleComponent]
+    [RequireComponent(typeof(SpriteRenderer))]
+    public sealed class AttackerVisualController : MonoBehaviour, IPoolLifecycle
+    {
+        private const float MovementDirectionThreshold = 0.0001f;
+
+        [SerializeField] private SpriteRenderer spriteRenderer;
+        [SerializeField]
+        [Tooltip("Used when a legacy attacker definition does not yet reference visual data.")]
+        private AttackerVisualDefinition fallbackVisualDefinition;
+
+        private BasicAttacker attacker;
+        private Coroutine deathRoutine;
+        private float movementElapsed;
+        private int lastDirectionIndex;
+        private bool isPlayingDeath;
+
+        private void Awake()
+        {
+            ResolveComponents();
+            RefreshMovementSprite();
+        }
+
+        private void LateUpdate()
+        {
+            if (isPlayingDeath || attacker == null || attacker.IsDefeated)
+            {
+                return;
+            }
+
+            movementElapsed += Time.deltaTime;
+            RefreshMovementSprite();
+        }
+
+        /// <summary>Starts the matching directional death sequence and returns whether one could be played.</summary>
+        public bool TryPlayDeathAnimation(BasicAttacker source)
+        {
+            ResolveComponents();
+            if (source == null || source != attacker)
+            {
+                return false;
+            }
+
+            var visuals = GetVisualDefinition();
+            if (visuals == null || !visuals.HasDeathSprites)
+            {
+                return false;
+            }
+
+            if (deathRoutine != null)
+            {
+                StopCoroutine(deathRoutine);
+            }
+
+            isPlayingDeath = true;
+            deathRoutine = StartCoroutine(PlayDeathSequence(source, visuals));
+            return true;
+        }
+
+        void IPoolLifecycle.OnTakenFromPool()
+        {
+            StopDeathRoutine();
+            isPlayingDeath = false;
+            movementElapsed = 0f;
+            ResolveComponents();
+
+            if (spriteRenderer != null)
+            {
+                spriteRenderer.enabled = true;
+            }
+
+            if (attacker != null)
+            {
+                lastDirectionIndex = ToDirectionIndex(attacker.MoveDirection);
+            }
+
+            RefreshMovementSprite();
+        }
+
+        void IPoolLifecycle.OnReturnedToPool()
+        {
+            StopDeathRoutine();
+            isPlayingDeath = false;
+        }
+
+        private IEnumerator PlayDeathSequence(BasicAttacker source, AttackerVisualDefinition visuals)
+        {
+            for (var frameIndex = 0; frameIndex < AttackerVisualDefinition.DeathFrameCount; frameIndex++)
+            {
+                SetSprite(visuals.GetDeathSprite(lastDirectionIndex, frameIndex));
+                yield return new WaitForSeconds(visuals.DeathFrameDuration);
+            }
+
+            deathRoutine = null;
+            if (source != null && source.IsDefeated && source.gameObject.activeInHierarchy)
+            {
+                source.CompleteDeathAnimation();
+            }
+        }
+
+        private void RefreshMovementSprite()
+        {
+            ResolveComponents();
+            var visuals = GetVisualDefinition();
+            if (visuals == null || !visuals.HasMovementSprites || attacker == null || attacker.IsDefeated)
+            {
+                return;
+            }
+
+            var moveDirection = attacker.MoveDirection;
+            if (moveDirection.sqrMagnitude > MovementDirectionThreshold)
+            {
+                lastDirectionIndex = ToDirectionIndex(moveDirection);
+            }
+
+            var frameIndex = Mathf.FloorToInt(movementElapsed / visuals.MovementFrameDuration) %
+                             AttackerVisualDefinition.MovementFrameCount;
+            SetSprite(visuals.GetMovementSprite(lastDirectionIndex, frameIndex));
+        }
+
+        private AttackerVisualDefinition GetVisualDefinition()
+        {
+            return attacker != null && attacker.Definition != null && attacker.Definition.VisualDefinition != null
+                ? attacker.Definition.VisualDefinition
+                : fallbackVisualDefinition;
+        }
+
+        private void ResolveComponents()
+        {
+            spriteRenderer ??= GetComponent<SpriteRenderer>();
+            attacker ??= GetComponentInParent<BasicAttacker>();
+        }
+
+        private void StopDeathRoutine()
+        {
+            if (deathRoutine != null)
+            {
+                StopCoroutine(deathRoutine);
+                deathRoutine = null;
+            }
+        }
+
+        private void SetSprite(Sprite sprite)
+        {
+            if (spriteRenderer != null && sprite != null && spriteRenderer.sprite != sprite)
+            {
+                spriteRenderer.sprite = sprite;
+            }
+        }
+
+        private static int ToDirectionIndex(Vector2 direction)
+        {
+            if (direction.sqrMagnitude <= MovementDirectionThreshold)
+            {
+                return 0;
+            }
+
+            var angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+            var index = Mathf.RoundToInt(angle / (360f / AttackerVisualDefinition.DirectionCount));
+            return (index % AttackerVisualDefinition.DirectionCount + AttackerVisualDefinition.DirectionCount) %
+                   AttackerVisualDefinition.DirectionCount;
+        }
+    }
+}

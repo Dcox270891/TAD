@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 694892edc0a468b448e49591a6175013, type: 3}
+  m_Name: BoarDefinition
+  m_EditorClassIdentifier: Assembly-CSharp::TAD.Attackers.AttackerDefinition
+  attackerId: 007
+  displayName: Boar
+  maximumHealth: 30
+  movementSpeed: 2.65
+  size: 1.15
+  sendCost: 11
+  waveIncome: 3
+  expGiven: 20
+  killGain: 22
+  sendSize: 5
+  archetype: 2
+  challengeTier: 1
+  traversalProfile: 0
+  visualDefinition: {fileID: 11400000, guid: c2ecdc71fc827e641b962c0df1b92ca0, type: 2}

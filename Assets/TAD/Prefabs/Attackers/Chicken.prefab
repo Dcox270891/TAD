@@ -160,6 +160,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5396846481310002016}
   - component: {fileID: 7604296610242428945}
+  - component: {fileID: 6299891162121284098}
   m_Layer: 10
   m_Name: Visual
   m_TagString: Untagged
@@ -231,7 +232,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 21300000, guid: d8490e22592e62143a416c08a6fc3535, type: 3}
+  m_Sprite: {fileID: 450327192, guid: bd29f42a7af37b44190805b2d4a3c9e1, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -242,3 +243,17 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
   m_BlendShapeWeights: []
+--- !u!114 &6299891162121284098
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7889943325373786402}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc7357b81dd42584b94ab701d5c0d4f1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TAD.Attackers.AttackerVisualController
+  spriteRenderer: {fileID: 7604296610242428945}
+  fallbackVisualDefinition: {fileID: 11400000, guid: ec151d6bb6c7ee5439771e72d564513f, type: 2}

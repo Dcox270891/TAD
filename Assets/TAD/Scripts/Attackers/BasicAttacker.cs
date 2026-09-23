@@ -8,7 +8,7 @@ using UnityEngine;
 namespace TAD.Attackers
 {
     /// <summary>
-    /// Moves a basic animal attacker and reports its remaining health to the Food Store on arrival.
+    /// Moves a reusable animal attacker toward the Food Store and reports its remaining health on arrival.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(PolygonCollider2D), typeof(Rigidbody2D))]
@@ -19,14 +19,19 @@ namespace TAD.Attackers
         [SerializeField] private AttackerDefinition definition;
         [SerializeField] private Vector2 startingMoveDirection = Vector2.right;
 
+        private readonly List<Vector3> routePoints = new();
+        private readonly HashSet<FarmHand> helpedToKillDefenders = new();
+        private readonly List<Collider2D> ignoredHalfCoverColliders = new();
+
         private Rigidbody2D body;
+        private PolygonCollider2D bodyCollider;
         private PooledInstance pooledInstance;
         private FarmRouteMapper routeMapper;
+        private AttackerVisualController visualController;
         private Vector2 moveDirection;
         private float currentHealth;
         private bool hasReachedFoodStore;
-        private readonly List<Vector3> routePoints = new();
-        private readonly HashSet<FarmHand> helpedToKillDefenders = new();
+        private bool isDefeated;
         private int nextRoutePointIndex;
 
         public AttackerDefinition Definition => definition;
@@ -41,12 +46,19 @@ namespace TAD.Attackers
 
         public float RemainingHealth => currentHealth;
         public bool HasReachedFoodStore => hasReachedFoodStore;
+        public bool IsDefeated => isDefeated;
         public float Size => definition != null ? definition.Size : 0f;
         public int SendCost => definition != null ? definition.SendCost : 0;
         public int WaveIncome => definition != null ? definition.WaveIncome : 0;
         public int ExpGiven => definition != null ? definition.ExpGiven : 0;
         public int KillGain => definition != null ? definition.KillGain : 0;
         public int SendSize => definition != null ? definition.SendSize : 0;
+        public AttackerTraversalProfile TraversalProfile => definition != null
+            ? definition.TraversalProfile
+            : AttackerTraversalProfile.Ground;
+
+        /// <summary>The latest normalized route direction, used by directional visual presentation.</summary>
+        public Vector2 MoveDirection => moveDirection;
 
         /// <summary>Unique defenders that have dealt a non-lethal hit during this attacker activation.</summary>
         public IReadOnlyCollection<FarmHand> HelpedToKillDefenders => helpedToKillDefenders;
@@ -54,13 +66,26 @@ namespace TAD.Attackers
         private void Awake()
         {
             body = GetComponent<Rigidbody2D>();
+            bodyCollider = GetComponent<PolygonCollider2D>();
             pooledInstance = GetComponent<PooledInstance>();
+            visualController = GetComponentInChildren<AttackerVisualController>(true);
             ResetRuntimeState();
+        }
+
+        private void OnEnable()
+        {
+            // IgnoreCollision state is reset by Unity when a pooled object is reactivated.
+            ConfigureTraversalCollisions();
+        }
+
+        private void OnDisable()
+        {
+            RestoreTraversalCollisions();
         }
 
         private void FixedUpdate()
         {
-            if (definition == null || hasReachedFoodStore || currentHealth <= 0f)
+            if (definition == null || hasReachedFoodStore || isDefeated || currentHealth <= 0f)
             {
                 return;
             }
@@ -77,7 +102,6 @@ namespace TAD.Attackers
             }
 
             moveDirection = mappedDirection;
-
             if (moveDirection == Vector2.zero)
             {
                 return;
@@ -144,7 +168,7 @@ namespace TAD.Attackers
             wasDefeated = false;
             helpedToKillAdded = false;
             killingBlowReplacedHelpedToKill = false;
-            if (damage <= 0f || currentHealth <= 0f)
+            if (damage <= 0f || currentHealth <= 0f || isDefeated)
             {
                 return false;
             }
@@ -163,19 +187,28 @@ namespace TAD.Attackers
                 killingBlowReplacedHelpedToKill = helpedToKillDefenders.Remove(defender);
             }
 
-            ReturnToPool();
+            BeginDefeat();
             return true;
         }
 
         public void OnFoodStoreReached(FoodStore foodStore, float foodConsumed)
         {
-            if (hasReachedFoodStore)
+            if (hasReachedFoodStore || isDefeated)
             {
                 return;
             }
 
             hasReachedFoodStore = true;
             ReturnToPool();
+        }
+
+        /// <summary>Called by the visual controller once the final death sprite has been displayed.</summary>
+        public void CompleteDeathAnimation()
+        {
+            if (isDefeated)
+            {
+                ReturnToPool();
+            }
         }
 
         void IPoolLifecycle.OnTakenFromPool()
@@ -190,10 +223,12 @@ namespace TAD.Attackers
 
         void IPoolLifecycle.OnReturnedToPool()
         {
+            RestoreTraversalCollisions();
             if (body != null)
             {
                 body.linearVelocity = Vector2.zero;
                 body.angularVelocity = 0f;
+                body.simulated = false;
             }
         }
 
@@ -201,6 +236,7 @@ namespace TAD.Attackers
         {
             currentHealth = definition != null ? definition.MaximumHealth : 0f;
             hasReachedFoodStore = false;
+            isDefeated = false;
             moveDirection = startingMoveDirection.sqrMagnitude > 0f ? startingMoveDirection.normalized : Vector2.right;
             routePoints.Clear();
             helpedToKillDefenders.Clear();
@@ -210,7 +246,15 @@ namespace TAD.Attackers
             {
                 body.linearVelocity = Vector2.zero;
                 body.angularVelocity = 0f;
+                body.simulated = true;
             }
+
+            if (bodyCollider != null)
+            {
+                bodyCollider.enabled = true;
+            }
+
+            ConfigureTraversalCollisions();
         }
 
         /// <summary>
@@ -223,7 +267,7 @@ namespace TAD.Attackers
             nextRoutePointIndex = 0;
 
             if (body == null || routeMapper == null ||
-                !routeMapper.TryGetFastestRoute(body.position, Size, routePoints) ||
+                !routeMapper.TryGetFastestRoute(body.position, Size, TraversalProfile, routePoints) ||
                 routePoints.Count < 2)
             {
                 return false;
@@ -257,7 +301,83 @@ namespace TAD.Attackers
 
             // The Food Store trigger normally returns an attacker before it reaches this fallback.
             // Keeping it preserves movement when a route ends immediately beside a small target collider.
-            return routeMapper != null && routeMapper.TryGetNextDirection(currentPosition, Size, out direction);
+            return routeMapper != null && routeMapper.TryGetNextDirection(
+                currentPosition,
+                Size,
+                TraversalProfile,
+                out direction);
+        }
+
+        private void BeginDefeat()
+        {
+            if (isDefeated)
+            {
+                return;
+            }
+
+            isDefeated = true;
+            moveDirection = Vector2.zero;
+            routePoints.Clear();
+            nextRoutePointIndex = 0;
+
+            if (body != null)
+            {
+                body.linearVelocity = Vector2.zero;
+                body.angularVelocity = 0f;
+                body.simulated = false;
+            }
+
+            if (bodyCollider != null)
+            {
+                bodyCollider.enabled = false;
+            }
+
+            visualController ??= GetComponentInChildren<AttackerVisualController>(true);
+            if (visualController == null || !visualController.TryPlayDeathAnimation(this))
+            {
+                CompleteDeathAnimation();
+            }
+        }
+
+        private void ConfigureTraversalCollisions()
+        {
+            RestoreTraversalCollisions();
+            if (bodyCollider == null || TraversalProfile != AttackerTraversalProfile.IgnoresHalfCover)
+            {
+                return;
+            }
+
+            var walls = Object.FindObjectsByType<FarmWall>(FindObjectsInactive.Exclude);
+            foreach (var wall in walls)
+            {
+                if (wall == null || wall.Cover != FarmWallCover.Half ||
+                    !wall.TryGetComponent<BoxCollider2D>(out var wallCollider))
+                {
+                    continue;
+                }
+
+                Physics2D.IgnoreCollision(bodyCollider, wallCollider, true);
+                ignoredHalfCoverColliders.Add(wallCollider);
+            }
+        }
+
+        private void RestoreTraversalCollisions()
+        {
+            if (bodyCollider == null)
+            {
+                ignoredHalfCoverColliders.Clear();
+                return;
+            }
+
+            foreach (var wallCollider in ignoredHalfCoverColliders)
+            {
+                if (wallCollider != null)
+                {
+                    Physics2D.IgnoreCollision(bodyCollider, wallCollider, false);
+                }
+            }
+
+            ignoredHalfCoverColliders.Clear();
         }
 
         private void ReturnToPool()

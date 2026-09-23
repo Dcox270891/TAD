@@ -17,6 +17,14 @@ namespace TAD.Attackers
         [SerializeField, Min(0)] private int killGain = 10;
         [SerializeField, Min(0)] private int sendSize = 5;
 
+        [Header("Roster")]
+        [SerializeField] private AttackerArchetype archetype = AttackerArchetype.Basic;
+        [SerializeField, Range(1, 3)] private int challengeTier = 1;
+        [SerializeField] private AttackerTraversalProfile traversalProfile = AttackerTraversalProfile.Ground;
+
+        [Header("Visuals")]
+        [SerializeField] private AttackerVisualDefinition visualDefinition;
+
         public string AttackerId => attackerId;
         public string DisplayName => displayName;
         public float MaximumHealth => maximumHealth;
@@ -27,6 +35,11 @@ namespace TAD.Attackers
         public int ExpGiven => expGiven;
         public int KillGain => killGain;
         public int SendSize => sendSize;
+        public AttackerArchetype Archetype => archetype;
+        public int ChallengeTier => challengeTier;
+        public AttackerTraversalProfile TraversalProfile => traversalProfile;
+        public bool IgnoresHalfCover => traversalProfile == AttackerTraversalProfile.IgnoresHalfCover;
+        public AttackerVisualDefinition VisualDefinition => visualDefinition;
 
 #if UNITY_EDITOR
         private void OnValidate()
@@ -39,6 +52,7 @@ namespace TAD.Attackers
             expGiven = Mathf.Max(0, expGiven);
             killGain = Mathf.Max(0, killGain);
             sendSize = Mathf.Max(0, sendSize);
+            challengeTier = Mathf.Clamp(challengeTier, 1, 3);
         }
 #endif
     }

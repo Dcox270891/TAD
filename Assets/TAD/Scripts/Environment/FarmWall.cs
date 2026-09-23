@@ -1,3 +1,4 @@
+using TAD.Attackers;
 using UnityEngine;
 
 namespace TAD.Environment
@@ -23,9 +24,7 @@ namespace TAD.Environment
         private BoxCollider2D sourceCollider;
 
         public FarmWallCover Cover => cover;
-
         public bool BlocksAllAttacks => cover == FarmWallCover.Full;
-
         public bool AllowsFarmhandRangedAttack => cover == FarmWallCover.Half;
 
         private void Awake()
@@ -45,6 +44,19 @@ namespace TAD.Environment
             var safeRadius = Mathf.Max(0f, radius);
             var closestPoint = GetClosestPointOnBox(collider, worldPosition);
             return (closestPoint - worldPosition).sqrMagnitude + 0.0001f < safeRadius * safeRadius;
+        }
+
+        /// <summary>
+        /// Returns whether this wall blocks an attacker with the supplied traversal profile.
+        /// Flying attackers can pass Half cover but must continue to avoid Full cover.
+        /// </summary>
+        public bool BlocksAttackerCircle(
+            Vector2 worldPosition,
+            float radius,
+            AttackerTraversalProfile traversalProfile)
+        {
+            return !(traversalProfile == AttackerTraversalProfile.IgnoresHalfCover && cover == FarmWallCover.Half) &&
+                   BlocksCircle(worldPosition, radius);
         }
 
         private BoxCollider2D EnsureSolidCollider()

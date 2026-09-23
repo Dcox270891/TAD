@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System.Collections.Generic;
+using TAD.Attackers;
 using TAD.Navigation;
 using TAD.Waves;
 using UnityEditor;
@@ -7,14 +8,11 @@ using UnityEngine;
 
 namespace TAD.Editor
 {
-    /// <summary>
-    /// Draws cached attacker routes in the Unity Scene view while the level is running.
-    /// It is compiled into the editor only, so it cannot appear in the Game view or a player build.
-    /// </summary>
+    /// <summary>Draws cached attacker routes in the Unity Scene view while the level is running.</summary>
     [InitializeOnLoad]
     internal static class FastestRouteSceneOverlay
     {
-        private static readonly List<float> AttackerSizes = new();
+        private static readonly List<AttackerRouteDescriptor> AttackerRoutes = new();
         private static readonly List<Vector3> RoutePoints = new();
 
         static FastestRouteSceneOverlay()
@@ -35,26 +33,32 @@ namespace TAD.Editor
             for (var mapperIndex = 0; mapperIndex < routeMappers.Length; mapperIndex++)
             {
                 var routeMapper = routeMappers[mapperIndex];
-                routeMapper.CopyPrecomputedAttackerSizes(AttackerSizes);
-
+                routeMapper.CopyPrecomputedAttackerRoutes(AttackerRoutes);
                 foreach (var waveController in waveControllers)
                 {
-                    for (var sizeIndex = 0; sizeIndex < AttackerSizes.Count; sizeIndex++)
+                    for (var routeIndex = 0; routeIndex < AttackerRoutes.Count; routeIndex++)
                     {
-                        var attackerSize = AttackerSizes[sizeIndex];
-                        if (!routeMapper.TryGetFastestRoute(waveController.SpawnPosition, attackerSize, RoutePoints))
+                        var route = AttackerRoutes[routeIndex];
+                        if (!routeMapper.TryGetFastestRoute(
+                                waveController.SpawnPosition,
+                                route.AttackerSize,
+                                route.TraversalProfile,
+                                RoutePoints))
                         {
                             continue;
                         }
 
-                        var hue = Mathf.Repeat((mapperIndex * 0.27f) + (sizeIndex * 0.6180339f), 1f);
+                        var hue = Mathf.Repeat((mapperIndex * 0.27f) + (routeIndex * 0.6180339f), 1f);
                         var color = Color.HSVToRGB(hue, 0.8f, 1f);
                         using (new Handles.DrawingScope(color))
                         {
                             Handles.DrawAAPolyLine(3f, RoutePoints.ToArray());
+                            var profileLabel = route.TraversalProfile == AttackerTraversalProfile.IgnoresHalfCover
+                                ? "flying"
+                                : "ground";
                             Handles.Label(
-                                RoutePoints[0] + (Vector3.up * (0.2f + (sizeIndex * 0.15f))),
-                                $"Fastest route - size {attackerSize:0.##}");
+                                RoutePoints[0] + (Vector3.up * (0.2f + (routeIndex * 0.15f))),
+                                $"Fastest route - {profileLabel}, size {route.AttackerSize:0.##}");
                         }
                     }
                 }

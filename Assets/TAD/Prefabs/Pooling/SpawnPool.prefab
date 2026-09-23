@@ -55,6 +55,19 @@ MonoBehaviour:
   - objectType: 2
     prefab: {fileID: 6925713925554940803, guid: 6b047fba528a63740813a18ead69958a, type: 3}
     initialCapacity: 5
+  additionalAttackerPrefabs:
+  - {fileID: 4465617851278540577, guid: 3169f21287e34d442ad61a9a61eb808d, type: 3}
+  - {fileID: 4539596133536927622, guid: 686c6b1a9a7532849b65f4c4908ebca2, type: 3}
+  - {fileID: 4965499273711243573, guid: 1eaf45c3092402a488719ac3ee7bcc45, type: 3}
+  - {fileID: 1555546248635430462, guid: 32be4df7b10e68f489a900a0ec01048c, type: 3}
+  - {fileID: 3156591042286869188, guid: 457d1aea706922543b9f8111bd43987e, type: 3}
+  - {fileID: 1541242498398724688, guid: 921e907ad0f72234db813d595886cb18, type: 3}
+  - {fileID: 160060337164289261, guid: 03e7a0f7ca41aa8478cecd14d156f419, type: 3}
+  - {fileID: 718988378918846499, guid: 67cba16a785c4b847854d897e3f37052, type: 3}
+  - {fileID: 295905137268638908, guid: caed7fca8627bbc4fb91680d50223a64, type: 3}
+  - {fileID: 7380514914642394048, guid: 3dc1798705f367b4f9d5282ed4f8a271, type: 3}
+  - {fileID: 1133527070088945012, guid: 4667ed6be8f017a43854e57e992ee79f, type: 3}
+  additionalAttackerInitialCapacity: 5
 --- !u!114 &465870676978708901
 MonoBehaviour:
   m_ObjectHideFlags: 0

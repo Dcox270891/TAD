@@ -17,11 +17,32 @@ namespace TAD.Waves
     public sealed class WaveController : MonoBehaviour
     {
         [Serializable]
+        private sealed class AttackerGroup
+        {
+            [SerializeField] private AttackerDefinition attackerDefinition;
+            [SerializeField, Min(1)] private int count = 1;
+
+            public AttackerDefinition AttackerDefinition => attackerDefinition;
+            public int Count => count;
+
+#if UNITY_EDITOR
+            public void Validate()
+            {
+                count = Mathf.Max(1, count);
+            }
+#endif
+        }
+
+        [Serializable]
         private sealed class WaveSettings
         {
             [SerializeField, Min(1)]
-            [Tooltip("How many attackers the AI sends in this numbered wave.")]
+            [Tooltip("How many default attackers the AI sends when no typed composition is configured.")]
             private int attackerCount = 3;
+
+            [SerializeField]
+            [Tooltip("Optional ordered attacker groups. When supplied, their total replaces the legacy attacker count.")]
+            private AttackerGroup[] attackerGroups = Array.Empty<AttackerGroup>();
 
             [SerializeField, Min(0f)]
             [Tooltip("Seconds between attackers in this wave.")]
@@ -31,7 +52,25 @@ namespace TAD.Waves
             [Tooltip("Seconds to wait after the previous wave is cleared before starting this wave.")]
             private float delayBeforeWave = 1f;
 
-            public int AttackerCount => attackerCount;
+            public int AttackerCount
+            {
+                get
+                {
+                    if (attackerGroups == null || attackerGroups.Length == 0)
+                    {
+                        return attackerCount;
+                    }
+
+                    var total = 0;
+                    foreach (var group in attackerGroups)
+                    {
+                        total += group != null ? group.Count : 0;
+                    }
+
+                    return total > 0 ? total : attackerCount;
+                }
+            }
+
             public float SpawnInterval => spawnInterval;
             public float DelayBeforeWave => delayBeforeWave;
 
@@ -42,12 +81,48 @@ namespace TAD.Waves
                 this.delayBeforeWave = delayBeforeWave;
             }
 
+            /// <summary>Returns null for a legacy wave, which asks the pool for its default attacker prefab.</summary>
+            public AttackerDefinition GetDefinitionAtSpawnIndex(int spawnIndex)
+            {
+                if (attackerGroups == null || attackerGroups.Length == 0)
+                {
+                    return null;
+                }
+
+                var remainingIndex = spawnIndex;
+                foreach (var group in attackerGroups)
+                {
+                    if (group == null)
+                    {
+                        continue;
+                    }
+
+                    if (remainingIndex < group.Count)
+                    {
+                        return group.AttackerDefinition;
+                    }
+
+                    remainingIndex -= group.Count;
+                }
+
+                return null;
+            }
+
 #if UNITY_EDITOR
             public void Validate()
             {
                 attackerCount = Mathf.Max(1, attackerCount);
                 spawnInterval = Mathf.Max(0f, spawnInterval);
                 delayBeforeWave = Mathf.Max(0f, delayBeforeWave);
+                if (attackerGroups == null)
+                {
+                    return;
+                }
+
+                foreach (var group in attackerGroups)
+                {
+                    group?.Validate();
+                }
             }
 #endif
         }
@@ -88,45 +163,28 @@ namespace TAD.Waves
         private bool hasCompletedAllWaves;
         private bool isSubscribedToFoodStore;
 
-        /// <summary>The currently deploying or resolving wave, numbered from one. Zero means no wave has started.</summary>
         public int CurrentWaveNumber => currentWaveNumber;
-
         public int TotalWaveCount => waves?.Length ?? 0;
-
         public int SpawnedInCurrentWave => spawnedInCurrentWave;
-
         public int ActiveAttackerCount => CountActiveAttackers();
-
         public bool IsRunning => waveRoutine != null;
-
         public bool HasCompletedAllWaves => hasCompletedAllWaves;
-
-        /// <summary>Whether a manually-started numbered wave can begin now.</summary>
         public bool CanStartNextWave => waveRoutine == null &&
                                         !hasCompletedAllWaves &&
                                         waves != null &&
                                         nextWaveIndex < waves.Length &&
                                         (foodStore == null || !foodStore.IsDepleted);
 
-        /// <summary>Prevents automatic startup so a player-facing control can start the sequence instead.</summary>
         public void RequireManualStart()
         {
             startOnStart = false;
         }
 
-        /// <summary>The exact source position used when this controller releases an attacker.</summary>
         public Vector3 SpawnPosition => (spawnPoint != null ? spawnPoint : transform).position;
 
-        /// <summary>Raised with the one-based wave number and its requested attacker count.</summary>
         public event Action<int, int> WaveStarted;
-
-        /// <summary>Raised after every attacker sent in the wave has returned to the pool.</summary>
         public event Action<int> WaveCompleted;
-
-        /// <summary>Raised after the final configured wave has been cleared while food remains.</summary>
         public event Action AllWavesCompleted;
-
-        /// <summary>Raised after a running wave sequence or manually-started wave has fully stopped.</summary>
         public event Action<bool> WaveRunFinished;
 
         private void Start()
@@ -143,7 +201,6 @@ namespace TAD.Waves
             UnsubscribeFromFoodStore();
         }
 
-        /// <summary>Begins the configured sequence from wave one. Returns false if it is already running or incomplete.</summary>
         public bool StartWaves()
         {
             if (waveRoutine != null)
@@ -157,12 +214,7 @@ namespace TAD.Waves
                 return false;
             }
 
-            if (!TryResolveDependencies())
-            {
-                return false;
-            }
-
-            if (!routeMapper.RebuildRoutes())
+            if (!TryResolveDependencies() || !EnsureRouteMap())
             {
                 Debug.LogError("Wave Controller could not build a route to the Food Store before sending attackers.", this);
                 return false;
@@ -178,28 +230,14 @@ namespace TAD.Waves
             return true;
         }
 
-        /// <summary>
-        /// Starts exactly one configured wave. Once its attackers have all returned to the pool,
-        /// this method can be called again to deploy the next numbered wave.
-        /// </summary>
         public bool StartNextWave()
         {
-            if (!CanStartNextWave)
+            if (!CanStartNextWave || !TryResolveDependencies() || foodStore.IsDepleted)
             {
                 return false;
             }
 
-            if (!TryResolveDependencies())
-            {
-                return false;
-            }
-
-            if (foodStore.IsDepleted)
-            {
-                return false;
-            }
-
-            if (!routeMapper.RebuildRoutes())
+            if (!EnsureRouteMap())
             {
                 Debug.LogError("Wave Controller could not build a route to the Food Store before sending attackers.", this);
                 return false;
@@ -219,7 +257,6 @@ namespace TAD.Waves
             return true;
         }
 
-        /// <summary>Stops scheduling future attackers. Attackers already released by the pool are left unchanged.</summary>
         public void StopWaves()
         {
             var wasRunning = waveRoutine != null;
@@ -230,7 +267,6 @@ namespace TAD.Waves
             }
 
             activeAttackers.Clear();
-
             if (wasRunning)
             {
                 WaveRunFinished?.Invoke(false);
@@ -240,7 +276,6 @@ namespace TAD.Waves
         private IEnumerator RunWaves()
         {
             var completedSequence = true;
-
             for (var waveIndex = 0; waveIndex < waves.Length; waveIndex++)
             {
                 if (foodStore.IsDepleted)
@@ -281,7 +316,7 @@ namespace TAD.Waves
                         break;
                     }
 
-                    if (!SpawnAttacker())
+                    if (!SpawnAttacker(wave.GetDefinitionAtSpawnIndex(attackerIndex)))
                     {
                         completedSequence = false;
                         failedToSpawn = true;
@@ -289,7 +324,6 @@ namespace TAD.Waves
                     }
 
                     spawnedInCurrentWave++;
-
                     if (attackerIndex < wave.AttackerCount - 1 && wave.SpawnInterval > 0f)
                     {
                         yield return new WaitForSeconds(wave.SpawnInterval);
@@ -297,7 +331,6 @@ namespace TAD.Waves
                 }
 
                 yield return WaitForActiveAttackers();
-
                 if (foodStore.IsDepleted || failedToSpawn)
                 {
                     completedSequence = false;
@@ -309,9 +342,7 @@ namespace TAD.Waves
 
             hasCompletedAllWaves = completedSequence && !foodStore.IsDepleted;
             waveRoutine = null;
-
             WaveRunFinished?.Invoke(hasCompletedAllWaves);
-
             if (hasCompletedAllWaves)
             {
                 AllWavesCompleted?.Invoke();
@@ -351,14 +382,13 @@ namespace TAD.Waves
                     break;
                 }
 
-                if (!SpawnAttacker())
+                if (!SpawnAttacker(wave.GetDefinitionAtSpawnIndex(attackerIndex)))
                 {
                     failedToSpawn = true;
                     break;
                 }
 
                 spawnedInCurrentWave++;
-
                 if (attackerIndex < wave.AttackerCount - 1 && wave.SpawnInterval > 0f)
                 {
                     yield return new WaitForSeconds(wave.SpawnInterval);
@@ -366,7 +396,6 @@ namespace TAD.Waves
             }
 
             yield return WaitForActiveAttackers();
-
             var completed = !foodStore.IsDepleted && !failedToSpawn;
             if (completed)
             {
@@ -382,44 +411,48 @@ namespace TAD.Waves
         {
             waveRoutine = null;
             WaveRunFinished?.Invoke(completed);
-
             if (completed && hasCompletedAllWaves)
             {
                 AllWavesCompleted?.Invoke();
             }
         }
 
-        private bool SpawnAttacker()
+        private bool SpawnAttacker(AttackerDefinition requestedDefinition)
         {
             var source = spawnPoint != null ? spawnPoint : transform;
-            var attackerObject = spawnPool.Spawn(PooledObjectType.Attacker, source.position, source.rotation);
+            var attackerObject = requestedDefinition != null
+                ? spawnPool.SpawnAttacker(requestedDefinition, source.position, source.rotation)
+                : spawnPool.Spawn(PooledObjectType.Attacker, source.position, source.rotation);
             if (attackerObject == null)
             {
                 return false;
             }
 
-            if (attackerObject.TryGetComponent<BasicAttacker>(out var attacker))
-            {
-                if (attacker.Definition == null)
-                {
-                    Debug.LogWarning($"{attackerObject.name} was returned to the pool because it has no attacker definition.", this);
-                    ReturnSpawnedAttacker(attackerObject);
-                    return false;
-                }
-
-                attacker.SetRouteMapper(routeMapper);
-
-                if (!attacker.TryClampToVisibleMap() ||
-                    !routeMapper.TryGetNextDirection(attacker.CurrentPosition, attacker.Size, out _))
-                {
-                    Debug.LogWarning($"{attackerObject.name} was returned to the pool because the visible spawn area has no route to the Food Store for size {attacker.Size}.", this);
-                    ReturnSpawnedAttacker(attackerObject);
-                    return false;
-                }
-            }
-            else
+            if (!attackerObject.TryGetComponent<BasicAttacker>(out var attacker))
             {
                 Debug.LogWarning($"{attackerObject.name} does not have a Basic Attacker component, so this wave cannot assign it a route.", attackerObject);
+                ReturnSpawnedAttacker(attackerObject);
+                return false;
+            }
+
+            if (attacker.Definition == null)
+            {
+                Debug.LogWarning($"{attackerObject.name} was returned to the pool because it has no attacker definition.", this);
+                ReturnSpawnedAttacker(attackerObject);
+                return false;
+            }
+
+            attacker.SetRouteMapper(routeMapper);
+            if (!attacker.TryClampToVisibleMap() ||
+                !routeMapper.TryGetNextDirection(
+                    attacker.CurrentPosition,
+                    attacker.Size,
+                    attacker.TraversalProfile,
+                    out _))
+            {
+                Debug.LogWarning(
+                    $"{attackerObject.name} was returned to the pool because the visible spawn area has no route to the Food Store for size {attacker.Size} and profile {attacker.TraversalProfile}.",
+                    this);
                 ReturnSpawnedAttacker(attackerObject);
                 return false;
             }
@@ -461,12 +494,17 @@ namespace TAD.Waves
             return activeAttackers.Count;
         }
 
+        private bool EnsureRouteMap()
+        {
+            return routeMapper != null &&
+                   (routeMapper.CachedRouteFieldCount > 0 || routeMapper.RebuildRoutes());
+        }
+
         private bool TryResolveDependencies()
         {
             spawnPool ??= UnityEngine.Object.FindAnyObjectByType<SpawnPool>();
             routeMapper ??= UnityEngine.Object.FindAnyObjectByType<FarmRouteMapper>();
             foodStore ??= UnityEngine.Object.FindAnyObjectByType<FoodStore>();
-
             if (spawnPool != null && routeMapper != null && foodStore != null)
             {
                 return true;
@@ -506,6 +544,11 @@ namespace TAD.Waves
 #if UNITY_EDITOR
         private void OnValidate()
         {
+            if (waves == null)
+            {
+                return;
+            }
+
             foreach (var wave in waves)
             {
                 wave?.Validate();
