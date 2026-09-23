@@ -105,6 +105,7 @@ GameObject:
   - component: {fileID: 1305352603070803197}
   - component: {fileID: 2073962169593985075}
   - component: {fileID: 5968805547786594147}
+  - component: {fileID: 1708686551607226627}
   m_Layer: 9
   m_Name: FoodStore
   m_TagString: Untagged
@@ -227,3 +228,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TAD.UI.FoodStoreHudBootstrap
   hudPrefab: {fileID: 6714839492078114540, guid: 890c8d809a77ac14a99fe3531093602f, type: 3}
+--- !u!114 &1708686551607226627
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7722631836731287254}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a51c5f7a1f462dd429fa0fe353b8d4a4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TAD.UI.FoodStoreDefeatOverlayBootstrap
+  overlayPrefab: {fileID: 5369828564266853525, guid: c3b394a6ee25e0b47ba7a7883252645e, type: 3}
