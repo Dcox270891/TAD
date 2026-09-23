@@ -185,5 +185,3 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TAD.Environment.FarmWall
   cover: 0
-  hasHole: 0
-  holeSize: 0

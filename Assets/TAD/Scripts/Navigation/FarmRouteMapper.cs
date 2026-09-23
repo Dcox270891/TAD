@@ -13,7 +13,6 @@ namespace TAD.Navigation
     [DisallowMultipleComponent]
     public sealed class FarmRouteMapper : MonoBehaviour
     {
-        private const int NoHoleRouteKey = -1;
         private const float SizeKeyScale = 1000f;
         private const int MaxRecoveryCellRadius = 8;
         private const float MapBoundaryEpsilon = 0.0001f;
@@ -46,9 +45,8 @@ namespace TAD.Navigation
         [Tooltip("Maximum flow-field cells a route may skip when a clear line smooths a wall corner.")]
         private int cornerSmoothingLookAheadCells = 8;
 
-        private readonly Dictionary<RouteFieldKey, RouteField> routeFields = new();
+        private readonly Dictionary<int, RouteField> routeFields = new();
         private readonly List<int> precomputedAttackerSizeKeys = new();
-        private readonly List<int> holeSizeKeys = new();
         private FarmWall[] walls = Array.Empty<FarmWall>();
         private int columns;
         private int rows;
@@ -112,15 +110,14 @@ namespace TAD.Navigation
 
             var safeAttackerSize = Mathf.Max(0.01f, attackerSize);
             var attackerSizeKey = GetSizeKey(safeAttackerSize);
-            var requiredHoleSizeKey = GetRequiredHoleSizeKey(attackerSizeKey);
-            var requiredHoleSize = GetRequiredHoleSize(requiredHoleSizeKey);
+
             var radius = (safeAttackerSize * 0.5f) + obstaclePadding;
             var startPosition2D = (Vector2)startingPosition;
             var destination = foodStore.transform.position;
 
             if (!TryGetCellIndex(startPosition2D, out var currentIndex))
             {
-                if (!IsClearSegment(startPosition2D, destination, radius, requiredHoleSize))
+                if (!IsClearSegment(startPosition2D, destination, radius))
                 {
                     return false;
                 }
@@ -130,7 +127,7 @@ namespace TAD.Navigation
                 return true;
             }
 
-            var routeKey = new RouteFieldKey(attackerSizeKey, requiredHoleSizeKey);
+            var routeKey = attackerSizeKey;
             if (!routeFields.TryGetValue(routeKey, out var field) || !field.Walkable[currentIndex] || field.GoalIndex < 0)
             {
                 return false;
@@ -151,7 +148,7 @@ namespace TAD.Navigation
                 // Smoothed links are generated from cell centres, while this first segment may begin
                 // at an arbitrary spawn position. Verify the actual segment before committing to it so
                 // a diagonal cannot cut across the corner of a wall.
-                if (!IsClearSegment(routePoints[^1], nextCell, radius, requiredHoleSize))
+                if (!IsClearSegment(routePoints[^1], nextCell, radius))
                 {
                     nextIndex = field.NextIndices[currentIndex];
                     if (nextIndex < 0)
@@ -161,7 +158,7 @@ namespace TAD.Navigation
                     }
 
                     nextCell = GetCellCenter(nextIndex);
-                    if (!IsClearSegment(routePoints[^1], nextCell, radius, requiredHoleSize))
+                    if (!IsClearSegment(routePoints[^1], nextCell, radius))
                     {
                         routePoints.Clear();
                         return false;
@@ -177,7 +174,7 @@ namespace TAD.Navigation
             }
 
             if (currentIndex != field.GoalIndex ||
-                !IsClearSegment(routePoints[^1], destination, radius, requiredHoleSize))
+                !IsClearSegment(routePoints[^1], destination, radius))
             {
                 routePoints.Clear();
                 return false;
@@ -222,7 +219,7 @@ namespace TAD.Navigation
             columns = Mathf.Max(1, Mathf.CeilToInt(runtimeMapSize.x / cellSize));
             rows = Mathf.Max(1, Mathf.CeilToInt(runtimeMapSize.y / cellSize));
 
-            // Keeping odd counts puts a cell at the visible camera centre, making central wall openings reliable.
+            // Keeping odd counts puts a cell at the visible camera centre, making central navigation decisions stable.
             if (columns % 2 == 0)
             {
                 columns++;
@@ -235,10 +232,6 @@ namespace TAD.Navigation
 
             actualCellSize = new Vector2(runtimeMapSize.x / columns, runtimeMapSize.y / rows);
             walls = UnityEngine.Object.FindObjectsByType<FarmWall>(FindObjectsInactive.Exclude);
-            foreach (var wall in walls)
-            {
-                wall.PrepareCollisionGeometry();
-            }
 
             routeFields.Clear();
             CollectStartupRouteData();
@@ -281,8 +274,7 @@ namespace TAD.Navigation
 
             var safeAttackerSize = Mathf.Max(0.01f, attackerSize);
             var attackerSizeKey = GetSizeKey(safeAttackerSize);
-            var requiredHoleSizeKey = GetRequiredHoleSizeKey(attackerSizeKey);
-            var requiredHoleSize = GetRequiredHoleSize(requiredHoleSizeKey);
+
             var radius = (safeAttackerSize * 0.5f) + obstaclePadding;
 
             if (!TryGetCellIndex(currentPosition, out var currentIndex))
@@ -292,7 +284,7 @@ namespace TAD.Navigation
                 return false;
             }
 
-            var routeKey = new RouteFieldKey(attackerSizeKey, requiredHoleSizeKey);
+            var routeKey = attackerSizeKey;
             if (routeFields.TryGetValue(routeKey, out var field))
             {
                 if (field.Walkable[currentIndex])
@@ -302,7 +294,6 @@ namespace TAD.Navigation
                             currentPosition,
                             smoothedNextIndex,
                             radius,
-                            requiredHoleSize,
                             out direction))
                     {
                         return true;
@@ -314,14 +305,13 @@ namespace TAD.Navigation
                             currentPosition,
                             immediateNextIndex,
                             radius,
-                            requiredHoleSize,
                             out direction))
                     {
                         return true;
                     }
                 }
 
-                if (TryGetRecoveryDirection(currentPosition, currentIndex, field, radius, requiredHoleSize, out direction))
+                if (TryGetRecoveryDirection(currentPosition, currentIndex, field, radius, out direction))
                 {
                     return true;
                 }
@@ -330,13 +320,12 @@ namespace TAD.Navigation
             // Only terminal or unexpectedly unmapped positions take this small sampled fallback. It keeps the
             // normal movement path to an O(1) flow-field lookup while ensuring an animal continues into the
             // Food Store whenever a clear line is available.
-            return TryGetClearDirectDirection(currentPosition, radius, requiredHoleSize, out direction);
+            return TryGetClearDirectDirection(currentPosition, radius, out direction);
         }
 
         private void CollectStartupRouteData()
         {
             precomputedAttackerSizeKeys.Clear();
-            holeSizeKeys.Clear();
 
             AddUniqueKey(precomputedAttackerSizeKeys, GetSizeKey(defaultAttackerSize));
 
@@ -362,61 +351,36 @@ namespace TAD.Navigation
                 }
             }
 
-            foreach (var wall in walls)
-            {
-                if (wall != null && wall.gameObject.activeInHierarchy && wall.HasHole && wall.HoleSize > 0f)
-                {
-                    AddUniqueKey(holeSizeKeys, GetSizeKey(wall.HoleSize));
-                }
-            }
-
             precomputedAttackerSizeKeys.Sort();
-            holeSizeKeys.Sort();
+
         }
 
         private void BuildStartupRouteFields()
         {
-            // Build the all-walls baseline first, before considering a single hole. It remains cached even when
-            // a shorter eligible-opening route is also available.
             foreach (var attackerSizeKey in precomputedAttackerSizeKeys)
             {
-                GetOrCreateRouteField(attackerSizeKey, NoHoleRouteKey);
-            }
-
-            // One field for a hole threshold evaluates every opening at least that wide in one Dijkstra pass.
-            // That makes the selected field naturally choose the fastest size-2 hole over any size-1 hole when
-            // it is the shorter overall route.
-            foreach (var holeSizeKey in holeSizeKeys)
-            {
-                foreach (var attackerSizeKey in precomputedAttackerSizeKeys)
-                {
-                    if (attackerSizeKey <= holeSizeKey)
-                    {
-                        GetOrCreateRouteField(attackerSizeKey, holeSizeKey);
-                    }
-                }
+                GetOrCreateRouteField(attackerSizeKey);
             }
         }
 
-        private RouteField GetOrCreateRouteField(int attackerSizeKey, int requiredHoleSizeKey)
+        private RouteField GetOrCreateRouteField(int attackerSizeKey)
         {
-            var routeKey = new RouteFieldKey(attackerSizeKey, requiredHoleSizeKey);
-            if (!routeFields.TryGetValue(routeKey, out var field))
+            if (!routeFields.TryGetValue(attackerSizeKey, out var field))
             {
-                field = BuildRouteField(GetSizeFromKey(attackerSizeKey), GetRequiredHoleSize(requiredHoleSizeKey));
-                routeFields.Add(routeKey, field);
+                field = BuildRouteField(GetSizeFromKey(attackerSizeKey));
+                routeFields.Add(attackerSizeKey, field);
             }
 
             return field;
         }
 
-        private RouteField BuildRouteField(float attackerSize, float requiredHoleSize)
+        private RouteField BuildRouteField(float attackerSize)
         {
             var field = new RouteField(columns * rows);
             var radius = (attackerSize * 0.5f) + obstaclePadding;
             for (var index = 0; index < field.Walkable.Length; index++)
             {
-                field.Walkable[index] = IsWalkable(GetCellCenter(index), radius, requiredHoleSize);
+                field.Walkable[index] = IsWalkable(GetCellCenter(index), radius);
             }
 
             var goalIndex = FindClosestWalkableCell(foodStore.transform.position, field.Walkable);
@@ -452,7 +416,7 @@ namespace TAD.Navigation
                             continue;
                         }
 
-                        if (!field.Walkable[neighbour] || !CanTraverse(neighbour, current.Index, xOffset, yOffset, radius, requiredHoleSize, field.Walkable))
+                        if (!field.Walkable[neighbour] || !CanTraverse(neighbour, current.Index, xOffset, yOffset, radius, field.Walkable))
                         {
                             continue;
                         }
@@ -470,7 +434,7 @@ namespace TAD.Navigation
                 }
             }
 
-            BuildSmoothedNextIndices(field, radius, requiredHoleSize);
+            BuildSmoothedNextIndices(field, radius);
 
             return field;
         }
@@ -479,7 +443,7 @@ namespace TAD.Navigation
         /// Replaces tight cell-by-cell turns with bounded, wall-safe line-of-sight waypoints.
         /// This work runs during the level-start map build so attacker movement stays a constant-time lookup.
         /// </summary>
-        private void BuildSmoothedNextIndices(RouteField field, float radius, float requiredHoleSize)
+        private void BuildSmoothedNextIndices(RouteField field, float radius)
         {
             for (var index = 0; index < field.NextIndices.Length; index++)
             {
@@ -495,7 +459,7 @@ namespace TAD.Navigation
                 {
                     var candidateIndex = field.NextIndices[currentIndex];
                     if (candidateIndex < 0 ||
-                        !IsClearSegment(origin, GetCellCenter(candidateIndex), radius, requiredHoleSize))
+                        !IsClearSegment(origin, GetCellCenter(candidateIndex), radius))
                     {
                         break;
                     }
@@ -508,7 +472,7 @@ namespace TAD.Navigation
             }
         }
 
-        private bool CanTraverse(int fromIndex, int toIndex, int xOffset, int yOffset, float radius, float requiredHoleSize, bool[] walkable)
+        private bool CanTraverse(int fromIndex, int toIndex, int xOffset, int yOffset, float radius, bool[] walkable)
         {
             if (xOffset != 0 && yOffset != 0)
             {
@@ -521,10 +485,10 @@ namespace TAD.Navigation
             }
 
             var midpoint = (GetCellCenter(fromIndex) + GetCellCenter(toIndex)) * 0.5f;
-            return IsWalkable(midpoint, radius, requiredHoleSize);
+            return IsWalkable(midpoint, radius);
         }
 
-        private bool IsWalkable(Vector2 worldPosition, float radius, float requiredHoleSize)
+        private bool IsWalkable(Vector2 worldPosition, float radius)
         {
             if (!IsWithinVisibleMap(worldPosition))
             {
@@ -533,7 +497,7 @@ namespace TAD.Navigation
 
             foreach (var wall in walls)
             {
-                if (wall != null && wall.gameObject.activeInHierarchy && wall.BlocksCircleForRoute(worldPosition, radius, requiredHoleSize))
+                if (wall != null && wall.gameObject.activeInHierarchy && wall.BlocksCircle(worldPosition, radius))
                 {
                     return false;
                 }
@@ -600,7 +564,6 @@ namespace TAD.Navigation
             Vector2 currentPosition,
             int targetIndex,
             float radius,
-            float requiredHoleSize,
             out Vector2 direction)
         {
             direction = Vector2.zero;
@@ -612,7 +575,7 @@ namespace TAD.Navigation
             var target = GetCellCenter(targetIndex);
             var delta = target - currentPosition;
             if (delta.sqrMagnitude <= 0.0001f ||
-                !IsClearSegment(currentPosition, target, radius, requiredHoleSize))
+                !IsClearSegment(currentPosition, target, radius))
             {
                 return false;
             }
@@ -626,7 +589,6 @@ namespace TAD.Navigation
             int currentIndex,
             RouteField field,
             float radius,
-            float requiredHoleSize,
             out Vector2 direction)
         {
             direction = Vector2.zero;
@@ -662,7 +624,7 @@ namespace TAD.Navigation
                     var candidateCell = GetCellCenter(candidateIndex);
                     var distance = (candidateCell - currentPosition).sqrMagnitude;
                     if (distance <= 0.0001f || distance >= closestDistance ||
-                        !IsClearSegment(currentPosition, candidateCell, radius, requiredHoleSize))
+                        !IsClearSegment(currentPosition, candidateCell, radius))
                     {
                         continue;
                     }
@@ -681,7 +643,7 @@ namespace TAD.Navigation
             return direction.sqrMagnitude > 0f;
         }
 
-        private bool TryGetClearDirectDirection(Vector2 currentPosition, float radius, float requiredHoleSize, out Vector2 direction)
+        private bool TryGetClearDirectDirection(Vector2 currentPosition, float radius, out Vector2 direction)
         {
             direction = Vector2.zero;
             var destination = (Vector2)foodStore.transform.position;
@@ -691,7 +653,7 @@ namespace TAD.Navigation
                 return false;
             }
 
-            if (!IsClearSegment(currentPosition, destination, radius, requiredHoleSize))
+            if (!IsClearSegment(currentPosition, destination, radius))
             {
                 return false;
             }
@@ -700,7 +662,7 @@ namespace TAD.Navigation
             return true;
         }
 
-        private bool IsClearSegment(Vector2 startPosition, Vector2 destination, float radius, float requiredHoleSize)
+        private bool IsClearSegment(Vector2 startPosition, Vector2 destination, float radius)
         {
             var delta = destination - startPosition;
             var sampleSpacing = Mathf.Max(0.01f, Mathf.Min(actualCellSize.x, actualCellSize.y) * 0.5f);
@@ -708,31 +670,13 @@ namespace TAD.Navigation
             for (var sampleIndex = 0; sampleIndex <= sampleCount; sampleIndex++)
             {
                 var samplePosition = Vector2.Lerp(startPosition, destination, sampleIndex / (float)sampleCount);
-                if (!IsWalkable(samplePosition, radius, requiredHoleSize))
+                if (!IsWalkable(samplePosition, radius))
                 {
                     return false;
                 }
             }
 
             return true;
-        }
-
-        private int GetRequiredHoleSizeKey(int attackerSizeKey)
-        {
-            foreach (var holeSizeKey in holeSizeKeys)
-            {
-                if (holeSizeKey >= attackerSizeKey)
-                {
-                    return holeSizeKey;
-                }
-            }
-
-            return NoHoleRouteKey;
-        }
-
-        private static float GetRequiredHoleSize(int requiredHoleSizeKey)
-        {
-            return requiredHoleSizeKey == NoHoleRouteKey ? float.PositiveInfinity : GetSizeFromKey(requiredHoleSizeKey);
         }
 
         private static int GetSizeKey(float size)
@@ -839,34 +783,6 @@ namespace TAD.Navigation
             public int[] SmoothedNextIndices { get; }
 
             public int GoalIndex { get; set; } = -1;
-        }
-
-        private readonly struct RouteFieldKey : IEquatable<RouteFieldKey>
-        {
-            public RouteFieldKey(int attackerSizeKey, int requiredHoleSizeKey)
-            {
-                AttackerSizeKey = attackerSizeKey;
-                RequiredHoleSizeKey = requiredHoleSizeKey;
-            }
-
-            public int AttackerSizeKey { get; }
-
-            public int RequiredHoleSizeKey { get; }
-
-            public bool Equals(RouteFieldKey other)
-            {
-                return AttackerSizeKey == other.AttackerSizeKey && RequiredHoleSizeKey == other.RequiredHoleSizeKey;
-            }
-
-            public override bool Equals(object obj)
-            {
-                return obj is RouteFieldKey other && Equals(other);
-            }
-
-            public override int GetHashCode()
-            {
-                return (AttackerSizeKey * 397) ^ RequiredHoleSizeKey;
-            }
         }
 
         private readonly struct HeapNode
