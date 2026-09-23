@@ -114,6 +114,7 @@ MonoBehaviour:
   rangeCollider: {fileID: 7503971524455403412}
   rangeBody: {fileID: 35709057752819855}
   rangeVisual: {fileID: 5043079244291360440}
+  expMax: 10
 --- !u!114 &4453968977288024414
 MonoBehaviour:
   m_ObjectHideFlags: 0

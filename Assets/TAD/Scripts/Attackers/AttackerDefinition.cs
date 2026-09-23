@@ -13,6 +13,9 @@ namespace TAD.Attackers
         [SerializeField, Min(0f)] private float size = 1f;
         [SerializeField, Min(0)] private int sendCost = 5;
         [SerializeField, Min(0)] private int waveIncome = 1;
+        [SerializeField, Min(0)] private int expGiven = 10;
+        [SerializeField, Min(0)] private int killGain = 10;
+        [SerializeField, Min(0)] private int sendSize = 5;
 
         public string AttackerId => attackerId;
         public string DisplayName => displayName;
@@ -21,6 +24,9 @@ namespace TAD.Attackers
         public float Size => size;
         public int SendCost => sendCost;
         public int WaveIncome => waveIncome;
+        public int ExpGiven => expGiven;
+        public int KillGain => killGain;
+        public int SendSize => sendSize;
 
 #if UNITY_EDITOR
         private void OnValidate()
@@ -30,6 +36,9 @@ namespace TAD.Attackers
             size = Mathf.Max(0f, size);
             sendCost = Mathf.Max(0, sendCost);
             waveIncome = Mathf.Max(0, waveIncome);
+            expGiven = Mathf.Max(0, expGiven);
+            killGain = Mathf.Max(0, killGain);
+            sendSize = Mathf.Max(0, sendSize);
         }
 #endif
     }

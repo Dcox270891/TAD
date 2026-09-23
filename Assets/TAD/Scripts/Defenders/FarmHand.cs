@@ -22,7 +22,9 @@ namespace TAD.Defenders
         [SerializeField] private CircleCollider2D rangeCollider;
         [SerializeField] private Rigidbody2D rangeBody;
         [SerializeField] private DefenderRangeVisual rangeVisual;
+        [SerializeField, Min(1)] private int expMax = 10;
 
+        [System.NonSerialized] private int currentExp;
         private PooledInstance pooledInstance;
         private SpawnPool projectilePool;
         private readonly List<BasicAttacker> attackersInRange = new();
@@ -42,6 +44,12 @@ namespace TAD.Defenders
         /// The value remains the same if this farmhand is later reused from the pool.
         /// </summary>
         public long InstanceId => pooledInstance != null ? pooledInstance.RuntimeInstanceId : 0L;
+
+        /// <summary>Configured experience capacity for this farmhand.</summary>
+        public int ExpMax => expMax;
+
+        /// <summary>Current runtime experience for this placed farmhand.</summary>
+        public int CurrentExp => currentExp;
 
         /// <summary>World-space attack range supplied by the currently assigned weapon.</summary>
         public float Range => weaponDefinition != null ? weaponDefinition.Range : 0f;
@@ -77,6 +85,7 @@ namespace TAD.Defenders
 
         private void Awake()
         {
+            ResetExperience();
             ResolveComponents();
             ConfigureRangeBody();
             ConfigureRangeCollider();
@@ -143,6 +152,7 @@ namespace TAD.Defenders
 
         void IPoolLifecycle.OnTakenFromPool()
         {
+            ResetExperience();
             ResolveComponents();
 
             if (visual != null)
@@ -380,6 +390,11 @@ namespace TAD.Defenders
             rangeVisual.Configure(Range, sortingLayerId, sortingOrder, isRangeIndicatorVisible);
         }
 
+        private void ResetExperience()
+        {
+            currentExp = 0;
+        }
+
         private void ClearAttackersInRange()
         {
             attackersInRange.Clear();
@@ -408,6 +423,7 @@ namespace TAD.Defenders
 #if UNITY_EDITOR
         private void OnValidate()
         {
+            expMax = Mathf.Max(1, expMax);
             ResolveComponents();
             ConfigureRangeBody();
             ConfigureRangeCollider();

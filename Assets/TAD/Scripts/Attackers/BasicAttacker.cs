@@ -42,6 +42,9 @@ namespace TAD.Attackers
         public float Size => definition != null ? definition.Size : 0f;
         public int SendCost => definition != null ? definition.SendCost : 0;
         public int WaveIncome => definition != null ? definition.WaveIncome : 0;
+        public int ExpGiven => definition != null ? definition.ExpGiven : 0;
+        public int KillGain => definition != null ? definition.KillGain : 0;
+        public int SendSize => definition != null ? definition.SendSize : 0;
 
         private void Awake()
         {

@@ -19,3 +19,6 @@ MonoBehaviour:
   size: 1
   sendCost: 5
   waveIncome: 1
+  expGiven: 10
+  killGain: 10
+  sendSize: 5
