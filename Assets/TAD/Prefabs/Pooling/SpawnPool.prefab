@@ -53,7 +53,7 @@ MonoBehaviour:
     prefab: {fileID: 1396477453823266386, guid: 4c99c4a4f94ca3749b8f88c3f81e3163, type: 3}
     initialCapacity: 5
   - objectType: 2
-    prefab: {fileID: 0}
+    prefab: {fileID: 6925713925554940803, guid: 6b047fba528a63740813a18ead69958a, type: 3}
     initialCapacity: 5
 --- !u!114 &465870676978708901
 MonoBehaviour:

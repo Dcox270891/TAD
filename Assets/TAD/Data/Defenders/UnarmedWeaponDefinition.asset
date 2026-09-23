@@ -13,10 +13,11 @@ MonoBehaviour:
   m_Name: UnarmedWeaponDefinition
   m_EditorClassIdentifier: Assembly-CSharp::TAD.Defenders.WeaponDefinition
   displayName: Unarmed
-  description: A farmhand's fists. No projectile is used.
+  description: A farmhand's thrown hand. It repeatedly fires compact hand projectiles at attackers in range.
   cost: 0
   range: 5
-  projectilePrefab: {fileID: 0}
-  projectileSpeed: 0
+  attackSpeed: 1
+  projectilePrefab: {fileID: 6925713925554940803, guid: 6b047fba528a63740813a18ead69958a, type: 3}
+  projectileSpeed: 1
   damage: 1
-  projectileLifetime: 0
+  projectileLifetime: 3

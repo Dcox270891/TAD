@@ -20,7 +20,9 @@ namespace TAD.Defenders
         [SerializeField] private DefenderRangeVisual rangeVisual;
 
         private PooledInstance pooledInstance;
+        private SpawnPool projectilePool;
         private readonly List<BasicAttacker> attackersInRange = new();
+        private float nextFireTime;
         private bool isRangeIndicatorVisible;
 
         /// <summary>Visual used by the placement system to create a non-interactive preview.</summary>
@@ -78,10 +80,16 @@ namespace TAD.Defenders
         private void OnEnable()
         {
             ClearAttackersInRange();
+            nextFireTime = Time.time;
             isRangeIndicatorVisible = false;
             ConfigureRangeBody();
             ConfigureRangeCollider();
             ConfigureRangeVisual();
+        }
+
+        private void Update()
+        {
+            TryFireAtFirstAttackerInRange();
         }
 
         private void OnDisable()
@@ -95,6 +103,7 @@ namespace TAD.Defenders
         {
             weaponDefinition = definition;
             ClearAttackersInRange();
+            nextFireTime = Time.time;
             ConfigureRangeCollider();
             ConfigureRangeVisual();
         }
@@ -108,6 +117,12 @@ namespace TAD.Defenders
 
         private void OnTriggerEnter2D(Collider2D other)
         {
+            TrackAttacker(other);
+        }
+
+        private void OnTriggerStay2D(Collider2D other)
+        {
+            // Also catches an animal activated inside an already-active defender range.
             TrackAttacker(other);
         }
 
@@ -130,6 +145,7 @@ namespace TAD.Defenders
             }
 
             ClearAttackersInRange();
+            nextFireTime = Time.time;
             isRangeIndicatorVisible = false;
             ConfigureRangeBody();
             ConfigureRangeCollider();
@@ -139,6 +155,7 @@ namespace TAD.Defenders
         void IPoolLifecycle.OnReturnedToPool()
         {
             ClearAttackersInRange();
+            nextFireTime = 0f;
             SetRangeIndicatorVisible(false);
         }
 
@@ -160,6 +177,94 @@ namespace TAD.Defenders
             }
 
             attackersInRange.Add(attacker);
+            TryFireAtFirstAttackerInRange();
+        }
+
+        private void TryFireAtFirstAttackerInRange()
+        {
+            if (Time.time < nextFireTime || !TryGetFirstAttackerInRange(out var target))
+            {
+                return;
+            }
+
+            var weapon = weaponDefinition;
+            if (weapon == null || weapon.ProjectilePrefab == null || weapon.ProjectileSpeed <= 0f ||
+                weapon.Damage <= 0f || weapon.ProjectileLifetime <= 0f)
+            {
+                return;
+            }
+
+            var pool = ResolveProjectilePool();
+            if (pool == null)
+            {
+                return;
+            }
+
+            var origin = (Vector2)transform.position;
+            var projectileObject = pool.Spawn(PooledObjectType.Projectile, origin, Quaternion.identity);
+            if (projectileObject == null)
+            {
+                nextFireTime = Time.time + weapon.FireInterval;
+                return;
+            }
+
+            var projectile = projectileObject.GetComponent<FarmHandProjectile>();
+            if (projectile == null || !projectile.Launch(
+                    origin,
+                    target,
+                    weapon.ProjectileSpeed,
+                    weapon.Damage,
+                    weapon.ProjectileLifetime))
+            {
+                ReturnProjectileToPool(projectileObject);
+                nextFireTime = Time.time + weapon.FireInterval;
+                return;
+            }
+
+            nextFireTime = Time.time + weapon.FireInterval;
+        }
+
+        private bool TryGetFirstAttackerInRange(out BasicAttacker attacker)
+        {
+            PruneInvalidAttackers();
+            if (attackersInRange.Count > 0)
+            {
+                attacker = attackersInRange[0];
+                return true;
+            }
+
+            attacker = null;
+            return false;
+        }
+
+        private SpawnPool ResolveProjectilePool()
+        {
+            if (projectilePool != null)
+            {
+                return projectilePool;
+            }
+
+            pooledInstance ??= GetComponent<PooledInstance>();
+            projectilePool = pooledInstance != null ? pooledInstance.Owner : null;
+            projectilePool ??= Object.FindAnyObjectByType<SpawnPool>();
+            return projectilePool;
+        }
+
+        private static void ReturnProjectileToPool(GameObject projectileObject)
+        {
+            if (projectileObject == null)
+            {
+                return;
+            }
+
+            var pooledProjectile = projectileObject.GetComponent<PooledInstance>();
+            if (pooledProjectile != null)
+            {
+                pooledProjectile.ReturnToPool();
+                return;
+            }
+
+            projectileObject.SetActive(false);
         }
 
         private void ConfigureRangeBody()

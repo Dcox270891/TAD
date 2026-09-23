@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace TAD.Defenders
 {
@@ -19,6 +20,12 @@ namespace TAD.Defenders
         [Header("Attack Range")]
         [SerializeField, Min(0f)] private float range = 1f;
 
+        [Header("Attack Speed")]
+        [FormerlySerializedAs("fireInterval")]
+        [SerializeField, Min(0.01f)]
+        [Tooltip("Projectiles fired each second while a valid attacker remains in range.")]
+        private float attackSpeed = 1f;
+
         [Header("Projectile")]
         [SerializeField] private GameObject projectilePrefab;
         [SerializeField, Min(0f)] private float projectileSpeed;
@@ -27,6 +34,8 @@ namespace TAD.Defenders
 
         public int Cost => cost;
         public float Range => range;
+        public float AttackSpeed => attackSpeed;
+        public float FireInterval => 1f / Mathf.Max(0.01f, attackSpeed);
         public GameObject ProjectilePrefab => projectilePrefab;
         public float ProjectileSpeed => projectileSpeed;
         public float Damage => damage;
@@ -39,6 +48,7 @@ namespace TAD.Defenders
         {
             cost = Mathf.Max(0, cost);
             range = Mathf.Max(0f, range);
+            attackSpeed = Mathf.Max(0.01f, attackSpeed);
             projectileSpeed = Mathf.Max(0f, projectileSpeed);
             damage = Mathf.Max(0f, damage);
             projectileLifetime = Mathf.Max(0f, projectileLifetime);
