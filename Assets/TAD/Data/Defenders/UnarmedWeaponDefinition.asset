@@ -17,6 +17,7 @@ MonoBehaviour:
   cost: 0
   range: 5
   attackSpeed: 1
+  projectileType: 0
   projectilePrefab: {fileID: 6925713925554940803, guid: 6b047fba528a63740813a18ead69958a, type: 3}
   projectileSpeed: 1
   damage: 1

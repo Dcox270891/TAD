@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using TAD.Attackers;
+using TAD.Environment;
 using TAD.Pooling;
 using UnityEngine;
 
@@ -13,6 +14,9 @@ namespace TAD.Defenders
     [RequireComponent(typeof(SpriteRenderer), typeof(CircleCollider2D), typeof(Rigidbody2D))]
     public sealed class FarmHand : MonoBehaviour, IPoolLifecycle
     {
+        private const float BlockedTargetRetryInterval = 0.1f;
+        private const int LineOfSightHitCapacity = 16;
+
         [SerializeField] private SpriteRenderer visual;
         [SerializeField] private WeaponDefinition weaponDefinition;
         [SerializeField] private CircleCollider2D rangeCollider;
@@ -22,6 +26,8 @@ namespace TAD.Defenders
         private PooledInstance pooledInstance;
         private SpawnPool projectilePool;
         private readonly List<BasicAttacker> attackersInRange = new();
+        private readonly RaycastHit2D[] lineOfSightHits = new RaycastHit2D[LineOfSightHitCapacity];
+        private ContactFilter2D lineOfSightFilter;
         private float nextFireTime;
         private bool isRangeIndicatorVisible;
 
@@ -89,7 +95,7 @@ namespace TAD.Defenders
 
         private void Update()
         {
-            TryFireAtFirstAttackerInRange();
+            TryFireAtFirstAttackableAttacker();
         }
 
         private void OnDisable()
@@ -166,6 +172,15 @@ namespace TAD.Defenders
             rangeBody ??= GetComponent<Rigidbody2D>();
             rangeVisual ??= GetComponentInChildren<DefenderRangeVisual>(true);
             pooledInstance ??= GetComponent<PooledInstance>();
+            ConfigureLineOfSightFilter();
+        }
+
+        private void ConfigureLineOfSightFilter()
+        {
+            lineOfSightFilter = new ContactFilter2D();
+            lineOfSightFilter.useLayerMask = true;
+            lineOfSightFilter.layerMask = LayerMask.GetMask("Environment");
+            lineOfSightFilter.useTriggers = false;
         }
 
         private void TrackAttacker(Collider2D other)
@@ -177,12 +192,12 @@ namespace TAD.Defenders
             }
 
             attackersInRange.Add(attacker);
-            TryFireAtFirstAttackerInRange();
+            TryFireAtFirstAttackableAttacker();
         }
 
-        private void TryFireAtFirstAttackerInRange()
+        private void TryFireAtFirstAttackableAttacker()
         {
-            if (Time.time < nextFireTime || !TryGetFirstAttackerInRange(out var target))
+            if (Time.time < nextFireTime)
             {
                 return;
             }
@@ -191,6 +206,13 @@ namespace TAD.Defenders
             if (weapon == null || weapon.ProjectilePrefab == null || weapon.ProjectileSpeed <= 0f ||
                 weapon.Damage <= 0f || weapon.ProjectileLifetime <= 0f)
             {
+                return;
+            }
+
+            if (!TryGetFirstAttackableAttacker(weapon.ProjectileType, out var target))
+            {
+                // Avoid repeating line-of-sight physics queries every rendered frame while every nearby target is covered.
+                nextFireTime = Time.time + BlockedTargetRetryInterval;
                 return;
             }
 
@@ -224,16 +246,62 @@ namespace TAD.Defenders
             nextFireTime = Time.time + weapon.FireInterval;
         }
 
-        private bool TryGetFirstAttackerInRange(out BasicAttacker attacker)
+        private bool TryGetFirstAttackableAttacker(WeaponProjectileType projectileType, out BasicAttacker attacker)
         {
             PruneInvalidAttackers();
-            if (attackersInRange.Count > 0)
+
+            for (var index = 0; index < attackersInRange.Count; index++)
             {
-                attacker = attackersInRange[0];
-                return true;
+                var candidate = attackersInRange[index];
+                if (!IsCandidateBlockedByWall(candidate, projectileType))
+                {
+                    attacker = candidate;
+                    return true;
+                }
             }
 
             attacker = null;
+            return false;
+        }
+
+        private bool IsCandidateBlockedByWall(BasicAttacker candidate, WeaponProjectileType projectileType)
+        {
+            var origin = (Vector2)transform.position;
+            var targetPosition = candidate.CurrentPosition;
+            var direction = targetPosition - origin;
+            if (direction.sqrMagnitude <= 0.0001f)
+            {
+                return false;
+            }
+
+            var distance = direction.magnitude;
+            var hitCount = Physics2D.Raycast(
+                origin,
+                direction / distance,
+                lineOfSightFilter,
+                lineOfSightHits,
+                distance);
+
+            // A saturated buffer could conceal a later full-cover wall, so do not fire unless every hit was inspected.
+            if (hitCount >= lineOfSightHits.Length)
+            {
+                return true;
+            }
+
+            for (var index = 0; index < hitCount; index++)
+            {
+                var wall = lineOfSightHits[index].collider.GetComponentInParent<FarmWall>();
+                if (wall == null)
+                {
+                    continue;
+                }
+
+                if (projectileType != WeaponProjectileType.Ranged || wall.BlocksAllAttacks)
+                {
+                    return true;
+                }
+            }
+
             return false;
         }
 
