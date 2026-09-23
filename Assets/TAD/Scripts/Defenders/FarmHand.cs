@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using TAD.Attackers;
+using TAD.Economy;
 using TAD.Environment;
 using TAD.Pooling;
 using UnityEngine;
@@ -16,6 +17,8 @@ namespace TAD.Defenders
     {
         private const float BlockedTargetRetryInterval = 0.1f;
         private const int LineOfSightHitCapacity = 16;
+        private const float HelpedToKillExperiencePercent = 0.1f;
+        private const float ExperienceDecimalMultiplier = 10f;
 
         [SerializeField] private SpriteRenderer visual;
         [SerializeField] private WeaponDefinition weaponDefinition;
@@ -24,9 +27,10 @@ namespace TAD.Defenders
         [SerializeField] private DefenderRangeVisual rangeVisual;
         [SerializeField, Min(1)] private int expMax = 10;
 
-        [System.NonSerialized] private int currentExp;
+        [System.NonSerialized] private float currentExp;
         private PooledInstance pooledInstance;
         private SpawnPool projectilePool;
+        private ResourceBank defenderBank;
         private readonly List<BasicAttacker> attackersInRange = new();
         private readonly RaycastHit2D[] lineOfSightHits = new RaycastHit2D[LineOfSightHitCapacity];
         private ContactFilter2D lineOfSightFilter;
@@ -45,11 +49,11 @@ namespace TAD.Defenders
         /// </summary>
         public long InstanceId => pooledInstance != null ? pooledInstance.RuntimeInstanceId : 0L;
 
-        /// <summary>Configured experience capacity for this farmhand.</summary>
+        /// <summary>Configured experience threshold for this farmhand.</summary>
         public int ExpMax => expMax;
 
         /// <summary>Current runtime experience for this placed farmhand.</summary>
-        public int CurrentExp => currentExp;
+        public float CurrentExp => currentExp;
 
         /// <summary>World-space attack range supplied by the currently assigned weapon.</summary>
         public float Range => weaponDefinition != null ? weaponDefinition.Range : 0f;
@@ -128,6 +132,19 @@ namespace TAD.Defenders
         {
             isRangeIndicatorVisible = visible;
             ConfigureRangeVisual();
+        }
+
+        /// <summary>Awards one non-lethal helped-to-kill experience credit.</summary>
+        internal void AwardHelpedToKillExperience(int expGiven)
+        {
+            AddExperience(RoundToNearestTenth(expGiven * HelpedToKillExperiencePercent));
+        }
+
+        /// <summary>Awards a killing-blow experience credit and the matching Defender-bank gold.</summary>
+        internal void AwardKillingBlowReward(int expGiven, int killGain)
+        {
+            AddExperience(expGiven);
+            ResolveDefenderBank()?.AddGold(killGain);
         }
 
         private void OnTriggerEnter2D(Collider2D other)
@@ -242,6 +259,7 @@ namespace TAD.Defenders
 
             var projectile = projectileObject.GetComponent<FarmHandProjectile>();
             if (projectile == null || !projectile.Launch(
+                    this,
                     origin,
                     target,
                     weapon.ProjectileSpeed,
@@ -313,6 +331,26 @@ namespace TAD.Defenders
             }
 
             return false;
+        }
+
+        private ResourceBank ResolveDefenderBank()
+        {
+            if (defenderBank != null && defenderBank.BankSide == BankSide.Defender)
+            {
+                return defenderBank;
+            }
+
+            defenderBank = null;
+            foreach (var bank in Object.FindObjectsByType<ResourceBank>(FindObjectsInactive.Include))
+            {
+                if (bank.BankSide == BankSide.Defender)
+                {
+                    defenderBank = bank;
+                    break;
+                }
+            }
+
+            return defenderBank;
         }
 
         private SpawnPool ResolveProjectilePool()
@@ -390,9 +428,24 @@ namespace TAD.Defenders
             rangeVisual.Configure(Range, sortingLayerId, sortingOrder, isRangeIndicatorVisible);
         }
 
+        private void AddExperience(float amount)
+        {
+            if (amount <= 0f)
+            {
+                return;
+            }
+
+            currentExp = RoundToNearestTenth(currentExp + amount);
+        }
+
+        private static float RoundToNearestTenth(float amount)
+        {
+            return Mathf.Round(amount * ExperienceDecimalMultiplier) / ExperienceDecimalMultiplier;
+        }
+
         private void ResetExperience()
         {
-            currentExp = 0;
+            currentExp = 0f;
         }
 
         private void ClearAttackersInRange()

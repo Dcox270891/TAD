@@ -19,6 +19,7 @@ namespace TAD.Defenders
         private float hitRadius = 0.15f;
 
         private PooledInstance pooledInstance;
+        private FarmHand firingFarmHand;
         private Vector2 travelDirection;
         private float travelSpeed;
         private float damage;
@@ -63,9 +64,9 @@ namespace TAD.Defenders
         }
 
         /// <summary>Starts a straight, non-homing shot from a farmhand centre toward the selected attacker.</summary>
-        public bool Launch(Vector2 origin, BasicAttacker target, float speed, float damageAmount, float lifetime)
+        public bool Launch(FarmHand sourceFarmHand, Vector2 origin, BasicAttacker target, float speed, float damageAmount, float lifetime)
         {
-            if (!IsValidTarget(target) || speed <= 0f || damageAmount <= 0f || lifetime <= 0f)
+            if (sourceFarmHand == null || !IsValidTarget(target) || speed <= 0f || damageAmount <= 0f || lifetime <= 0f)
             {
                 return false;
             }
@@ -84,6 +85,7 @@ namespace TAD.Defenders
                 return false;
             }
 
+            firingFarmHand = sourceFarmHand;
             travelDirection = delta.normalized;
             travelSpeed = speed;
             damage = damageAmount;
@@ -117,7 +119,20 @@ namespace TAD.Defenders
                 return;
             }
 
-            attacker.TakeDamage(damage);
+            var expGiven = attacker.ExpGiven;
+            var killGain = attacker.KillGain;
+            if (attacker.TryTakeDamage(damage, firingFarmHand, out var wasDefeated, out var helpedToKillAdded))
+            {
+                if (wasDefeated)
+                {
+                    firingFarmHand?.AwardKillingBlowReward(expGiven, killGain);
+                }
+                else if (helpedToKillAdded)
+                {
+                    firingFarmHand?.AwardHelpedToKillExperience(expGiven);
+                }
+            }
+
             ReturnToPool();
         }
 
@@ -178,6 +193,7 @@ namespace TAD.Defenders
         private void ResetRuntimeState()
         {
             isLaunched = false;
+            firingFarmHand = null;
             travelDirection = Vector2.zero;
             travelSpeed = 0f;
             damage = 0f;

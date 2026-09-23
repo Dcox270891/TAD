@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TAD.Defenders;
 using TAD.Environment;
 using TAD.Navigation;
 using TAD.Pooling;
@@ -25,6 +26,7 @@ namespace TAD.Attackers
         private float currentHealth;
         private bool hasReachedFoodStore;
         private readonly List<Vector3> routePoints = new();
+        private readonly HashSet<FarmHand> helpedToKillDefenders = new();
         private int nextRoutePointIndex;
 
         public AttackerDefinition Definition => definition;
@@ -45,6 +47,9 @@ namespace TAD.Attackers
         public int ExpGiven => definition != null ? definition.ExpGiven : 0;
         public int KillGain => definition != null ? definition.KillGain : 0;
         public int SendSize => definition != null ? definition.SendSize : 0;
+
+        /// <summary>Unique defenders that have dealt a non-lethal hit during this attacker activation.</summary>
+        public IReadOnlyCollection<FarmHand> HelpedToKillDefenders => helpedToKillDefenders;
 
         private void Awake()
         {
@@ -121,6 +126,18 @@ namespace TAD.Attackers
         /// <summary>Applies damage and returns true when this attacker is defeated.</summary>
         public bool TakeDamage(float damage)
         {
+            TryTakeDamage(damage, null, out var wasDefeated, out _);
+            return wasDefeated;
+        }
+
+        /// <summary>
+        /// Applies damage from a defender and reports whether damage was accepted, whether it was lethal,
+        /// and whether this defender earned a new helped-to-kill credit.
+        /// </summary>
+        public bool TryTakeDamage(float damage, FarmHand defender, out bool wasDefeated, out bool helpedToKillAdded)
+        {
+            wasDefeated = false;
+            helpedToKillAdded = false;
             if (damage <= 0f || currentHealth <= 0f)
             {
                 return false;
@@ -129,7 +146,15 @@ namespace TAD.Attackers
             currentHealth = Mathf.Max(0f, currentHealth - damage);
             if (currentHealth > 0f)
             {
-                return false;
+                helpedToKillAdded = defender != null && helpedToKillDefenders.Add(defender);
+                return true;
+            }
+
+            wasDefeated = true;
+            if (defender != null)
+            {
+                // A defender with an existing assisted-kill credit receives the killing-blow reward instead.
+                helpedToKillDefenders.Remove(defender);
             }
 
             ReturnToPool();
@@ -172,6 +197,7 @@ namespace TAD.Attackers
             hasReachedFoodStore = false;
             moveDirection = startingMoveDirection.sqrMagnitude > 0f ? startingMoveDirection.normalized : Vector2.right;
             routePoints.Clear();
+            helpedToKillDefenders.Clear();
             nextRoutePointIndex = 0;
 
             if (body != null)
