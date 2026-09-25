@@ -22,6 +22,9 @@ namespace TAD.Attackers
         private readonly List<Vector3> routePoints = new();
         private readonly HashSet<FarmHand> helpedToKillDefenders = new();
         private readonly List<Collider2D> ignoredHalfCoverColliders = new();
+        // Physical farmhand colliders are never navigation obstacles. The actual range and projectile colliders
+        // remain triggers, so they are deliberately left alone to preserve targeting and damage callbacks.
+        private readonly List<Collider2D> ignoredFarmHandColliders = new();
 
         private Rigidbody2D body;
         private PolygonCollider2D bodyCollider;
@@ -74,13 +77,26 @@ namespace TAD.Attackers
 
         private void OnEnable()
         {
+            FarmHand.FarmHandEnabled += HandleFarmHandEnabled;
             // IgnoreCollision state is reset by Unity when a pooled object is reactivated.
             ConfigureTraversalCollisions();
         }
 
         private void OnDisable()
         {
+            FarmHand.FarmHandEnabled -= HandleFarmHandEnabled;
             RestoreTraversalCollisions();
+        }
+
+        private void OnCollisionEnter2D(Collision2D collision)
+        {
+            IgnoreFarmHandCollision(collision);
+        }
+
+        private void OnCollisionStay2D(Collision2D collision)
+        {
+            // Covers a farmhand placed after this attacker has already begun moving.
+            IgnoreFarmHandCollision(collision);
         }
 
         private void FixedUpdate()
@@ -344,6 +360,8 @@ namespace TAD.Attackers
         private void ConfigureTraversalCollisions()
         {
             RestoreTraversalCollisions();
+            ConfigureFarmHandCollisionSafety();
+
             if (bodyCollider == null || TraversalProfile != AttackerTraversalProfile.IgnoresHalfCover)
             {
                 return;
@@ -363,11 +381,75 @@ namespace TAD.Attackers
             }
         }
 
+        /// <summary>
+        /// Preserves the rule that farmhands can target animals but cannot form a solid wall.
+        /// Only unexpected non-trigger colliders on a farmhand hierarchy are ignored. Trigger colliders
+        /// (the range sensor and pooled projectile hitboxes) continue to receive their normal callbacks.
+        /// </summary>
+        private void ConfigureFarmHandCollisionSafety()
+        {
+            if (bodyCollider == null)
+            {
+                return;
+            }
+
+            var farmHands = Object.FindObjectsByType<FarmHand>(FindObjectsInactive.Exclude);
+            foreach (var farmHand in farmHands)
+            {
+                IgnoreFarmHandColliders(farmHand);
+            }
+        }
+
+        private void HandleFarmHandEnabled(FarmHand farmHand)
+        {
+            // Farmhands can be placed while a wave is in progress, after this attacker was activated.
+            IgnoreFarmHandColliders(farmHand);
+        }
+
+        private void IgnoreFarmHandColliders(FarmHand farmHand)
+        {
+            if (bodyCollider == null || farmHand == null)
+            {
+                return;
+            }
+
+            var farmHandColliders = farmHand.GetComponentsInChildren<Collider2D>(true);
+            foreach (var farmHandCollider in farmHandColliders)
+            {
+                IgnoreFarmHandCollider(farmHandCollider);
+            }
+        }
+
+        private void IgnoreFarmHandCollision(Collision2D collision)
+        {
+            if (collision == null)
+            {
+                return;
+            }
+
+            // Unity exposes both sides of a 2D collision. One is this attacker and the other may be a farmhand.
+            IgnoreFarmHandCollider(collision.collider);
+            IgnoreFarmHandCollider(collision.otherCollider);
+        }
+
+        private void IgnoreFarmHandCollider(Collider2D collider)
+        {
+            if (bodyCollider == null || collider == null || collider == bodyCollider || collider.isTrigger ||
+                ignoredFarmHandColliders.Contains(collider) || collider.GetComponentInParent<FarmHand>() == null)
+            {
+                return;
+            }
+
+            Physics2D.IgnoreCollision(bodyCollider, collider, true);
+            ignoredFarmHandColliders.Add(collider);
+        }
+
         private void RestoreTraversalCollisions()
         {
             if (bodyCollider == null)
             {
                 ignoredHalfCoverColliders.Clear();
+                ignoredFarmHandColliders.Clear();
                 return;
             }
 
@@ -379,7 +461,16 @@ namespace TAD.Attackers
                 }
             }
 
+            foreach (var farmHandCollider in ignoredFarmHandColliders)
+            {
+                if (farmHandCollider != null)
+                {
+                    Physics2D.IgnoreCollision(bodyCollider, farmHandCollider, false);
+                }
+            }
+
             ignoredHalfCoverColliders.Clear();
+            ignoredFarmHandColliders.Clear();
         }
 
         private void ReturnToPool()

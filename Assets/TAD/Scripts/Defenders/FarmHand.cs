@@ -68,6 +68,9 @@ namespace TAD.Defenders
         /// <summary>Raised after this farmhand's experience or level changes.</summary>
         public event System.Action ProgressionChanged;
 
+        /// <summary>Raised after a farmhand has configured its non-blocking range sensor.</summary>
+        public static event System.Action<FarmHand> FarmHandEnabled;
+
         /// <summary>World-space attack range supplied by the currently assigned weapon.</summary>
         public float Range => weaponDefinition != null ? weaponDefinition.Range : 0f;
 
@@ -117,6 +120,7 @@ namespace TAD.Defenders
             ConfigureRangeBody();
             ConfigureRangeCollider();
             ConfigureRangeVisual();
+            FarmHandEnabled?.Invoke(this);
         }
 
         private void Update()
