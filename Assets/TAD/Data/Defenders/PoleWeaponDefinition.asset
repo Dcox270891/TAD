@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 79697559321644b468d8daf28721571f, type: 3}
+  m_Name: PoleWeaponDefinition
+  m_EditorClassIdentifier: Assembly-CSharp::TAD.Defenders.WeaponDefinition
+  displayName: Pole
+  description: A long melee pole. One pole sweeps 180 degrees around the farmhand and can strike each attacker once per swing.
+  cost: 36
+  range: 1.5
+  attackSpeed: 1.2
+  projectileType: 0
+  projectileBehavior: 1
+  projectileLifetimeMode: 0
+  projectilePrefab: {fileID: 2074273349284568064, guid: ff4fd6ba21af5704b81faf95406d3461, type: 3}
+  projectileSpeed: 7
+  damage: 12
+  projectileLifetime: 0.75
+  maximumActiveProjectiles: 1
+  initialSpeedMultiplier: 1
+  rollingAcceleration: 0
+  poleSweepAngle: 180

@@ -69,6 +69,15 @@ namespace TAD.Pooling
         [Tooltip("Objects prewarmed for every additional attacker prefab.")]
         private int additionalAttackerInitialCapacity = 5;
 
+        [Header("Additional Projectiles")]
+        [SerializeField]
+        [Tooltip("One reusable projectile prefab for each specialised defender weapon. The default Projectile pool remains the Unarmed hand.")]
+        private GameObject[] additionalProjectilePrefabs = Array.Empty<GameObject>();
+
+        [SerializeField, Min(0)]
+        [Tooltip("Objects prewarmed for every additional projectile prefab.")]
+        private int additionalProjectileInitialCapacity = 5;
+
         [SerializeField]
         [Tooltip("The route map owned by this Spawn Pool. It is required so pooled attackers always share the same map.")]
         private FarmRouteMapper routeMapper;
@@ -78,6 +87,7 @@ namespace TAD.Pooling
 
         private readonly Dictionary<PooledObjectType, PoolBucket> pools = new();
         private readonly Dictionary<AttackerDefinition, PoolBucket> attackerPoolsByDefinition = new();
+        private readonly Dictionary<GameObject, PoolBucket> projectilePoolsByPrefab = new();
         private readonly Dictionary<PooledInstance, PoolBucket> instanceBuckets = new();
         private bool isInitialized;
 
@@ -208,6 +218,29 @@ namespace TAD.Pooling
             return SpawnFromBucket(pool, position, rotation, parent);
         }
 
+        /// <summary>Activates a pooled projectile matched to the exact prefab selected by a weapon definition.</summary>
+        public GameObject SpawnProjectile(
+            GameObject projectilePrefab,
+            Vector3 position,
+            Quaternion rotation,
+            Transform parent = null)
+        {
+            if (projectilePrefab == null)
+            {
+                Debug.LogError($"{name} cannot spawn a null projectile prefab.", this);
+                return null;
+            }
+
+            Initialize();
+            if (!projectilePoolsByPrefab.TryGetValue(projectilePrefab, out var pool))
+            {
+                Debug.LogError($"{name} has no configured pooled bucket for projectile prefab {projectilePrefab.name}.", this);
+                return null;
+            }
+
+            return SpawnFromBucket(pool, position, rotation, parent);
+        }
+
         /// <summary>Activates a reusable attacker prefab matched to a shared attacker definition.</summary>
         public GameObject SpawnAttacker(
             AttackerDefinition definition,
@@ -267,12 +300,13 @@ namespace TAD.Pooling
                 var pool = CreateBucket(settings.Prefab, settings.ObjectType, settings.ObjectType + " Pool");
                 pools.Add(settings.ObjectType, pool);
                 RegisterAttackerPool(settings.Prefab, pool);
+                RegisterProjectilePool(settings.Prefab, pool);
                 Prewarm(pool, settings.InitialCapacity);
             }
 
             if (additionalAttackerPrefabs == null)
             {
-                return;
+                additionalAttackerPrefabs = Array.Empty<GameObject>();
             }
 
             foreach (var attackerPrefab in additionalAttackerPrefabs)
@@ -298,6 +332,29 @@ namespace TAD.Pooling
                 attackerPoolsByDefinition.Add(attacker.Definition, pool);
                 Prewarm(pool, additionalAttackerInitialCapacity);
             }
+
+            if (additionalProjectilePrefabs == null)
+            {
+                return;
+            }
+
+            foreach (var projectilePrefab in additionalProjectilePrefabs)
+            {
+                if (projectilePrefab == null)
+                {
+                    continue;
+                }
+
+                if (projectilePoolsByPrefab.ContainsKey(projectilePrefab))
+                {
+                    Debug.LogWarning($"{name} already has a pooled bucket for projectile prefab {projectilePrefab.name}; the duplicate was ignored.", this);
+                    continue;
+                }
+
+                var projectilePool = CreateBucket(projectilePrefab, PooledObjectType.Projectile, $"Projectile Pool ({projectilePrefab.name})");
+                RegisterProjectilePool(projectilePrefab, projectilePool);
+                Prewarm(projectilePool, additionalProjectileInitialCapacity);
+            }
         }
 
         private PoolBucket CreateBucket(GameObject prefab, PooledObjectType objectType, string containerName)
@@ -321,6 +378,19 @@ namespace TAD.Pooling
             if (!attackerPoolsByDefinition.TryAdd(attacker.Definition, pool))
             {
                 Debug.LogWarning($"{name} has more than one pooled prefab for attacker definition {attacker.Definition.DisplayName}. The later prefab is ignored.", this);
+            }
+        }
+
+        private void RegisterProjectilePool(GameObject prefab, PoolBucket pool)
+        {
+            if (pool.ObjectType != PooledObjectType.Projectile || prefab == null)
+            {
+                return;
+            }
+
+            if (!projectilePoolsByPrefab.TryAdd(prefab, pool))
+            {
+                Debug.LogWarning($"{name} has more than one pooled bucket for projectile prefab {prefab.name}. The later prefab was ignored.", this);
             }
         }
 
@@ -394,6 +464,7 @@ namespace TAD.Pooling
             }
 
             additionalAttackerInitialCapacity = Mathf.Max(0, additionalAttackerInitialCapacity);
+            additionalProjectileInitialCapacity = Mathf.Max(0, additionalProjectileInitialCapacity);
         }
 #endif
     }

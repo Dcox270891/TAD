@@ -69,6 +69,12 @@ MonoBehaviour:
   - {fileID: 7380514914642394048, guid: 3dc1798705f367b4f9d5282ed4f8a271, type: 3}
   - {fileID: 1133527070088945012, guid: 4667ed6be8f017a43854e57e992ee79f, type: 3}
   additionalAttackerInitialCapacity: 5
+  additionalProjectilePrefabs:
+  - {fileID: 2074273349284568064, guid: ff4fd6ba21af5704b81faf95406d3461, type: 3}
+  - {fileID: 2511437359071816503, guid: 70cae31e09c43cb498c3a44db79aeb6b, type: 3}
+  - {fileID: 1958398127359794655, guid: 1d5d2105462eb724b94bba69f475fab9, type: 3}
+  - {fileID: 3479797706705336641, guid: cc83f71ace6e7e44dab448c06be1d467, type: 3}
+  additionalProjectileInitialCapacity: 5
   routeMapper: {fileID: 739535124104778831}
 --- !u!114 &465870676978708901
 MonoBehaviour:

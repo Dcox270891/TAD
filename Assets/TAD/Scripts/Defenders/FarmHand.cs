@@ -38,6 +38,7 @@ namespace TAD.Defenders
         private ContactFilter2D lineOfSightFilter;
         private float nextFireTime;
         private bool isRangeIndicatorVisible;
+        private readonly List<FarmHandProjectileBase> limitedActiveProjectiles = new();
 
         /// <summary>Visual used by the placement system to create a non-interactive preview.</summary>
         public SpriteRenderer Visual => visual;
@@ -132,6 +133,7 @@ namespace TAD.Defenders
 
         private void OnDisable()
         {
+            CancelLimitedProjectiles();
             ClearAttackersInRange();
             SetRangeIndicatorVisible(false);
         }
@@ -139,6 +141,7 @@ namespace TAD.Defenders
         /// <summary>Assigns a weapon and immediately updates this defender's detection and visible ranges.</summary>
         public void SetWeapon(WeaponDefinition definition)
         {
+            CancelLimitedProjectiles();
             weaponDefinition = definition;
             ClearAttackersInRange();
             nextFireTime = Time.time;
@@ -172,6 +175,38 @@ namespace TAD.Defenders
             ResolveDefenderBank()?.AddGold(killGain);
         }
 
+        /// <summary>Applies projectile damage while preserving this defender's assisted XP, kill XP, and gold rules.</summary>
+        internal bool TryDamageAttacker(BasicAttacker attacker, float damageAmount)
+        {
+            if (!IsValidAttacker(attacker) || damageAmount <= 0f)
+            {
+                return false;
+            }
+
+            var expGiven = attacker.ExpGiven;
+            var killGain = attacker.KillGain;
+            if (!attacker.TryTakeDamage(
+                    damageAmount,
+                    this,
+                    out var wasDefeated,
+                    out var helpedToKillAdded,
+                    out var killingBlowReplacedHelpedToKill))
+            {
+                return false;
+            }
+
+            if (wasDefeated)
+            {
+                AwardKillingBlowReward(expGiven, killGain, killingBlowReplacedHelpedToKill);
+            }
+            else if (helpedToKillAdded)
+            {
+                AwardHelpedToKillExperience(expGiven);
+            }
+
+            return true;
+        }
+
         private void OnTriggerEnter2D(Collider2D other)
         {
             TrackAttacker(other);
@@ -194,6 +229,7 @@ namespace TAD.Defenders
 
         void IPoolLifecycle.OnTakenFromPool()
         {
+            CancelLimitedProjectiles();
             ResetProgression();
             ResolveComponents();
 
@@ -213,6 +249,7 @@ namespace TAD.Defenders
 
         void IPoolLifecycle.OnReturnedToPool()
         {
+            CancelLimitedProjectiles();
             ClearAttackersInRange();
             nextFireTime = 0f;
             SetRangeIndicatorVisible(false);
@@ -258,7 +295,7 @@ namespace TAD.Defenders
             var weapon = weaponDefinition;
             var damage = Damage;
             if (weapon == null || weapon.ProjectilePrefab == null || weapon.ProjectileSpeed <= 0f ||
-                damage <= 0f || weapon.ProjectileLifetime <= 0f)
+                damage <= 0f || (weapon.UsesTimedLifetime && weapon.ProjectileLifetime <= 0f))
             {
                 return;
             }
@@ -276,29 +313,84 @@ namespace TAD.Defenders
                 return;
             }
 
+            if (!CanLaunchProjectile(weapon))
+            {
+                return;
+            }
+
             var origin = (Vector2)transform.position;
-            var projectileObject = pool.Spawn(PooledObjectType.Projectile, origin, Quaternion.identity);
+            var projectileObject = pool.SpawnProjectile(weapon.ProjectilePrefab, origin, Quaternion.identity);
             if (projectileObject == null)
             {
                 nextFireTime = Time.time + weapon.FireInterval;
                 return;
             }
 
-            var projectile = projectileObject.GetComponent<FarmHandProjectile>();
+            var projectile = projectileObject.GetComponent<FarmHandProjectileBase>();
             if (projectile == null || !projectile.Launch(
                     this,
                     origin,
                     target,
-                    weapon.ProjectileSpeed,
-                    damage,
-                    weapon.ProjectileLifetime))
+                    weapon,
+                    damage))
             {
                 ReturnProjectileToPool(projectileObject);
                 nextFireTime = Time.time + weapon.FireInterval;
                 return;
             }
 
+            if (weapon.MaximumActiveProjectiles > 0)
+            {
+                limitedActiveProjectiles.Add(projectile);
+            }
+
             nextFireTime = Time.time + weapon.FireInterval;
+        }
+
+        private bool CanLaunchProjectile(WeaponDefinition weapon)
+        {
+            if (weapon == null || weapon.MaximumActiveProjectiles <= 0)
+            {
+                return true;
+            }
+
+            PruneLimitedActiveProjectiles();
+            var activeCount = 0;
+            foreach (var projectile in limitedActiveProjectiles)
+            {
+                if (projectile != null && projectile.IsLaunched && projectile.Source == this &&
+                    projectile.WeaponDefinition == weapon)
+                {
+                    activeCount++;
+                }
+            }
+
+            return activeCount < weapon.MaximumActiveProjectiles;
+        }
+
+        private void PruneLimitedActiveProjectiles()
+        {
+            for (var index = limitedActiveProjectiles.Count - 1; index >= 0; index--)
+            {
+                var projectile = limitedActiveProjectiles[index];
+                if (projectile == null || !projectile.IsLaunched || projectile.Source != this)
+                {
+                    limitedActiveProjectiles.RemoveAt(index);
+                }
+            }
+        }
+
+        private void CancelLimitedProjectiles()
+        {
+            foreach (var projectile in limitedActiveProjectiles)
+            {
+                if (projectile != null && projectile.IsLaunched && projectile.Source == this)
+                {
+                    projectile.Cancel();
+                }
+            }
+
+            limitedActiveProjectiles.Clear();
         }
 
         private bool TryGetFirstAttackableAttacker(WeaponProjectileType projectileType, out BasicAttacker attacker)
