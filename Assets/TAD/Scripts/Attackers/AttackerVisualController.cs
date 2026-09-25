@@ -12,6 +12,7 @@ namespace TAD.Attackers
     public sealed class AttackerVisualController : MonoBehaviour, IPoolLifecycle
     {
         private const float MovementDirectionThreshold = 0.0001f;
+        private const float MinimumDisplaySize = 0.01f;
 
         [SerializeField] private SpriteRenderer spriteRenderer;
         [SerializeField]
@@ -23,10 +24,14 @@ namespace TAD.Attackers
         private float movementElapsed;
         private int lastDirectionIndex;
         private bool isPlayingDeath;
+        private Vector3 baseLocalScale;
+        private bool hasBaseLocalScale;
 
         private void Awake()
         {
+            CacheBaseLocalScale();
             ResolveComponents();
+            RefreshDisplayScale();
             RefreshMovementSprite();
         }
 
@@ -72,6 +77,7 @@ namespace TAD.Attackers
             isPlayingDeath = false;
             movementElapsed = 0f;
             ResolveComponents();
+            RefreshDisplayScale();
 
             if (spriteRenderer != null)
             {
@@ -138,6 +144,28 @@ namespace TAD.Attackers
         {
             spriteRenderer ??= GetComponent<SpriteRenderer>();
             attacker ??= GetComponentInParent<BasicAttacker>();
+        }
+
+        private void RefreshDisplayScale()
+        {
+            if (attacker == null)
+            {
+                return;
+            }
+
+            CacheBaseLocalScale();
+            transform.localScale = baseLocalScale * Mathf.Max(MinimumDisplaySize, attacker.Size);
+        }
+
+        private void CacheBaseLocalScale()
+        {
+            if (hasBaseLocalScale)
+            {
+                return;
+            }
+
+            baseLocalScale = transform.localScale;
+            hasBaseLocalScale = true;
         }
 
         private void StopDeathRoutine()
