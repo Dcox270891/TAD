@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.IO;
 using TAD.Levels;
 using TAD.Progression;
@@ -12,8 +11,6 @@ namespace TAD.UI
     [DisallowMultipleComponent]
     public sealed class MainMenuController : MonoBehaviour
     {
-        private const float MinimumLoadingScreenDuration = 0.25f;
-
         [Header("Menu Buttons")]
         [SerializeField] private UnityEngine.UI.Button selectLevelButton;
         [SerializeField] private UnityEngine.UI.Button playButton;
@@ -171,47 +168,16 @@ namespace TAD.UI
             playerProfile.lastPlayedLevelId = level.Id;
             SaveProfile();
             Time.timeScale = 1f;
-            isLoadingLevel = true;
-            StartCoroutine(LoadLevelAsync(sceneBuildIndex, level.SceneName));
+            isLoadingLevel = levelLoadingOverlay.TryLoadScene(sceneBuildIndex, level.SceneName, HandleLevelLoadFailed);
+            if (!isLoadingLevel)
+            {
+                Debug.LogError($"Main Menu could not begin loading level scene '{level.SceneName}'.", this);
+            }
         }
 
-        private IEnumerator LoadLevelAsync(int sceneBuildIndex, string sceneName)
+        private void HandleLevelLoadFailed()
         {
-            levelLoadingOverlay.Show();
-            var loadingScreenShownAt = Time.realtimeSinceStartup;
-
-            // Give the Canvas one frame to render before the asynchronous scene work starts.
-            yield return null;
-
-            AsyncOperation loadOperation = SceneManager.LoadSceneAsync(sceneBuildIndex);
-            if (loadOperation == null)
-            {
-                Debug.LogError($"Could not start loading level scene '{sceneName}'.", this);
-                levelLoadingOverlay.Hide();
-                isLoadingLevel = false;
-                yield break;
-            }
-
-            // Unity reports 0-0.9 while content is prepared. Hold activation briefly so 100% can be shown.
-            loadOperation.allowSceneActivation = false;
-            while (loadOperation.progress < 0.9f)
-            {
-                levelLoadingOverlay.SetProgress(loadOperation.progress / 0.9f);
-                yield return null;
-            }
-
-            levelLoadingOverlay.SetProgress(1f);
-            var remainingVisibleTime = MinimumLoadingScreenDuration - (Time.realtimeSinceStartup - loadingScreenShownAt);
-            if (remainingVisibleTime > 0f)
-            {
-                yield return new WaitForSecondsRealtime(remainingVisibleTime);
-            }
-            else
-            {
-                yield return null;
-            }
-
-            loadOperation.allowSceneActivation = true;
+            isLoadingLevel = false;
         }
 
         private void ShowNotImplemented(UnityEngine.UI.Button sourceButton, string title)

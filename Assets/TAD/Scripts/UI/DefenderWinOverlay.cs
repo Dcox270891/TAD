@@ -18,10 +18,12 @@ namespace TAD.UI
         [SerializeField] private UnityEngine.UI.Button mainMenuButton;
         [SerializeField] private UnityEngine.UI.Button quitButton;
         [SerializeField] private string mainMenuSceneName = "MainMenu";
+        [SerializeField] private LevelLoadingOverlay levelLoadingOverlayPrefab;
 
         private DayCycleController dayCycle;
         private bool buttonsSubscribed;
         private bool dayCycleSubscribed;
+        private bool isRestarting;
 
         public bool IsVisible => modalOverlay != null && modalOverlay.IsVisible;
 
@@ -62,18 +64,49 @@ namespace TAD.UI
             ShowIfDefendersHaveWon();
         }
 
-        /// <summary>Reloads the current level from its initial preparation phase.</summary>
+        /// <summary>Reloads the active gameplay scene through the shared loading-screen transition.</summary>
         public void Restart()
         {
+            if (isRestarting)
+            {
+                return;
+            }
+
             var activeScene = SceneManager.GetActiveScene();
             if (!activeScene.IsValid() || activeScene.buildIndex < 0)
             {
                 return;
             }
 
+            if (levelLoadingOverlayPrefab == null)
+            {
+                Debug.LogError("Defender Win Overlay is missing its Level Loading Overlay prefab.", this);
+                return;
+            }
+
             modalOverlay?.Hide();
             Time.timeScale = 1f;
-            SceneManager.LoadScene(activeScene.buildIndex);
+            var loadingOverlay = Instantiate(levelLoadingOverlayPrefab);
+            isRestarting = loadingOverlay.TryLoadScene(
+                activeScene.buildIndex,
+                activeScene.name,
+                () => HandleRestartLoadFailed(loadingOverlay));
+            if (!isRestarting)
+            {
+                HandleRestartLoadFailed(loadingOverlay);
+            }
+        }
+
+        private void HandleRestartLoadFailed(LevelLoadingOverlay loadingOverlay)
+        {
+            isRestarting = false;
+            if (loadingOverlay != null)
+            {
+                Destroy(loadingOverlay.gameObject);
+            }
+
+            modalOverlay?.Show();
+            SelectRestartButton();
         }
 
         /// <summary>Leaves the match and returns to the Main Menu.</summary>

@@ -179,3 +179,4 @@ MonoBehaviour:
   mainMenuButton: {fileID: 4773096624630219385}
   quitButton: {fileID: 4647469702548462675}
   mainMenuSceneName: MainMenu
+  levelLoadingOverlayPrefab: {fileID: 711827298958036746, guid: 5e1abc7f1987e7440a716dd49ca9e6ba, type: 3}
