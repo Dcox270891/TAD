@@ -13,6 +13,8 @@ namespace TAD.Attackers
     {
         private const float MovementDirectionThreshold = 0.0001f;
         private const float MinimumDisplaySize = 0.01f;
+        // The map is intentionally broad; enlarge visuals without changing navigation or hitboxes.
+        private const float VisualScaleMultiplier = 4f;
 
         [SerializeField] private SpriteRenderer spriteRenderer;
         [SerializeField]
@@ -154,7 +156,7 @@ namespace TAD.Attackers
             }
 
             CacheBaseLocalScale();
-            transform.localScale = baseLocalScale * Mathf.Max(MinimumDisplaySize, attacker.Size);
+            transform.localScale = baseLocalScale * (VisualScaleMultiplier * Mathf.Max(MinimumDisplaySize, attacker.Size));
         }
 
         private void CacheBaseLocalScale()
