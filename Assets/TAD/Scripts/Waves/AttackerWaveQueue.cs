@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using TAD.Attackers;
 using TAD.Economy;
@@ -7,41 +8,66 @@ using UnityEngine;
 namespace TAD.Waves
 {
     /// <summary>
-    /// Collects attacker groups selected by the player and sends them as one pooled, route-validated wave.
+    /// Records attacker-card selections as FIFO groups. At the end of preparation, a snapshot of
+    /// those groups is sent one after another; selections made during combat remain queued for the next day.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(WaveController))]
     public sealed class AttackerWaveQueue : MonoBehaviour
     {
+        private sealed class QueuedAttackerGroup
+        {
+            public QueuedAttackerGroup(AttackerDefinition definition)
+            {
+                Definition = definition;
+                Count = definition != null ? definition.SendSize : 0;
+                Income = definition != null ? definition.WaveIncome : 0;
+            }
+
+            public AttackerDefinition Definition { get; }
+            public int Count { get; }
+            public int Income { get; }
+        }
+
         [SerializeField, Min(0f)]
-        [Tooltip("Seconds between attackers in a player-composed wave.")]
+        [Tooltip("Seconds between attackers in each player-selected group.")]
         private float spawnInterval = 0.2f;
 
         [SerializeField]
-        [Tooltip("The player bank that pays for attacker groups and receives their queued wave income.")]
+        [Tooltip("The player bank that pays for attacker groups and receives their income when sent groups resolve.")]
         private ResourceBank attackerBank;
 
-        private readonly List<AttackerDefinition> queuedAttackers = new();
+        private readonly Queue<QueuedAttackerGroup> queuedGroups = new();
+        private readonly Queue<QueuedAttackerGroup> dispatchedGroups = new();
+        private readonly List<AttackerDefinition> spawnBuffer = new();
         private WaveController waveController;
-        private bool isSubscribed;
+        private DayCycleController dayCycle;
+        private Coroutine nextGroupRoutine;
+        private Action<bool> sequenceCompletion;
+        private int dispatchedIncome;
+        private bool isSending;
 
-        public bool HasQueuedAttackers => queuedAttackers.Count > 0;
-        public int QueuedAttackerCount => queuedAttackers.Count;
-        public bool CanQueueAttackers => waveController != null && !waveController.IsRunning;
-        public bool CanSendQueuedWave => HasQueuedAttackers && CanQueueAttackers;
+        public bool HasQueuedAttackers => queuedGroups.Count > 0;
+        public int QueuedWaveCount => queuedGroups.Count;
+        public int QueuedAttackerCount => CountAttackers(queuedGroups);
+        public bool IsSending => isSending;
+        public bool CanQueueAttackers => waveController != null &&
+                                         (dayCycle == null || dayCycle.CanAcceptAttackerOrders) &&
+                                         waveController.CanQueuePlayerWave;
+        public bool CanSendQueuedWave => HasQueuedAttackers &&
+                                          !isSending &&
+                                          waveController != null &&
+                                          !waveController.IsRunning &&
+                                          waveController.CanStartPlayerWave;
 
-        /// <summary>Raised whenever the group queue or its ready state changes.</summary>
+        /// <summary>Raised whenever queued groups or their ready state changes.</summary>
         public event Action QueueChanged;
 
         private void Awake()
         {
             waveController = GetComponent<WaveController>();
+            dayCycle = GetComponent<DayCycleController>();
             ResolveAttackerBank();
-        }
-
-        private void OnEnable()
-        {
-            SubscribeToWaveController();
         }
 
         private void Start()
@@ -51,12 +77,22 @@ namespace TAD.Waves
 
         private void OnDisable()
         {
-            UnsubscribeFromWaveController();
+            if (nextGroupRoutine != null)
+            {
+                StopCoroutine(nextGroupRoutine);
+                nextGroupRoutine = null;
+            }
+
+            isSending = false;
+            sequenceCompletion = null;
+            dispatchedGroups.Clear();
+            spawnBuffer.Clear();
+            dispatchedIncome = 0;
         }
 
         /// <summary>
-        /// Pays once for a selected attacker card and queues that definition for each unit in its Send Size.
-        /// The card's Wave Income is added once per selected group and paid after the queued wave succeeds.
+        /// Pays once for a selected attacker card, queues its configured Send Size as one group,
+        /// and records its Wave Income for payment only after that group has been sent and resolved.
         /// </summary>
         public bool TryQueueAttackers(AttackerDefinition definition)
         {
@@ -64,56 +100,226 @@ namespace TAD.Waves
                 definition.SendSize <= 0 ||
                 attackerBank == null ||
                 !CanQueueAttackers ||
-                !waveController.CanStartPlayerWave ||
                 !attackerBank.TrySpendGold(definition.SendCost))
             {
                 return false;
             }
 
-            for (var index = 0; index < definition.SendSize; index++)
-            {
-                queuedAttackers.Add(definition);
-            }
-
-            attackerBank.AddIncome(definition.WaveIncome);
+            var group = new QueuedAttackerGroup(definition);
+            queuedGroups.Enqueue(group);
+            attackerBank.AddIncome(group.Income);
             RaiseQueueChanged();
             return true;
         }
 
-        /// <summary>Sends every selected attacker using the Wave Controller's existing pooled spawn pipeline.</summary>
+        /// <summary>
+        /// Sends a snapshot of all currently queued groups. This legacy entry point preserves existing callers.
+        /// </summary>
         public bool TrySendQueuedWave()
+        {
+            return TrySendQueuedWaves(null);
+        }
+
+        /// <summary>
+        /// Sends every group currently queued in click order. New selections made while this sequence runs
+        /// stay in the pending queue for the next preparation period.
+        /// </summary>
+        public bool TrySendQueuedWaves(Action<bool> completion)
         {
             if (!CanSendQueuedWave)
             {
                 return false;
             }
 
-            var attackersToSend = queuedAttackers.ToArray();
-            if (!waveController.TryStartPlayerWave(attackersToSend, spawnInterval, HandlePlayerWaveFinished))
+            sequenceCompletion = completion;
+            dispatchedIncome = 0;
+            isSending = true;
+            while (queuedGroups.Count > 0)
+            {
+                var group = queuedGroups.Dequeue();
+                dispatchedGroups.Enqueue(group);
+                dispatchedIncome += group.Income;
+            }
+
+            RaiseQueueChanged();
+            if (TryStartNextDispatchedGroup())
+            {
+                return true;
+            }
+
+            // Leave a group intact if it cannot be started, so a temporary map or pool issue never
+            // silently consumes the attacker's purchased selection.
+            RestoreDispatchedGroupsToQueue();
+            isSending = false;
+            dispatchedIncome = 0;
+            sequenceCompletion = null;
+            RaiseQueueChanged();
+            return false;
+        }
+
+        /// <summary>Cancels all pending and active attacker orders when the level ends.</summary>
+        public void CancelAllOrders()
+        {
+            if (nextGroupRoutine != null)
+            {
+                StopCoroutine(nextGroupRoutine);
+                nextGroupRoutine = null;
+            }
+
+            var completion = sequenceCompletion;
+            sequenceCompletion = null;
+            isSending = false;
+            dispatchedIncome = 0;
+            queuedGroups.Clear();
+            dispatchedGroups.Clear();
+            spawnBuffer.Clear();
+            attackerBank?.ClearIncome();
+            RaiseQueueChanged();
+            completion?.Invoke(false);
+        }
+
+        /// <summary>Clears runtime-only orders when a fresh level session begins.</summary>
+        public void ResetForNewLevelSession()
+        {
+            if (nextGroupRoutine != null)
+            {
+                StopCoroutine(nextGroupRoutine);
+                nextGroupRoutine = null;
+            }
+
+            isSending = false;
+            sequenceCompletion = null;
+            dispatchedIncome = 0;
+            queuedGroups.Clear();
+            dispatchedGroups.Clear();
+            spawnBuffer.Clear();
+            attackerBank?.ClearIncome();
+            RaiseQueueChanged();
+        }
+
+        private bool TryStartNextDispatchedGroup()
+        {
+            if (!isSending || dispatchedGroups.Count == 0 || waveController == null)
             {
                 return false;
             }
 
-            queuedAttackers.Clear();
-            RaiseQueueChanged();
-            return true;
-        }
-
-        private void HandlePlayerWaveFinished(bool completed)
-        {
-            if (attackerBank != null)
+            var group = dispatchedGroups.Peek();
+            if (group.Definition == null || group.Count <= 0)
             {
-                if (completed)
-                {
-                    attackerBank.CollectIncome();
-                }
-                else
-                {
-                    attackerBank.ClearIncome();
-                }
+                return false;
             }
 
+            spawnBuffer.Clear();
+            for (var index = 0; index < group.Count; index++)
+            {
+                spawnBuffer.Add(group.Definition);
+            }
+
+            return waveController.TryStartPlayerWave(spawnBuffer, spawnInterval, HandleDispatchedGroupFinished);
+        }
+
+        private void HandleDispatchedGroupFinished(bool completed)
+        {
+            if (!isSending)
+            {
+                return;
+            }
+
+            if (!completed)
+            {
+                CompleteSendingSequence(false);
+                return;
+            }
+
+            if (dispatchedGroups.Count > 0)
+            {
+                dispatchedGroups.Dequeue();
+            }
+
+            if (dispatchedGroups.Count == 0)
+            {
+                CompleteSendingSequence(true);
+                return;
+            }
+
+            nextGroupRoutine = StartCoroutine(StartNextDispatchedGroupOnNextFrame());
+        }
+
+        private IEnumerator StartNextDispatchedGroupOnNextFrame()
+        {
+            yield return null;
+            nextGroupRoutine = null;
+            if (isSending && !TryStartNextDispatchedGroup())
+            {
+                CompleteSendingSequence(false);
+            }
+        }
+
+        private void CompleteSendingSequence(bool completed)
+        {
+            if (!isSending)
+            {
+                return;
+            }
+
+            if (nextGroupRoutine != null)
+            {
+                StopCoroutine(nextGroupRoutine);
+                nextGroupRoutine = null;
+            }
+
+            if (completed)
+            {
+                attackerBank?.CollectIncome(dispatchedIncome);
+                dispatchedGroups.Clear();
+            }
+            else
+            {
+                RestoreDispatchedGroupsToQueue();
+            }
+
+            isSending = false;
+            dispatchedIncome = 0;
+            spawnBuffer.Clear();
+            var completion = sequenceCompletion;
+            sequenceCompletion = null;
             RaiseQueueChanged();
+            completion?.Invoke(completed);
+        }
+
+        private void RestoreDispatchedGroupsToQueue()
+        {
+            if (dispatchedGroups.Count == 0)
+            {
+                return;
+            }
+
+            var unsentGroups = dispatchedGroups.ToArray();
+            var groupsQueuedDuringCombat = queuedGroups.ToArray();
+            dispatchedGroups.Clear();
+            queuedGroups.Clear();
+
+            foreach (var group in unsentGroups)
+            {
+                queuedGroups.Enqueue(group);
+            }
+
+            foreach (var group in groupsQueuedDuringCombat)
+            {
+                queuedGroups.Enqueue(group);
+            }
+        }
+
+        private static int CountAttackers(IEnumerable<QueuedAttackerGroup> groups)
+        {
+            var count = 0;
+            foreach (var group in groups)
+            {
+                count += group != null ? group.Count : 0;
+            }
+
+            return count;
         }
 
         private void ResolveAttackerBank()
@@ -131,40 +337,6 @@ namespace TAD.Waves
                     return;
                 }
             }
-        }
-
-        private void SubscribeToWaveController()
-        {
-            if (isSubscribed || waveController == null)
-            {
-                return;
-            }
-
-            waveController.WaveStarted += HandleWaveStateChanged;
-            waveController.WaveRunFinished += HandleWaveRunFinished;
-            isSubscribed = true;
-        }
-
-        private void UnsubscribeFromWaveController()
-        {
-            if (!isSubscribed || waveController == null)
-            {
-                return;
-            }
-
-            waveController.WaveStarted -= HandleWaveStateChanged;
-            waveController.WaveRunFinished -= HandleWaveRunFinished;
-            isSubscribed = false;
-        }
-
-        private void HandleWaveStateChanged(int waveNumber, int attackerCount)
-        {
-            RaiseQueueChanged();
-        }
-
-        private void HandleWaveRunFinished(bool completed)
-        {
-            RaiseQueueChanged();
         }
 
         private void RaiseQueueChanged()

@@ -180,6 +180,14 @@ namespace TAD.Waves
                                            foodStore != null &&
                                            !foodStore.IsDepleted &&
                                            EnsureRouteMap();
+        /// <summary>
+        /// Returns whether a player order can be accepted even while an earlier player wave is active.
+        /// The queue snapshots these accepted orders for a later preparation period.
+        /// </summary>
+        public bool CanQueuePlayerWave => TryResolveDependencies() &&
+                                          foodStore != null &&
+                                          !foodStore.IsDepleted &&
+                                          EnsureRouteMap();
 
         public void RequireManualStart()
         {
@@ -282,6 +290,36 @@ namespace TAD.Waves
             playerWaveCompletion = completion;
             waveRoutine = StartCoroutine(RunPlayerWave(attackerDefinitions, Mathf.Max(0f, spawnInterval)));
             return true;
+        }
+
+        /// <summary>
+        /// Clears an interrupted level session without invoking a player-wave completion callback.
+        /// Active pooled attackers are returned so a fresh Day 0 cannot inherit visible animals.
+        /// </summary>
+        public void ResetForNewLevelSession()
+        {
+            if (waveRoutine != null)
+            {
+                StopCoroutine(waveRoutine);
+                waveRoutine = null;
+            }
+
+            playerWaveCompletion = null;
+            for (var index = activeAttackers.Count - 1; index >= 0; index--)
+            {
+                var attackerObject = activeAttackers[index];
+                if (attackerObject != null && attackerObject.activeSelf)
+                {
+                    ReturnSpawnedAttacker(attackerObject);
+                }
+            }
+
+            activeAttackers.Clear();
+            currentWaveNumber = 0;
+            nextWaveIndex = 0;
+            spawnedInCurrentWave = 0;
+            hasCompletedAllWaves = false;
+            UnsubscribeFromFoodStore();
         }
 
         public void StopWaves()

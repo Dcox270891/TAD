@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace TAD.UI
 {
-    /// <summary>Connects the player-facing Play button to either a queued attacker wave or the next configured wave.</summary>
+    /// <summary>Connects the compact Play control to the current preparation period.</summary>
     [DisallowMultipleComponent]
     public sealed class WaveStartButton : MonoBehaviour
     {
@@ -12,18 +12,23 @@ namespace TAD.UI
 
         private WaveController waveController;
         private AttackerWaveQueue attackerWaveQueue;
+        private DayCycleController dayCycle;
         private bool isSubscribedToWaveController;
         private bool isSubscribedToQueue;
+        private bool isSubscribedToDayCycle;
 
         /// <summary>Provides the Wave Controller this button should start.</summary>
         public void Bind(WaveController controller)
         {
             UnsubscribeFromWaveController();
             UnsubscribeFromQueue();
+            UnsubscribeFromDayCycle();
             waveController = controller;
             attackerWaveQueue = waveController != null ? waveController.GetComponent<AttackerWaveQueue>() : null;
+            dayCycle = waveController != null ? waveController.GetComponent<DayCycleController>() : null;
             SubscribeToWaveController();
             SubscribeToQueue();
+            SubscribeToDayCycle();
             RefreshInteractableState();
         }
 
@@ -45,6 +50,7 @@ namespace TAD.UI
 
             SubscribeToWaveController();
             SubscribeToQueue();
+            SubscribeToDayCycle();
             RefreshInteractableState();
         }
 
@@ -62,6 +68,7 @@ namespace TAD.UI
 
             UnsubscribeFromWaveController();
             UnsubscribeFromQueue();
+            UnsubscribeFromDayCycle();
         }
 
         private void HandlePlayPressed()
@@ -71,7 +78,11 @@ namespace TAD.UI
                 return;
             }
 
-            if (attackerWaveQueue != null && attackerWaveQueue.HasQueuedAttackers)
+            if (dayCycle != null)
+            {
+                dayCycle.TryStartQueuedWavesEarly();
+            }
+            else if (attackerWaveQueue != null && attackerWaveQueue.HasQueuedAttackers)
             {
                 attackerWaveQueue.TrySendQueuedWave();
             }
@@ -131,6 +142,28 @@ namespace TAD.UI
             isSubscribedToQueue = false;
         }
 
+        private void SubscribeToDayCycle()
+        {
+            if (isSubscribedToDayCycle || dayCycle == null)
+            {
+                return;
+            }
+
+            dayCycle.CycleChanged += RefreshInteractableState;
+            isSubscribedToDayCycle = true;
+        }
+
+        private void UnsubscribeFromDayCycle()
+        {
+            if (!isSubscribedToDayCycle || dayCycle == null)
+            {
+                return;
+            }
+
+            dayCycle.CycleChanged -= RefreshInteractableState;
+            isSubscribedToDayCycle = false;
+        }
+
         private void HandleWaveStateChanged(int waveNumber, int attackerCount)
         {
             RefreshInteractableState();
@@ -158,20 +191,21 @@ namespace TAD.UI
                 return;
             }
 
-            var hasQueuedAttackers = attackerWaveQueue != null && attackerWaveQueue.HasQueuedAttackers;
-            var isReadyToPlay = waveController != null &&
-                                !ModalOverlay.IsGameplayInputBlocked &&
-                                (hasQueuedAttackers
-                                    ? attackerWaveQueue.CanSendQueuedWave
-                                    : waveController.CanStartNextWave);
+            var isReadyToPlay = dayCycle != null
+                ? !ModalOverlay.IsGameplayInputBlocked && dayCycle.CanStartQueuedWavesEarly
+                : waveController != null &&
+                  !ModalOverlay.IsGameplayInputBlocked &&
+                  (attackerWaveQueue != null && attackerWaveQueue.HasQueuedAttackers
+                      ? attackerWaveQueue.CanSendQueuedWave
+                      : waveController.CanStartNextWave);
 
             if (playLabel != null)
             {
-                playLabel.text = hasQueuedAttackers ? "Send Wave" : "Play";
+                playLabel.text = ">";
             }
 
-            // Keep this presenter enabled so it can receive the completion event that makes the
-            // button visible again. The nested button owns the visual and interaction state.
+            // The compact play icon only appears once a queued group is ready to send, then returns
+            // at the next preparation period. The presenter remains active to receive those updates.
             if (playButton.gameObject != gameObject)
             {
                 playButton.gameObject.SetActive(isReadyToPlay);

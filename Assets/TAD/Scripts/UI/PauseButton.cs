@@ -4,17 +4,17 @@ using UnityEngine.EventSystems;
 
 namespace TAD.UI
 {
-    /// <summary>
-    /// Shows the pause control while a manually started wave is active and opens the shared-style pause menu.
-    /// </summary>
+    /// <summary>Shows the compact pause control throughout an active level and opens the shared pause menu.</summary>
     [DisallowMultipleComponent]
     public sealed class PauseButton : MonoBehaviour
     {
         [SerializeField] private UnityEngine.UI.Button pauseButton;
 
         private WaveController waveController;
+        private DayCycleController dayCycle;
         private PauseOverlay pauseOverlay;
-        private bool isSubscribed;
+        private bool isSubscribedToWaveController;
+        private bool isSubscribedToDayCycle;
 
         /// <summary>Gets the selectable visual element used to return controller focus after resuming.</summary>
         public GameObject SelectableGameObject => pauseButton != null ? pauseButton.gameObject : gameObject;
@@ -37,6 +37,7 @@ namespace TAD.UI
             }
 
             SubscribeToWaveController();
+            SubscribeToDayCycle();
             RefreshVisibility();
         }
 
@@ -53,6 +54,7 @@ namespace TAD.UI
             }
 
             UnsubscribeFromWaveController();
+            UnsubscribeFromDayCycle();
         }
 
         /// <summary>Provides the active Wave Controller and pause menu that this control should use.</summary>
@@ -65,15 +67,19 @@ namespace TAD.UI
             }
 
             UnsubscribeFromWaveController();
+            UnsubscribeFromDayCycle();
             waveController = controller;
+            dayCycle = waveController != null ? waveController.GetComponent<DayCycleController>() : null;
             pauseOverlay = overlay;
             SubscribeToWaveController();
+            SubscribeToDayCycle();
             RefreshVisibility();
         }
 
         private void HandlePausePressed()
         {
-            if (waveController == null || !waveController.IsRunning || ModalOverlay.IsGameplayInputBlocked)
+            var canPause = dayCycle != null ? dayCycle.CanPause : waveController != null && waveController.IsRunning;
+            if (!canPause || ModalOverlay.IsGameplayInputBlocked)
             {
                 return;
             }
@@ -84,13 +90,13 @@ namespace TAD.UI
 
         private PauseOverlay ResolvePauseOverlay()
         {
-            pauseOverlay ??= Object.FindFirstObjectByType<PauseOverlay>(FindObjectsInactive.Include);
+            pauseOverlay ??= Object.FindAnyObjectByType<PauseOverlay>(FindObjectsInactive.Include);
             return pauseOverlay;
         }
 
         private void SubscribeToWaveController()
         {
-            if (isSubscribed || waveController == null)
+            if (isSubscribedToWaveController || waveController == null)
             {
                 return;
             }
@@ -98,12 +104,12 @@ namespace TAD.UI
             waveController.WaveStarted += HandleWaveStarted;
             waveController.WaveRunFinished += HandleWaveRunFinished;
             waveController.AllWavesCompleted += HandleAllWavesCompleted;
-            isSubscribed = true;
+            isSubscribedToWaveController = true;
         }
 
         private void UnsubscribeFromWaveController()
         {
-            if (!isSubscribed || waveController == null)
+            if (!isSubscribedToWaveController || waveController == null)
             {
                 return;
             }
@@ -111,7 +117,29 @@ namespace TAD.UI
             waveController.WaveStarted -= HandleWaveStarted;
             waveController.WaveRunFinished -= HandleWaveRunFinished;
             waveController.AllWavesCompleted -= HandleAllWavesCompleted;
-            isSubscribed = false;
+            isSubscribedToWaveController = false;
+        }
+
+        private void SubscribeToDayCycle()
+        {
+            if (isSubscribedToDayCycle || dayCycle == null)
+            {
+                return;
+            }
+
+            dayCycle.CycleChanged += RefreshVisibility;
+            isSubscribedToDayCycle = true;
+        }
+
+        private void UnsubscribeFromDayCycle()
+        {
+            if (!isSubscribedToDayCycle || dayCycle == null)
+            {
+                return;
+            }
+
+            dayCycle.CycleChanged -= RefreshVisibility;
+            isSubscribedToDayCycle = false;
         }
 
         private void HandleWaveStarted(int waveNumber, int attackerCount)
@@ -141,13 +169,13 @@ namespace TAD.UI
                 return;
             }
 
-            var isWaveActive = waveController != null && waveController.IsRunning;
+            var isPauseAvailable = dayCycle != null ? dayCycle.CanPause : waveController != null && waveController.IsRunning;
             if (pauseButton.gameObject != gameObject)
             {
-                pauseButton.gameObject.SetActive(isWaveActive);
+                pauseButton.gameObject.SetActive(isPauseAvailable);
             }
 
-            pauseButton.interactable = isWaveActive;
+            pauseButton.interactable = isPauseAvailable;
         }
     }
 }

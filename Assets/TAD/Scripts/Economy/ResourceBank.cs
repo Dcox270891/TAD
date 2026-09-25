@@ -72,13 +72,22 @@ namespace TAD.Economy
         /// <summary>Pays all queued income into this bank and returns the amount collected.</summary>
         public int CollectIncome()
         {
-            var collectedIncome = currentIncome;
+            return CollectIncome(currentIncome);
+        }
+
+        /// <summary>
+        /// Pays up to the requested amount of queued income into this bank. This lets an active day
+        /// collect only the income for its resolved attacker groups while later orders remain pending.
+        /// </summary>
+        public int CollectIncome(int amount)
+        {
+            var collectedIncome = Mathf.Clamp(amount, 0, currentIncome);
             if (collectedIncome <= 0)
             {
                 return 0;
             }
 
-            SetIncome(0);
+            SetIncome(currentIncome - collectedIncome);
             AddGold(collectedIncome);
             return collectedIncome;
         }
