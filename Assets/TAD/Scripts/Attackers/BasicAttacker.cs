@@ -90,7 +90,9 @@ namespace TAD.Attackers
                 return;
             }
 
-            routeMapper ??= Object.FindAnyObjectByType<FarmRouteMapper>();
+            routeMapper ??= pooledInstance != null && pooledInstance.Owner != null
+                ? pooledInstance.Owner.RouteMapper
+                : Object.FindAnyObjectByType<FarmRouteMapper>();
             if (routeMapper == null || !TryClampToVisibleMap())
             {
                 return;

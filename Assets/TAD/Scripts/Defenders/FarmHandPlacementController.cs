@@ -38,7 +38,7 @@ namespace TAD.Defenders
         private int previewSortingOrder = 3;
 
         [SerializeField]
-        [Tooltip("Optional map reference. If blank, the first Farm Route Mapper in the scene is used.")]
+        [Tooltip("Optional map reference used only without a local Spawn Pool. A local Spawn Pool always owns the route map.")]
         private FarmRouteMapper routeMapper;
 
         private SpawnPool spawnPool;
@@ -63,7 +63,9 @@ namespace TAD.Defenders
         private void Awake()
         {
             spawnPool = GetComponent<SpawnPool>();
-            routeMapper ??= Object.FindAnyObjectByType<FarmRouteMapper>();
+            routeMapper = spawnPool != null
+                ? spawnPool.RouteMapper
+                : routeMapper ?? Object.FindAnyObjectByType<FarmRouteMapper>();
         }
 
         private void OnEnable()

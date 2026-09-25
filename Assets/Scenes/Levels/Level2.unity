@@ -664,6 +664,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 465870676978708901, guid: 33113d3647d296e4682e8aa61b4a1d98, type: 3}
+      propertyPath: routeMapper
+      value: 
+      objectReference: {fileID: 502312381}
     - target: {fileID: 592288151473745849, guid: 33113d3647d296e4682e8aa61b4a1d98, type: 3}
       propertyPath: poolSettings.Array.data[1].objectType
       value: 1
@@ -729,6 +733,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 33113d3647d296e4682e8aa61b4a1d98, type: 3}
+--- !u!114 &502312381 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 739535124104778831, guid: 33113d3647d296e4682e8aa61b4a1d98, type: 3}
+  m_PrefabInstance: {fileID: 502312380}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d1b498a87f0d6341915242cb5ac1637, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TAD.Navigation.FarmRouteMapper
 --- !u!1 &519420028
 GameObject:
   m_ObjectHideFlags: 0
@@ -1148,71 +1163,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 1569693026300897906, guid: 33113d3647d296e4682e8aa61b4a1d98, type: 3}
   m_PrefabInstance: {fileID: 502312380}
   m_PrefabAsset: {fileID: 0}
---- !u!1001 &1426909683
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 2474162864332338128, guid: a9d54643cf98cf441946f2246f8b7334, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2474162864332338128, guid: a9d54643cf98cf441946f2246f8b7334, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2474162864332338128, guid: a9d54643cf98cf441946f2246f8b7334, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2474162864332338128, guid: a9d54643cf98cf441946f2246f8b7334, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2474162864332338128, guid: a9d54643cf98cf441946f2246f8b7334, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2474162864332338128, guid: a9d54643cf98cf441946f2246f8b7334, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2474162864332338128, guid: a9d54643cf98cf441946f2246f8b7334, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2474162864332338128, guid: a9d54643cf98cf441946f2246f8b7334, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2474162864332338128, guid: a9d54643cf98cf441946f2246f8b7334, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2474162864332338128, guid: a9d54643cf98cf441946f2246f8b7334, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6449205999507295959, guid: a9d54643cf98cf441946f2246f8b7334, type: 3}
-      propertyPath: m_Name
-      value: FarmRouteMapper
-      objectReference: {fileID: 0}
-    - target: {fileID: 7840862293572466701, guid: a9d54643cf98cf441946f2246f8b7334, type: 3}
-      propertyPath: foodStore
-      value: 
-      objectReference: {fileID: 155924432}
-    - target: {fileID: 7840862293572466701, guid: a9d54643cf98cf441946f2246f8b7334, type: 3}
-      propertyPath: obstaclePadding
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: a9d54643cf98cf441946f2246f8b7334, type: 3}
 --- !u!1001 &1754230994
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1341,7 +1291,7 @@ PrefabInstance:
     - target: {fileID: 7753717080277469554, guid: ab665243b9a9df140980db99e3134233, type: 3}
       propertyPath: routeMapper
       value: 
-      objectReference: {fileID: 1929328142}
+      objectReference: {fileID: 502312381}
     - target: {fileID: 7753717080277469554, guid: ab665243b9a9df140980db99e3134233, type: 3}
       propertyPath: startOnStart
       value: 0
@@ -1555,17 +1505,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1929328142 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 7840862293572466701, guid: a9d54643cf98cf441946f2246f8b7334, type: 3}
-  m_PrefabInstance: {fileID: 1426909683}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4d1b498a87f0d6341915242cb5ac1637, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TAD.Navigation.FarmRouteMapper
 --- !u!1001 &2005518559
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1638,7 +1577,6 @@ SceneRoots:
   - {fileID: 519420032}
   - {fileID: 619394802}
   - {fileID: 155924431}
-  - {fileID: 1426909683}
   - {fileID: 502312380}
   - {fileID: 1791612269}
   - {fileID: 787456265}

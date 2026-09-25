@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 1569693026300897906}
   - component: {fileID: 592288151473745849}
   - component: {fileID: 465870676978708901}
+  - component: {fileID: 739535124104778831}
   m_Layer: 8
   m_Name: SpawnPool
   m_TagString: Untagged
@@ -68,6 +69,7 @@ MonoBehaviour:
   - {fileID: 7380514914642394048, guid: 3dc1798705f367b4f9d5282ed4f8a271, type: 3}
   - {fileID: 1133527070088945012, guid: 4667ed6be8f017a43854e57e992ee79f, type: 3}
   additionalAttackerInitialCapacity: 5
+  routeMapper: {fileID: 739535124104778831}
 --- !u!114 &465870676978708901
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -87,3 +89,22 @@ MonoBehaviour:
   previewOpacity: 0.5
   previewSortingOrder: 3
   routeMapper: {fileID: 0}
+--- !u!114 &739535124104778831
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8974110545092134639}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d1b498a87f0d6341915242cb5ac1637, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TAD.Navigation.FarmRouteMapper
+  foodStore: {fileID: 0}
+  defaultAttackerSize: 1
+  attackerDefinitionsToPrecompute: []
+  cellSize: 0.25
+  mapSize: {x: 20, y: 12}
+  obstaclePadding: 0
+  cornerSmoothingLookAheadCells: 8

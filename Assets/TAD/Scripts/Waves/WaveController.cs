@@ -503,7 +503,15 @@ namespace TAD.Waves
         private bool TryResolveDependencies()
         {
             spawnPool ??= UnityEngine.Object.FindAnyObjectByType<SpawnPool>();
-            routeMapper ??= UnityEngine.Object.FindAnyObjectByType<FarmRouteMapper>();
+            if (spawnPool != null)
+            {
+                routeMapper = spawnPool.RouteMapper;
+            }
+            else
+            {
+                routeMapper ??= UnityEngine.Object.FindAnyObjectByType<FarmRouteMapper>();
+            }
+
             foodStore ??= UnityEngine.Object.FindAnyObjectByType<FoodStore>();
             if (spawnPool != null && routeMapper != null && foodStore != null)
             {

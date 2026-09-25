@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using TAD.Attackers;
+using TAD.Navigation;
 using UnityEngine;
 
 namespace TAD.Pooling
@@ -10,6 +11,7 @@ namespace TAD.Pooling
     /// Additional attacker prefabs are addressed by their shared Attacker Definition.
     /// </summary>
     [DisallowMultipleComponent]
+    [RequireComponent(typeof(FarmRouteMapper))]
     public sealed class SpawnPool : MonoBehaviour
     {
         [Serializable]
@@ -67,6 +69,10 @@ namespace TAD.Pooling
         [Tooltip("Objects prewarmed for every additional attacker prefab.")]
         private int additionalAttackerInitialCapacity = 5;
 
+        [SerializeField]
+        [Tooltip("The route map owned by this Spawn Pool. It is required so pooled attackers always share the same map.")]
+        private FarmRouteMapper routeMapper;
+
         // Shared by every pool so IDs stay unique across all pooled gameplay types for one play session.
         private static long nextRuntimeInstanceId;
 
@@ -74,6 +80,15 @@ namespace TAD.Pooling
         private readonly Dictionary<AttackerDefinition, PoolBucket> attackerPoolsByDefinition = new();
         private readonly Dictionary<PooledInstance, PoolBucket> instanceBuckets = new();
         private bool isInitialized;
+
+        public FarmRouteMapper RouteMapper
+        {
+            get
+            {
+                routeMapper ??= GetComponent<FarmRouteMapper>();
+                return routeMapper;
+            }
+        }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetRuntimeInstanceIdSequence()
@@ -84,6 +99,7 @@ namespace TAD.Pooling
 
         private void Awake()
         {
+            routeMapper ??= GetComponent<FarmRouteMapper>();
             Initialize();
         }
 
@@ -278,6 +294,8 @@ namespace TAD.Pooling
 #if UNITY_EDITOR
         private void OnValidate()
         {
+            routeMapper ??= GetComponent<FarmRouteMapper>();
+
             foreach (var settings in poolSettings)
             {
                 settings?.Validate();

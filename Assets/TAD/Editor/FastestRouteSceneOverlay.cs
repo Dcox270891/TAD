@@ -1,7 +1,9 @@
 #if UNITY_EDITOR
 using System.Collections.Generic;
+using System.Linq;
 using TAD.Attackers;
 using TAD.Navigation;
+using TAD.Pooling;
 using TAD.Waves;
 using UnityEditor;
 using UnityEngine;
@@ -28,7 +30,11 @@ namespace TAD.Editor
                 return;
             }
 
-            var routeMappers = Object.FindObjectsByType<FarmRouteMapper>(FindObjectsInactive.Exclude);
+            var routeMappers = Object.FindObjectsByType<SpawnPool>(FindObjectsInactive.Exclude)
+                .Select(pool => pool.RouteMapper)
+                .Where(mapper => mapper != null)
+                .Distinct()
+                .ToArray();
             var waveControllers = Object.FindObjectsByType<WaveController>(FindObjectsInactive.Exclude);
             for (var mapperIndex = 0; mapperIndex < routeMappers.Length; mapperIndex++)
             {
