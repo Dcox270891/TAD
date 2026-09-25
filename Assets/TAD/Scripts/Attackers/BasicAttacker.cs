@@ -25,6 +25,8 @@ namespace TAD.Attackers
         // Physical farmhand colliders are never navigation obstacles. The actual range and projectile colliders
         // remain triggers, so they are deliberately left alone to preserve targeting and damage callbacks.
         private readonly List<Collider2D> ignoredFarmHandColliders = new();
+        // Animals follow shared routes and should never physically queue or push one another.
+        private readonly List<Collider2D> ignoredAttackerColliders = new();
 
         private Rigidbody2D body;
         private PolygonCollider2D bodyCollider;
@@ -91,12 +93,14 @@ namespace TAD.Attackers
         private void OnCollisionEnter2D(Collision2D collision)
         {
             IgnoreFarmHandCollision(collision);
+            IgnoreAttackerCollision(collision);
         }
 
         private void OnCollisionStay2D(Collision2D collision)
         {
-            // Covers a farmhand placed after this attacker has already begun moving.
+            // Covers a farmhand or another attacker created after this attacker has already begun moving.
             IgnoreFarmHandCollision(collision);
+            IgnoreAttackerCollision(collision);
         }
 
         private void FixedUpdate()
@@ -360,6 +364,7 @@ namespace TAD.Attackers
         private void ConfigureTraversalCollisions()
         {
             RestoreTraversalCollisions();
+            ConfigureAttackerCollisionSafety();
             ConfigureFarmHandCollisionSafety();
 
             if (bodyCollider == null || TraversalProfile != AttackerTraversalProfile.IgnoresHalfCover)
@@ -420,6 +425,29 @@ namespace TAD.Attackers
             }
         }
 
+        private void ConfigureAttackerCollisionSafety()
+        {
+            if (bodyCollider == null)
+            {
+                return;
+            }
+
+            var attackers = Object.FindObjectsByType<BasicAttacker>(FindObjectsInactive.Exclude);
+            foreach (var attacker in attackers)
+            {
+                if (attacker == null || attacker == this)
+                {
+                    continue;
+                }
+
+                var attackerColliders = attacker.GetComponentsInChildren<Collider2D>(true);
+                foreach (var attackerCollider in attackerColliders)
+                {
+                    IgnoreAttackerCollider(attackerCollider);
+                }
+            }
+        }
+
         private void IgnoreFarmHandCollision(Collision2D collision)
         {
             if (collision == null)
@@ -430,6 +458,17 @@ namespace TAD.Attackers
             // Unity exposes both sides of a 2D collision. One is this attacker and the other may be a farmhand.
             IgnoreFarmHandCollider(collision.collider);
             IgnoreFarmHandCollider(collision.otherCollider);
+        }
+
+        private void IgnoreAttackerCollision(Collision2D collision)
+        {
+            if (collision == null)
+            {
+                return;
+            }
+
+            IgnoreAttackerCollider(collision.collider);
+            IgnoreAttackerCollider(collision.otherCollider);
         }
 
         private void IgnoreFarmHandCollider(Collider2D collider)
@@ -444,12 +483,25 @@ namespace TAD.Attackers
             ignoredFarmHandColliders.Add(collider);
         }
 
+        private void IgnoreAttackerCollider(Collider2D collider)
+        {
+            if (bodyCollider == null || collider == null || collider == bodyCollider || collider.isTrigger ||
+                ignoredAttackerColliders.Contains(collider) || collider.GetComponentInParent<BasicAttacker>() == null)
+            {
+                return;
+            }
+
+            Physics2D.IgnoreCollision(bodyCollider, collider, true);
+            ignoredAttackerColliders.Add(collider);
+        }
+
         private void RestoreTraversalCollisions()
         {
             if (bodyCollider == null)
             {
                 ignoredHalfCoverColliders.Clear();
                 ignoredFarmHandColliders.Clear();
+                ignoredAttackerColliders.Clear();
                 return;
             }
 
@@ -469,8 +521,17 @@ namespace TAD.Attackers
                 }
             }
 
+            foreach (var attackerCollider in ignoredAttackerColliders)
+            {
+                if (attackerCollider != null)
+                {
+                    Physics2D.IgnoreCollision(bodyCollider, attackerCollider, false);
+                }
+            }
+
             ignoredHalfCoverColliders.Clear();
             ignoredFarmHandColliders.Clear();
+            ignoredAttackerColliders.Clear();
         }
 
         private void ReturnToPool()

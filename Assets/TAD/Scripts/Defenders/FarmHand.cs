@@ -109,6 +109,7 @@ namespace TAD.Defenders
             ResolveComponents();
             ConfigureRangeBody();
             ConfigureRangeCollider();
+            ConfigureNonBlockingColliders();
             ConfigureRangeVisual();
         }
 
@@ -119,6 +120,7 @@ namespace TAD.Defenders
             isRangeIndicatorVisible = false;
             ConfigureRangeBody();
             ConfigureRangeCollider();
+            ConfigureNonBlockingColliders();
             ConfigureRangeVisual();
             FarmHandEnabled?.Invoke(this);
         }
@@ -205,6 +207,7 @@ namespace TAD.Defenders
             isRangeIndicatorVisible = false;
             ConfigureRangeBody();
             ConfigureRangeCollider();
+            ConfigureNonBlockingColliders();
             ConfigureRangeVisual();
         }
 
@@ -440,6 +443,21 @@ namespace TAD.Defenders
             rangeCollider.enabled = worldRange > 0f && largestWorldScale > Mathf.Epsilon;
         }
 
+        /// <summary>
+        /// Farmhands are detection and attack sources, not map obstacles. Any collider on their hierarchy
+        /// is therefore a trigger; physical blocking stays exclusively with Environment colliders such as walls.
+        /// </summary>
+        private void ConfigureNonBlockingColliders()
+        {
+            foreach (var farmHandCollider in GetComponentsInChildren<Collider2D>(true))
+            {
+                if (farmHandCollider != null)
+                {
+                    farmHandCollider.isTrigger = true;
+                }
+            }
+        }
+
         private void ConfigureRangeVisual()
         {
             if (rangeVisual == null)
@@ -519,6 +537,7 @@ namespace TAD.Defenders
             ResolveComponents();
             ConfigureRangeBody();
             ConfigureRangeCollider();
+            ConfigureNonBlockingColliders();
         }
 
         private void OnDrawGizmosSelected()
