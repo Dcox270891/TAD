@@ -8,6 +8,7 @@ namespace TAD.UI
     public sealed class ResourceBanksHud : MonoBehaviour
     {
         [SerializeField] private UnityEngine.UI.Text attackerGoldText;
+        [SerializeField] private UnityEngine.UI.Text attackerIncomeText;
         [SerializeField] private UnityEngine.UI.Text defenderGoldText;
 
         private ResourceBank attackerBank;
@@ -56,6 +57,7 @@ namespace TAD.UI
             if (attackerBank != null)
             {
                 attackerBank.GoldChanged += HandleAttackerGoldChanged;
+                attackerBank.IncomeChanged += HandleAttackerIncomeChanged;
             }
 
             if (defenderBank != null)
@@ -76,6 +78,7 @@ namespace TAD.UI
             if (attackerBank != null)
             {
                 attackerBank.GoldChanged -= HandleAttackerGoldChanged;
+                attackerBank.IncomeChanged -= HandleAttackerIncomeChanged;
             }
 
             if (defenderBank != null)
@@ -91,6 +94,7 @@ namespace TAD.UI
             if (attackerBank != null)
             {
                 HandleAttackerGoldChanged(attackerBank.CurrentGold);
+                HandleAttackerIncomeChanged(attackerBank.CurrentIncome);
             }
 
             if (defenderBank != null)
@@ -104,6 +108,14 @@ namespace TAD.UI
             if (attackerGoldText != null)
             {
                 attackerGoldText.text = $"Attacker Gold: {gold}";
+            }
+        }
+
+        private void HandleAttackerIncomeChanged(int income)
+        {
+            if (attackerIncomeText != null)
+            {
+                attackerIncomeText.text = $"Income: +{income}";
             }
         }
 

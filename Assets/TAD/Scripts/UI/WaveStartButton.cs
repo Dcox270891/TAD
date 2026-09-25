@@ -3,29 +3,27 @@ using UnityEngine;
 
 namespace TAD.UI
 {
-    /// <summary>
-    /// Connects the player-facing Play button to a manual Wave Controller start.
-    /// </summary>
+    /// <summary>Connects the player-facing Play button to either a queued attacker wave or the next configured wave.</summary>
     [DisallowMultipleComponent]
     public sealed class WaveStartButton : MonoBehaviour
     {
         [SerializeField] private UnityEngine.UI.Button playButton;
+        [SerializeField] private UnityEngine.UI.Text playLabel;
 
         private WaveController waveController;
-        private bool isSubscribed;
+        private AttackerWaveQueue attackerWaveQueue;
+        private bool isSubscribedToWaveController;
+        private bool isSubscribedToQueue;
 
         /// <summary>Provides the Wave Controller this button should start.</summary>
         public void Bind(WaveController controller)
         {
-            if (waveController == controller)
-            {
-                RefreshInteractableState();
-                return;
-            }
-
             UnsubscribeFromWaveController();
+            UnsubscribeFromQueue();
             waveController = controller;
+            attackerWaveQueue = waveController != null ? waveController.GetComponent<AttackerWaveQueue>() : null;
             SubscribeToWaveController();
+            SubscribeToQueue();
             RefreshInteractableState();
         }
 
@@ -35,6 +33,7 @@ namespace TAD.UI
         private void Awake()
         {
             playButton ??= GetComponentInChildren<UnityEngine.UI.Button>(true);
+            playLabel ??= playButton != null ? playButton.GetComponentInChildren<UnityEngine.UI.Text>(true) : null;
         }
 
         private void OnEnable()
@@ -45,6 +44,7 @@ namespace TAD.UI
             }
 
             SubscribeToWaveController();
+            SubscribeToQueue();
             RefreshInteractableState();
         }
 
@@ -61,6 +61,7 @@ namespace TAD.UI
             }
 
             UnsubscribeFromWaveController();
+            UnsubscribeFromQueue();
         }
 
         private void HandlePlayPressed()
@@ -70,15 +71,21 @@ namespace TAD.UI
                 return;
             }
 
-            // StartNextWave assigns its coroutine before returning, so this locks immediately,
-            // including a configured pre-wave delay before the first attacker appears.
-            waveController.StartNextWave();
+            if (attackerWaveQueue != null && attackerWaveQueue.HasQueuedAttackers)
+            {
+                attackerWaveQueue.TrySendQueuedWave();
+            }
+            else
+            {
+                waveController.StartNextWave();
+            }
+
             RefreshInteractableState();
         }
 
         private void SubscribeToWaveController()
         {
-            if (isSubscribed || waveController == null)
+            if (isSubscribedToWaveController || waveController == null)
             {
                 return;
             }
@@ -86,12 +93,12 @@ namespace TAD.UI
             waveController.WaveStarted += HandleWaveStateChanged;
             waveController.WaveRunFinished += HandleWaveRunFinished;
             waveController.AllWavesCompleted += HandleAllWavesCompleted;
-            isSubscribed = true;
+            isSubscribedToWaveController = true;
         }
 
         private void UnsubscribeFromWaveController()
         {
-            if (!isSubscribed || waveController == null)
+            if (!isSubscribedToWaveController || waveController == null)
             {
                 return;
             }
@@ -99,7 +106,29 @@ namespace TAD.UI
             waveController.WaveStarted -= HandleWaveStateChanged;
             waveController.WaveRunFinished -= HandleWaveRunFinished;
             waveController.AllWavesCompleted -= HandleAllWavesCompleted;
-            isSubscribed = false;
+            isSubscribedToWaveController = false;
+        }
+
+        private void SubscribeToQueue()
+        {
+            if (isSubscribedToQueue || attackerWaveQueue == null)
+            {
+                return;
+            }
+
+            attackerWaveQueue.QueueChanged += HandleQueueChanged;
+            isSubscribedToQueue = true;
+        }
+
+        private void UnsubscribeFromQueue()
+        {
+            if (!isSubscribedToQueue || attackerWaveQueue == null)
+            {
+                return;
+            }
+
+            attackerWaveQueue.QueueChanged -= HandleQueueChanged;
+            isSubscribedToQueue = false;
         }
 
         private void HandleWaveStateChanged(int waveNumber, int attackerCount)
@@ -117,6 +146,11 @@ namespace TAD.UI
             RefreshInteractableState();
         }
 
+        private void HandleQueueChanged()
+        {
+            RefreshInteractableState();
+        }
+
         private void RefreshInteractableState()
         {
             if (playButton == null)
@@ -124,9 +158,17 @@ namespace TAD.UI
                 return;
             }
 
+            var hasQueuedAttackers = attackerWaveQueue != null && attackerWaveQueue.HasQueuedAttackers;
             var isReadyToPlay = waveController != null &&
-                                waveController.CanStartNextWave &&
-                                !ModalOverlay.IsGameplayInputBlocked;
+                                !ModalOverlay.IsGameplayInputBlocked &&
+                                (hasQueuedAttackers
+                                    ? attackerWaveQueue.CanSendQueuedWave
+                                    : waveController.CanStartNextWave);
+
+            if (playLabel != null)
+            {
+                playLabel.text = hasQueuedAttackers ? "Send Wave" : "Play";
+            }
 
             // Keep this presenter enabled so it can receive the completion event that makes the
             // button visible again. The nested button owns the visual and interaction state.

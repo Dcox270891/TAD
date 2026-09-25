@@ -333,3 +333,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TAD.UI.WaveStartButton
   playButton: {fileID: 5197135274748658257}
+  playLabel: {fileID: 2846477581952149371}

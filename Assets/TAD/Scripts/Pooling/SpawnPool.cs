@@ -90,6 +90,98 @@ namespace TAD.Pooling
             }
         }
 
+        /// <summary>Copies every attacker definition configured by this pool, preserving roster order.</summary>
+        public void CopyAvailableAttackerDefinitions(List<AttackerDefinition> destination)
+        {
+            if (destination == null)
+            {
+                return;
+            }
+
+            destination.Clear();
+            if (poolSettings != null)
+            {
+                foreach (var settings in poolSettings)
+                {
+                    if (settings == null || settings.ObjectType != PooledObjectType.Attacker)
+                    {
+                        continue;
+                    }
+
+                    AddAttackerDefinition(settings.Prefab, destination);
+                }
+            }
+
+            if (additionalAttackerPrefabs == null)
+            {
+                return;
+            }
+
+            foreach (var attackerPrefab in additionalAttackerPrefabs)
+            {
+                AddAttackerDefinition(attackerPrefab, destination);
+            }
+        }
+
+        /// <summary>Gets the configured attacker prefab for a definition, including the legacy default attacker.</summary>
+        public bool TryGetAttackerPrefab(AttackerDefinition definition, out GameObject attackerPrefab)
+        {
+            attackerPrefab = null;
+            if (definition == null)
+            {
+                return false;
+            }
+
+            if (poolSettings != null)
+            {
+                foreach (var settings in poolSettings)
+                {
+                    if (settings != null && settings.ObjectType == PooledObjectType.Attacker &&
+                        MatchesDefinition(settings.Prefab, definition))
+                    {
+                        attackerPrefab = settings.Prefab;
+                        return true;
+                    }
+                }
+            }
+
+            if (additionalAttackerPrefabs == null)
+            {
+                return false;
+            }
+
+            foreach (var candidate in additionalAttackerPrefabs)
+            {
+                if (MatchesDefinition(candidate, definition))
+                {
+                    attackerPrefab = candidate;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static void AddAttackerDefinition(GameObject attackerPrefab, List<AttackerDefinition> destination)
+        {
+            if (attackerPrefab == null ||
+                !attackerPrefab.TryGetComponent<BasicAttacker>(out var attacker) ||
+                attacker.Definition == null ||
+                destination.Contains(attacker.Definition))
+            {
+                return;
+            }
+
+            destination.Add(attacker.Definition);
+        }
+
+        private static bool MatchesDefinition(GameObject attackerPrefab, AttackerDefinition definition)
+        {
+            return attackerPrefab != null &&
+                   attackerPrefab.TryGetComponent<BasicAttacker>(out var attacker) &&
+                   attacker.Definition == definition;
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetRuntimeInstanceIdSequence()
         {

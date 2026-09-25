@@ -14,13 +14,18 @@ namespace TAD.Economy
         [SerializeField, Min(0)] private int startingGold = 100;
 
         private int currentGold;
+        private int currentIncome;
 
         /// <summary>Raised whenever the current gold value changes.</summary>
         public event Action<int> GoldChanged;
 
+        /// <summary>Raised when queued attacker-wave income changes.</summary>
+        public event Action<int> IncomeChanged;
+
         public BankSide BankSide => bankSide;
         public int StartingGold => startingGold;
         public int CurrentGold => currentGold;
+        public int CurrentIncome => currentIncome;
 
         private void Awake()
         {
@@ -31,6 +36,7 @@ namespace TAD.Economy
         public void ResetGold()
         {
             SetGold(startingGold);
+            ClearIncome();
         }
 
         /// <summary>Returns whether the bank can pay an amount without changing its balance.</summary>
@@ -51,6 +57,38 @@ namespace TAD.Economy
             SetGold(increasedGold);
         }
 
+        /// <summary>Adds income that will be paid when the queued attacker wave resolves.</summary>
+        public void AddIncome(int amount)
+        {
+            if (amount <= 0)
+            {
+                return;
+            }
+
+            var increasedIncome = (int)Math.Min(int.MaxValue, (long)currentIncome + amount);
+            SetIncome(increasedIncome);
+        }
+
+        /// <summary>Pays all queued income into this bank and returns the amount collected.</summary>
+        public int CollectIncome()
+        {
+            var collectedIncome = currentIncome;
+            if (collectedIncome <= 0)
+            {
+                return 0;
+            }
+
+            SetIncome(0);
+            AddGold(collectedIncome);
+            return collectedIncome;
+        }
+
+        /// <summary>Clears queued income without adding it to the current gold.</summary>
+        public void ClearIncome()
+        {
+            SetIncome(0);
+        }
+
         /// <summary>Attempts to pay gold, returning false when funds are insufficient.</summary>
         public bool TrySpendGold(int amount)
         {
@@ -61,6 +99,18 @@ namespace TAD.Economy
 
             SetGold(currentGold - amount);
             return true;
+        }
+
+        private void SetIncome(int value)
+        {
+            var clampedIncome = Mathf.Max(0, value);
+            if (currentIncome == clampedIncome)
+            {
+                return;
+            }
+
+            currentIncome = clampedIncome;
+            IncomeChanged?.Invoke(currentIncome);
         }
 
         private void SetGold(int value)
