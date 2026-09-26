@@ -27,8 +27,10 @@ namespace TAD.Defenders
         [SerializeField] private Rigidbody2D rangeBody;
         [SerializeField] private DefenderRangeVisual rangeVisual;
         [SerializeField, Min(1)] private int expMax = 10;
+        [SerializeField, Min(1)] private int maxLevel = 10;
 
         [System.NonSerialized] private float currentExp;
+        [System.NonSerialized] private float totalExperience;
         [System.NonSerialized] private int currentLevel = 1;
         private PooledInstance pooledInstance;
         private SpawnPool projectilePool;
@@ -60,6 +62,15 @@ namespace TAD.Defenders
 
         /// <summary>Current runtime level for this placed farmhand.</summary>
         public int CurrentLevel => currentLevel;
+
+        /// <summary>Configured maximum level for this farmhand.</summary>
+        public int MaxLevel => Mathf.Max(1, maxLevel);
+
+        /// <summary>True once this farmhand can no longer gain levels.</summary>
+        public bool IsAtMaxLevel => currentLevel >= MaxLevel;
+
+        /// <summary>Total experience earned by this placed farmhand, including awards received at the level cap.</summary>
+        public float TotalExperience => totalExperience;
 
         /// <summary>Per-farmhand damage after this farmhand's level multiplier is applied.</summary>
         public float Damage => weaponDefinition != null
@@ -574,12 +585,24 @@ namespace TAD.Defenders
                 return;
             }
 
-            var expThreshold = Mathf.Max(1, ExpMax);
-            currentExp = RoundToNearestTenth(currentExp + amount);
-            while (currentExp >= expThreshold)
+            // Results can credit every earned point even after no further level can be gained.
+            totalExperience = RoundToNearestTenth(totalExperience + amount);
+
+            if (!IsAtMaxLevel)
             {
-                currentExp = RoundToNearestTenth(currentExp - expThreshold);
-                currentLevel++;
+                var expThreshold = Mathf.Max(1, ExpMax);
+                currentExp = RoundToNearestTenth(currentExp + amount);
+                while (currentLevel < MaxLevel && currentExp >= expThreshold)
+                {
+                    currentExp = RoundToNearestTenth(currentExp - expThreshold);
+                    currentLevel++;
+                }
+
+                if (IsAtMaxLevel)
+                {
+                    // Current XP only represents progress toward an obtainable next level.
+                    currentExp = 0f;
+                }
             }
 
             ProgressionChanged?.Invoke();
@@ -593,6 +616,7 @@ namespace TAD.Defenders
         private void ResetProgression()
         {
             currentExp = 0f;
+            totalExperience = 0f;
             currentLevel = 1;
             ProgressionChanged?.Invoke();
         }
@@ -626,6 +650,7 @@ namespace TAD.Defenders
         private void OnValidate()
         {
             expMax = Mathf.Max(1, expMax);
+            maxLevel = Mathf.Max(1, maxLevel);
             ResolveComponents();
             ConfigureRangeBody();
             ConfigureRangeCollider();

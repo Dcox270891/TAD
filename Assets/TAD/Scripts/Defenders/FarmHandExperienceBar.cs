@@ -77,7 +77,9 @@ namespace TAD.Defenders
             }
 
             var expMax = Mathf.Max(1, farmHand.ExpMax);
-            var normalizedExperience = Mathf.Clamp01(farmHand.CurrentExp / expMax);
+            var normalizedExperience = farmHand.IsAtMaxLevel
+                ? 1f
+                : Mathf.Clamp01(farmHand.CurrentExp / expMax);
             ConfigureTransform();
             ConfigureBarRenderers(normalizedExperience);
             ConfigureTextRenderer();
@@ -193,7 +195,9 @@ namespace TAD.Defenders
             }
 
             valueText.font ??= Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            valueText.text = $"Lv {farmHand.CurrentLevel}  {farmHand.CurrentExp:0.#} / {farmHand.ExpMax}";
+            valueText.text = farmHand.IsAtMaxLevel
+                ? $"Lv {farmHand.CurrentLevel}  MAX"
+                : $"Lv {farmHand.CurrentLevel}  {farmHand.CurrentExp:0.#} / {farmHand.ExpMax}";
             valueText.anchor = TextAnchor.MiddleCenter;
             valueText.alignment = TextAlignment.Center;
             valueText.fontSize = 22;
