@@ -456,16 +456,28 @@ namespace TAD.Defenders
 
             var sourceVisual = farmHandPrefab.Visual;
             var previewRenderer = previewObject.AddComponent<SpriteRenderer>();
-            previewRenderer.sprite = sourceVisual.sprite;
-            previewRenderer.color = new Color(
-                sourceVisual.color.r,
-                sourceVisual.color.g,
-                sourceVisual.color.b,
-                sourceVisual.color.a * previewOpacity);
-            previewRenderer.flipX = sourceVisual.flipX;
-            previewRenderer.flipY = sourceVisual.flipY;
-            previewRenderer.sortingLayerID = sourceVisual.sortingLayerID;
-            previewRenderer.sortingOrder = Mathf.Max(previewSortingOrder, sourceVisual.sortingOrder + 1);
+            var previewBodySortingOrder = Mathf.Max(previewSortingOrder, sourceVisual.sortingOrder + 1);
+            var visualController = farmHandPrefab.GetComponent<FarmHandVisualController>();
+            if (visualController == null ||
+                !visualController.ConfigurePlacementPreview(
+                    previewRenderer,
+                    previewObject.transform,
+                    previewOpacity,
+                    previewObject.layer,
+                    previewBodySortingOrder))
+            {
+                // Retain compatibility with any legacy defender prefab that has not yet opted into layers.
+                previewRenderer.sprite = sourceVisual.sprite;
+                previewRenderer.color = new Color(
+                    sourceVisual.color.r,
+                    sourceVisual.color.g,
+                    sourceVisual.color.b,
+                    sourceVisual.color.a * previewOpacity);
+                previewRenderer.flipX = sourceVisual.flipX;
+                previewRenderer.flipY = sourceVisual.flipY;
+                previewRenderer.sortingLayerID = sourceVisual.sortingLayerID;
+                previewRenderer.sortingOrder = previewBodySortingOrder;
+            }
 
             var rangePreviewObject = new GameObject(
                 "Range Preview",

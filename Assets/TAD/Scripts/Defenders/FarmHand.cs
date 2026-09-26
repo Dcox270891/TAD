@@ -26,6 +26,7 @@ namespace TAD.Defenders
         private const float TestingExperienceMultiplier = 5f;
 
         [SerializeField] private SpriteRenderer visual;
+        [SerializeField] private FarmHandVisualController visualController;
         [SerializeField] private WeaponDefinition weaponDefinition;
         [SerializeField] private CircleCollider2D rangeCollider;
         [SerializeField] private Rigidbody2D rangeBody;
@@ -39,6 +40,7 @@ namespace TAD.Defenders
         [System.NonSerialized] private WeaponDefinition baseWeaponDefinition;
         [System.NonSerialized] private bool isAwaitingLevelThreeUpgrade;
         [System.NonSerialized] private bool hasSelectedLevelThreeUpgrade;
+        [System.NonSerialized] private Vector2 facingDirection = Vector2.right;
         private PooledInstance pooledInstance;
         private SpawnPool projectilePool;
         private ResourceBank defenderBank;
@@ -103,6 +105,12 @@ namespace TAD.Defenders
         /// <summary>Raised after this farmhand's experience or level changes.</summary>
         public event System.Action ProgressionChanged;
 
+        /// <summary>Raised after a successfully launched projectile so presentation can play its matching attack animation.</summary>
+        public event System.Action<Vector2, WeaponDefinition> Fired;
+
+        /// <summary>Raised after this farmhand's permanent gameplay weapon changes.</summary>
+        public event System.Action<WeaponDefinition> WeaponChanged;
+
         /// <summary>Raised after a farmhand has configured its non-blocking range sensor.</summary>
         public static event System.Action<FarmHand> FarmHandEnabled;
 
@@ -111,6 +119,9 @@ namespace TAD.Defenders
 
         /// <summary>World-space attack range supplied by the currently assigned weapon.</summary>
         public float Range => weaponDefinition != null ? weaponDefinition.Range : 0f;
+
+        /// <summary>Last valid aiming direction, used only by directional farmhand presentation.</summary>
+        public Vector2 FacingDirection => facingDirection.sqrMagnitude > 0.0001f ? facingDirection : Vector2.right;
 
         /// <summary>The non-blocking 2D trigger used to maintain the nearby attacker collection.</summary>
         public CircleCollider2D RangeCollider => rangeCollider;
@@ -185,6 +196,7 @@ namespace TAD.Defenders
             nextFireTime = Time.time;
             ConfigureRangeCollider();
             ConfigureRangeVisual();
+            WeaponChanged?.Invoke(weaponDefinition);
         }
 
         /// <summary>Charges the Defender bank and applies the one permanent weapon choice offered at level 3.</summary>
@@ -326,6 +338,7 @@ namespace TAD.Defenders
             ConfigureRangeCollider();
             ConfigureNonBlockingColliders();
             ConfigureRangeVisual();
+            WeaponChanged?.Invoke(weaponDefinition);
         }
 
         void IPoolLifecycle.OnReturnedToPool()
@@ -339,6 +352,7 @@ namespace TAD.Defenders
         private void ResolveComponents()
         {
             visual ??= GetComponent<SpriteRenderer>();
+            visualController ??= GetComponent<FarmHandVisualController>();
             rangeCollider ??= GetComponent<CircleCollider2D>();
             rangeBody ??= GetComponent<Rigidbody2D>();
             rangeVisual ??= GetComponentInChildren<DefenderRangeVisual>(true);
@@ -428,7 +442,14 @@ namespace TAD.Defenders
                 limitedActiveProjectiles.Add(projectile);
             }
 
+            var targetDirection = target.CurrentPosition - origin;
+            if (targetDirection.sqrMagnitude > 0.0001f)
+            {
+                facingDirection = targetDirection.normalized;
+            }
+
             nextFireTime = Time.time + weapon.FireInterval;
+            Fired?.Invoke(FacingDirection, weapon);
         }
 
         private bool CanLaunchProjectile(ProjectileDefinition projectileDefinition)
@@ -745,6 +766,7 @@ namespace TAD.Defenders
             currentLevel = 1;
             isAwaitingLevelThreeUpgrade = false;
             hasSelectedLevelThreeUpgrade = false;
+            facingDirection = Vector2.right;
             ProgressionChanged?.Invoke();
         }
 

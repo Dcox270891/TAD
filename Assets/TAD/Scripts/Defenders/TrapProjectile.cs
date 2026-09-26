@@ -13,6 +13,12 @@ namespace TAD.Defenders
         private float travelSpeed;
         private bool isArmed;
 
+        /// <summary>True once this pooled trap reaches its destination and can damage attackers.</summary>
+        public bool IsArmed => isArmed;
+
+        /// <summary>Raised when the trap changes between its travelling and armed visual states.</summary>
+        public event System.Action<bool> ArmedStateChanged;
+
         protected override ProjectileBehavior ExpectedProjectileBehavior => ProjectileBehavior.Trap;
 
         private void FixedUpdate()
@@ -45,6 +51,7 @@ namespace TAD.Defenders
             travelSpeed = Definition.ProjectileSpeed;
             isArmed = false;
             SetHitColliderEnabled(false);
+            ArmedStateChanged?.Invoke(false);
 
             if (targetDelta.sqrMagnitude > 0.0001f)
             {
@@ -71,6 +78,7 @@ namespace TAD.Defenders
             }
 
             SetHitColliderEnabled(true);
+            ArmedStateChanged?.Invoke(true);
         }
 
         private void OnTriggerEnter2D(Collider2D other)

@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 8326217055168025797}
   - component: {fileID: 8580551249944971714}
   - component: {fileID: 8703505917865841572}
+  - component: {fileID: 5111084933540771994}
   m_Layer: 11
   m_Name: TrapProjectile
   m_TagString: Untagged
@@ -43,7 +44,7 @@ SpriteRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1958398127359794655}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
@@ -84,7 +85,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 3
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 21300000, guid: a1872258bdfd17546a35961aa946a72d, type: 3}
+  m_Sprite: {fileID: 365420393, guid: ea52a35a715a80f40b83ddc66998721d, type: 3}
   m_Color: {r: 0.33, g: 0.8, b: 0.34, a: 0.82}
   m_FlipX: 0
   m_FlipY: 0
@@ -174,3 +175,19 @@ MonoBehaviour:
   hitCollider: {fileID: 8326217055168025797}
   body: {fileID: 8580551249944971714}
   hitRadius: 0.32
+--- !u!114 &5111084933540771994
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1958398127359794655}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 54a9282b380fc754495349f565f08ae2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TAD.Defenders.TrapProjectileVisualController
+  trapProjectile: {fileID: 8703505917865841572}
+  visual: {fileID: 8238685777312065120}
+  closedSprite: {fileID: 365420393, guid: ea52a35a715a80f40b83ddc66998721d, type: 3}
+  armedSprite: {fileID: 672371455, guid: ea52a35a715a80f40b83ddc66998721d, type: 3}
