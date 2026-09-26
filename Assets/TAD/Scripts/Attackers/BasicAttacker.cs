@@ -50,7 +50,11 @@ namespace TAD.Attackers
         public long InstanceId => pooledInstance != null ? pooledInstance.RuntimeInstanceId : 0L;
 
         public float RemainingHealth => currentHealth;
+        public float MaximumHealth => definition != null ? definition.MaximumHealth : 0f;
         public bool HasReachedFoodStore => hasReachedFoodStore;
+
+        /// <summary>Raised whenever this pooled attacker's health is reset or changed.</summary>
+        public event System.Action<float, float> HealthChanged;
         public bool IsDefeated => isDefeated;
         public float Size => definition != null ? definition.Size : 0f;
         public int SendCost => definition != null ? definition.SendCost : 0;
@@ -195,6 +199,7 @@ namespace TAD.Attackers
             }
 
             currentHealth = Mathf.Max(0f, currentHealth - damage);
+            NotifyHealthChanged();
             if (currentHealth > 0f)
             {
                 // A tower receives one assist share for this attacker activation, regardless of how many times it hits.
@@ -288,6 +293,12 @@ namespace TAD.Attackers
             }
 
             ConfigureTraversalCollisions();
+            NotifyHealthChanged();
+        }
+
+        private void NotifyHealthChanged()
+        {
+            HealthChanged?.Invoke(currentHealth, MaximumHealth);
         }
 
         /// <summary>
