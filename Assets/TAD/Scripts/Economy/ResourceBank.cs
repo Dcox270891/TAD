@@ -19,7 +19,7 @@ namespace TAD.Economy
         /// <summary>Raised whenever the current gold value changes.</summary>
         public event Action<int> GoldChanged;
 
-        /// <summary>Raised when queued attacker-wave income changes.</summary>
+        /// <summary>Raised when the stored attacker income total changes.</summary>
         public event Action<int> IncomeChanged;
 
         public BankSide BankSide => bankSide;
@@ -57,7 +57,7 @@ namespace TAD.Economy
             SetGold(increasedGold);
         }
 
-        /// <summary>Adds income that will be paid when the queued attacker wave resolves.</summary>
+        /// <summary>Adds recurring attacker income that is paid after future resolved waves.</summary>
         public void AddIncome(int amount)
         {
             if (amount <= 0)
@@ -92,7 +92,23 @@ namespace TAD.Economy
             return collectedIncome;
         }
 
-        /// <summary>Clears queued income without adding it to the current gold.</summary>
+        /// <summary>
+        /// Pays a snapshot of recurring income into this bank without consuming the stored income total.
+        /// This lets attacker income grow across resolved waves while the HUD continues to show the full amount.
+        /// </summary>
+        public int PayIncome(int amount)
+        {
+            var paidIncome = Mathf.Clamp(amount, 0, currentIncome);
+            if (paidIncome <= 0)
+            {
+                return 0;
+            }
+
+            AddGold(paidIncome);
+            return paidIncome;
+        }
+
+        /// <summary>Clears the stored income total without adding it to the current gold.</summary>
         public void ClearIncome()
         {
             SetIncome(0);

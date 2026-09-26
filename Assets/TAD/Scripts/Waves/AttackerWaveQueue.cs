@@ -34,7 +34,7 @@ namespace TAD.Waves
         private float spawnInterval = 0.2f;
 
         [SerializeField]
-        [Tooltip("The player bank that pays for attacker groups and receives their income when sent groups resolve.")]
+        [Tooltip("The player bank that pays for attacker groups and receives its persistent income after sent groups resolve.")]
         private ResourceBank attackerBank;
 
         private readonly Queue<QueuedAttackerGroup> queuedGroups = new();
@@ -44,6 +44,7 @@ namespace TAD.Waves
         private DayCycleController dayCycle;
         private Coroutine nextGroupRoutine;
         private Action<bool> sequenceCompletion;
+        // Snapshot of recurring income at the start of the currently dispatched sequence.
         private int dispatchedIncome;
         private bool isSending;
 
@@ -92,7 +93,7 @@ namespace TAD.Waves
 
         /// <summary>
         /// Pays once for a selected attacker card, queues its configured Send Size as one group,
-        /// and records its Wave Income for payment only after that group has been sent and resolved.
+        /// and adds its Wave Income to the persistent attacker income total.
         /// </summary>
         public bool TryQueueAttackers(AttackerDefinition definition)
         {
@@ -132,13 +133,13 @@ namespace TAD.Waves
             }
 
             sequenceCompletion = completion;
-            dispatchedIncome = 0;
+            // Income ordered during combat remains part of the next sequence payout.
+            dispatchedIncome = attackerBank != null ? attackerBank.CurrentIncome : 0;
             isSending = true;
             while (queuedGroups.Count > 0)
             {
                 var group = queuedGroups.Dequeue();
                 dispatchedGroups.Enqueue(group);
-                dispatchedIncome += group.Income;
             }
 
             RaiseQueueChanged();
@@ -271,7 +272,7 @@ namespace TAD.Waves
 
             if (completed)
             {
-                attackerBank?.CollectIncome(dispatchedIncome);
+                attackerBank?.PayIncome(dispatchedIncome);
                 dispatchedGroups.Clear();
             }
             else
