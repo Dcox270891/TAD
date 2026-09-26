@@ -16,7 +16,7 @@ namespace TAD.Defenders
         private float travelSpeed;
         private float remainingLifetime;
 
-        protected override WeaponProjectileBehavior ProjectileBehavior => WeaponProjectileBehavior.Rolling;
+        protected override ProjectileBehavior ExpectedProjectileBehavior => ProjectileBehavior.Rolling;
 
         private void FixedUpdate()
         {

@@ -13,7 +13,7 @@ namespace TAD.Defenders
         private float travelSpeed;
         private bool isArmed;
 
-        protected override WeaponProjectileBehavior ProjectileBehavior => WeaponProjectileBehavior.Trap;
+        protected override ProjectileBehavior ExpectedProjectileBehavior => ProjectileBehavior.Trap;
 
         private void FixedUpdate()
         {

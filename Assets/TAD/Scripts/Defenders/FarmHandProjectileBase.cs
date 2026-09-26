@@ -25,17 +25,18 @@ namespace TAD.Defenders
 
         protected FarmHand SourceFarmHand { get; private set; }
         protected BasicAttacker Target { get; private set; }
-        protected WeaponDefinition Definition { get; private set; }
+        protected ProjectileDefinition Definition { get; private set; }
+        protected float AttackRange { get; private set; }
         protected float Damage { get; private set; }
         protected Rigidbody2D Body => body;
         protected Collider2D HitCollider => hitCollider;
         protected Vector3 BaseLocalScale => baseLocalScale;
         public bool IsLaunched { get; private set; }
         public FarmHand Source => SourceFarmHand;
-        public WeaponDefinition WeaponDefinition => Definition;
+        public ProjectileDefinition ProjectileDefinition => Definition;
         public long InstanceId => pooledInstance != null ? pooledInstance.RuntimeInstanceId : 0L;
 
-        protected abstract WeaponProjectileBehavior ProjectileBehavior { get; }
+        protected abstract ProjectileBehavior ExpectedProjectileBehavior { get; }
 
         protected virtual void Awake()
         {
@@ -55,15 +56,16 @@ namespace TAD.Defenders
             ResetRuntimeState();
         }
 
-        /// <summary>Initializes this projectile from immutable weapon data immediately after the pool activates it.</summary>
+        /// <summary>Initializes this projectile from immutable projectile data immediately after the pool activates it.</summary>
         public bool Launch(
             FarmHand sourceFarmHand,
             Vector2 origin,
             BasicAttacker target,
-            WeaponDefinition definition,
+            ProjectileDefinition definition,
+            float attackRange,
             float damageAmount)
         {
-            if (sourceFarmHand == null || definition == null || definition.ProjectileBehavior != ProjectileBehavior ||
+            if (sourceFarmHand == null || definition == null || definition.ProjectileBehavior != ExpectedProjectileBehavior ||
                 !IsValidTarget(target) || definition.ProjectileSpeed <= 0f || damageAmount <= 0f ||
                 (definition.UsesTimedLifetime && definition.ProjectileLifetime <= 0f))
             {
@@ -82,6 +84,7 @@ namespace TAD.Defenders
             SourceFarmHand = sourceFarmHand;
             Target = target;
             Definition = definition;
+            AttackRange = Mathf.Max(0f, attackRange);
             Damage = damageAmount;
             body.position = origin;
             body.linearVelocity = Vector2.zero;
@@ -243,6 +246,7 @@ namespace TAD.Defenders
             SourceFarmHand = null;
             Target = null;
             Definition = null;
+            AttackRange = 0f;
             Damage = 0f;
 
             if (body != null)

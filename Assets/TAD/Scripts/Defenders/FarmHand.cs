@@ -304,14 +304,16 @@ namespace TAD.Defenders
             }
 
             var weapon = weaponDefinition;
+            var projectileDefinition = weapon != null ? weapon.ProjectileDefinition : null;
             var damage = Damage;
-            if (weapon == null || weapon.ProjectilePrefab == null || weapon.ProjectileSpeed <= 0f ||
-                damage <= 0f || (weapon.UsesTimedLifetime && weapon.ProjectileLifetime <= 0f))
+            if (weapon == null || projectileDefinition == null || projectileDefinition.ProjectilePrefab == null ||
+                projectileDefinition.ProjectileSpeed <= 0f || damage <= 0f ||
+                (projectileDefinition.UsesTimedLifetime && projectileDefinition.ProjectileLifetime <= 0f))
             {
                 return;
             }
 
-            if (!TryGetFirstAttackableAttacker(weapon.ProjectileType, out var target))
+            if (!TryGetFirstAttackableAttacker(projectileDefinition.ProjectileType, out var target))
             {
                 // Avoid repeating line-of-sight physics queries every rendered frame while every nearby target is covered.
                 nextFireTime = Time.time + BlockedTargetRetryInterval;
@@ -324,13 +326,13 @@ namespace TAD.Defenders
                 return;
             }
 
-            if (!CanLaunchProjectile(weapon))
+            if (!CanLaunchProjectile(projectileDefinition))
             {
                 return;
             }
 
             var origin = (Vector2)transform.position;
-            var projectileObject = pool.SpawnProjectile(weapon.ProjectilePrefab, origin, Quaternion.identity);
+            var projectileObject = pool.SpawnProjectile(projectileDefinition.ProjectilePrefab, origin, Quaternion.identity);
             if (projectileObject == null)
             {
                 nextFireTime = Time.time + weapon.FireInterval;
@@ -342,7 +344,8 @@ namespace TAD.Defenders
                     this,
                     origin,
                     target,
-                    weapon,
+                    projectileDefinition,
+                    weapon.Range,
                     damage))
             {
                 ReturnProjectileToPool(projectileObject);
@@ -350,7 +353,7 @@ namespace TAD.Defenders
                 return;
             }
 
-            if (weapon.MaximumActiveProjectiles > 0)
+            if (projectileDefinition.MaximumActiveProjectiles > 0)
             {
                 limitedActiveProjectiles.Add(projectile);
             }
@@ -358,9 +361,9 @@ namespace TAD.Defenders
             nextFireTime = Time.time + weapon.FireInterval;
         }
 
-        private bool CanLaunchProjectile(WeaponDefinition weapon)
+        private bool CanLaunchProjectile(ProjectileDefinition projectileDefinition)
         {
-            if (weapon == null || weapon.MaximumActiveProjectiles <= 0)
+            if (projectileDefinition == null || projectileDefinition.MaximumActiveProjectiles <= 0)
             {
                 return true;
             }
@@ -370,15 +373,14 @@ namespace TAD.Defenders
             foreach (var projectile in limitedActiveProjectiles)
             {
                 if (projectile != null && projectile.IsLaunched && projectile.Source == this &&
-                    projectile.WeaponDefinition == weapon)
+                    projectile.ProjectileDefinition == projectileDefinition)
                 {
                     activeCount++;
                 }
             }
 
-            return activeCount < weapon.MaximumActiveProjectiles;
+            return activeCount < projectileDefinition.MaximumActiveProjectiles;
         }
-
         private void PruneLimitedActiveProjectiles()
         {
             for (var index = limitedActiveProjectiles.Count - 1; index >= 0; index--)
@@ -404,7 +406,7 @@ namespace TAD.Defenders
             limitedActiveProjectiles.Clear();
         }
 
-        private bool TryGetFirstAttackableAttacker(WeaponProjectileType projectileType, out BasicAttacker attacker)
+        private bool TryGetFirstAttackableAttacker(ProjectileType projectileType, out BasicAttacker attacker)
         {
             PruneInvalidAttackers();
 
@@ -422,7 +424,7 @@ namespace TAD.Defenders
             return false;
         }
 
-        private bool IsCandidateBlockedByWall(BasicAttacker candidate, WeaponProjectileType projectileType)
+        private bool IsCandidateBlockedByWall(BasicAttacker candidate, ProjectileType projectileType)
         {
             var origin = (Vector2)transform.position;
             var targetPosition = candidate.CurrentPosition;
@@ -454,7 +456,7 @@ namespace TAD.Defenders
                     continue;
                 }
 
-                if (projectileType != WeaponProjectileType.Ranged || wall.BlocksAllAttacks)
+                if (projectileType != ProjectileType.Ranged || wall.BlocksAllAttacks)
                 {
                     return true;
                 }

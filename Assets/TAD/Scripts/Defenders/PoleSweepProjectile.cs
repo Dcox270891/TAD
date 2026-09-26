@@ -16,7 +16,7 @@ namespace TAD.Defenders
         private float remainingLifetime;
         private float sweepDuration;
 
-        protected override WeaponProjectileBehavior ProjectileBehavior => WeaponProjectileBehavior.PoleSweep;
+        protected override ProjectileBehavior ExpectedProjectileBehavior => ProjectileBehavior.PoleSweep;
 
         private void FixedUpdate()
         {
@@ -76,7 +76,7 @@ namespace TAD.Defenders
             var direction = new Vector2(
                 Mathf.Cos(swingAngle * Mathf.Deg2Rad),
                 Mathf.Sin(swingAngle * Mathf.Deg2Rad));
-            var reach = Mathf.Max(0.01f, Definition.Range);
+            var reach = Mathf.Max(0.01f, AttackRange);
             var position = (Vector2)SourceFarmHand.transform.position + (direction * (reach * 0.5f));
 
             transform.localScale = new Vector3(

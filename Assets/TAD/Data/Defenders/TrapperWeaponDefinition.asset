@@ -17,14 +17,5 @@ MonoBehaviour:
   cost: 36
   range: 1.5
   attackSpeed: 0.8
-  projectileType: 1
-  projectileBehavior: 3
-  projectileLifetimeMode: 1
-  projectilePrefab: {fileID: 1958398127359794655, guid: 1d5d2105462eb724b94bba69f475fab9, type: 3}
-  projectileSpeed: 13
   damage: 14
-  projectileLifetime: 0
-  maximumActiveProjectiles: 0
-  initialSpeedMultiplier: 1
-  rollingAcceleration: 0
-  poleSweepAngle: 180
+  projectileDefinition: {fileID: 11400000, guid: 2f58223db1a8f81429cb38bbf7aa54bc, type: 2}

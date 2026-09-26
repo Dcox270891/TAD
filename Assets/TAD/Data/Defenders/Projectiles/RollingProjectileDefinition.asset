@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 89aa934850846a64abd902f1c8f6b518, type: 3}
+  m_Name: RollingProjectileDefinition
+  m_EditorClassIdentifier: Assembly-CSharp::TAD.Defenders.ProjectileDefinition
+  projectileType: 0
+  projectileBehavior: 2
+  projectileLifetimeMode: 0
+  projectilePrefab: {fileID: 2511437359071816503, guid: 70cae31e09c43cb498c3a44db79aeb6b, type: 3}
+  projectileSpeed: 4
+  projectileLifetime: 3.5
+  maximumActiveProjectiles: 0
+  initialSpeedMultiplier: 0.2
+  rollingAcceleration: 5
+  poleSweepAngle: 180
