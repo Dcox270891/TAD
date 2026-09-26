@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using TAD.Defenders;
+using TAD.Economy;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.Events;
@@ -9,7 +10,7 @@ namespace TAD.UI
 {
     /// <summary>
     /// Displays the four permanent weapon choices offered to one farmhand when it reaches level 3.
-    /// ModalOverlay owns input blocking and the paused game clock while this choice is open.
+    /// The modal blocks lower input while each option reflects the live Defender resource balance.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(ModalOverlay))]
@@ -26,7 +27,10 @@ namespace TAD.UI
         private readonly UnityAction[] optionActions = new UnityAction[UpgradeOptionCount];
         private readonly WeaponDefinition[] options = new WeaponDefinition[UpgradeOptionCount];
         private FarmHand targetFarmHand;
+        private ResourceBank defenderBank;
         private bool isSubscribed;
+        private bool isDefenderBankSubscribed;
+        private string selectionError;
 
         /// <summary>True while this choice is visible and owns gameplay input.</summary>
         public bool IsVisible => modalOverlay != null && modalOverlay.IsVisible;
@@ -50,13 +54,26 @@ namespace TAD.UI
         private void OnDisable()
         {
             Unsubscribe();
+            UnbindDefenderBank();
         }
 
         private void Update()
         {
-            if (IsVisible && !IsEligibleTarget(targetFarmHand))
+            if (!IsVisible)
+            {
+                return;
+            }
+
+            if (!IsEligibleTarget(targetFarmHand))
             {
                 DismissUnavailableTarget();
+                return;
+            }
+
+            if (defenderBank == null)
+            {
+                BindDefenderBank(targetFarmHand.DefenderBank);
+                RefreshVisuals();
             }
         }
 
@@ -71,6 +88,8 @@ namespace TAD.UI
             }
 
             targetFarmHand = farmHand;
+            selectionError = null;
+            BindDefenderBank(farmHand.DefenderBank);
             RefreshVisuals();
             modalOverlay.Show();
             SelectFirstOption();
@@ -152,8 +171,18 @@ namespace TAD.UI
             }
 
             var selectedWeapon = options[optionIndex];
-            if (selectedWeapon == null || !targetFarmHand.TryChooseLevelThreeUpgrade(selectedWeapon))
+            if (selectedWeapon == null)
             {
+                return;
+            }
+
+            if (!targetFarmHand.TryChooseLevelThreeUpgrade(selectedWeapon))
+            {
+                selectionError = targetFarmHand.CanAffordLevelThreeUpgrade(selectedWeapon)
+                    ? $"Unable to purchase {selectedWeapon.DisplayName}."
+                    : $"Not enough Defender Gold for {selectedWeapon.DisplayName}.";
+                RefreshVisuals();
+                SelectFirstOption();
                 return;
             }
 
@@ -194,6 +223,9 @@ namespace TAD.UI
 
         private void RefreshVisuals()
         {
+            var hasDefenderBank = defenderBank != null;
+            var defenderGold = hasDefenderBank ? defenderBank.CurrentGold : 0;
+
             if (titleText != null)
             {
                 titleText.text = "DEFENDER LEVEL 3";
@@ -201,34 +233,49 @@ namespace TAD.UI
 
             if (subtitleText != null)
             {
-                subtitleText.text = "Choose one weapon upgrade";
+                subtitleText.text = hasDefenderBank
+                    ? $"Defender Gold: {defenderGold} - Choose one weapon upgrade{FormatSelectionError()}"
+                    : $"Defender Gold unavailable - weapon choice cannot be purchased.{FormatSelectionError()}";
             }
 
             for (var index = 0; index < UpgradeOptionCount; index++)
             {
                 var definition = options[index];
+                var canAfford = definition != null && hasDefenderBank && targetFarmHand != null &&
+                                targetFarmHand.CanAffordLevelThreeUpgrade(definition);
                 var button = GetOptionButton(index);
                 var label = GetOptionText(index);
                 if (button != null)
                 {
-                    button.interactable = definition != null;
+                    button.interactable = canAfford;
                 }
 
                 if (label != null)
                 {
-                    label.text = BuildOptionText(definition);
+                    label.text = BuildOptionText(definition, defenderGold, hasDefenderBank);
                 }
             }
         }
 
-        private static string BuildOptionText(WeaponDefinition definition)
+        private string FormatSelectionError()
+        {
+            return string.IsNullOrWhiteSpace(selectionError) ? string.Empty : $"\n{selectionError}";
+        }
+
+        private static string BuildOptionText(WeaponDefinition definition, int defenderGold, bool hasDefenderBank)
         {
             if (definition == null)
             {
                 return "Unavailable";
             }
 
-            return $"{definition.DisplayName}\n{definition.Description}\n\nDamage {definition.Damage:0.#}   Range {definition.Range:0.#}   Speed {definition.AttackSpeed:0.#}";
+            var costText = hasDefenderBank
+                ? definition.Cost <= defenderGold
+                    ? $"Cost: {definition.Cost} Gold"
+                    : $"Cost: {definition.Cost} Gold\nNeed {definition.Cost - defenderGold} more Gold"
+                : "Cost: Defender Gold unavailable";
+
+            return $"{definition.DisplayName}\n{definition.Description}\n\n{costText}\nDamage {definition.Damage:0.#}   Range {definition.Range:0.#}   Speed {definition.AttackSpeed:0.#}";
         }
 
         private void SelectFirstOption()
@@ -263,6 +310,42 @@ namespace TAD.UI
             return true;
         }
 
+        private void BindDefenderBank(ResourceBank bank)
+        {
+            if (defenderBank == bank)
+            {
+                return;
+            }
+
+            UnbindDefenderBank();
+            defenderBank = bank;
+            if (defenderBank != null)
+            {
+                defenderBank.GoldChanged += HandleDefenderGoldChanged;
+                isDefenderBankSubscribed = true;
+            }
+        }
+
+        private void UnbindDefenderBank()
+        {
+            if (isDefenderBankSubscribed && defenderBank != null)
+            {
+                defenderBank.GoldChanged -= HandleDefenderGoldChanged;
+            }
+
+            isDefenderBankSubscribed = false;
+            defenderBank = null;
+        }
+
+        private void HandleDefenderGoldChanged(int gold)
+        {
+            selectionError = null;
+            if (IsVisible)
+            {
+                RefreshVisuals();
+            }
+        }
+
         private static bool IsEligibleTarget(FarmHand farmHand)
         {
             return farmHand != null &&
@@ -274,6 +357,8 @@ namespace TAD.UI
         private void ClearPresentation()
         {
             targetFarmHand = null;
+            selectionError = null;
+            UnbindDefenderBank();
             Array.Clear(options, 0, options.Length);
         }
 

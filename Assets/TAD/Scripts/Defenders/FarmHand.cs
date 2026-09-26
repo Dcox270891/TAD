@@ -18,9 +18,12 @@ namespace TAD.Defenders
         private const float BlockedTargetRetryInterval = 0.1f;
         private const int LineOfSightHitCapacity = 16;
         private const float HelpedToKillExperiencePercent = 0.1f;
+        private const float MaximumAssistExperiencePercent = 0.5f;
         private const float ExperienceDecimalMultiplier = 10f;
         private const float LevelDamageMultiplier = 1.1f;
         private const int LevelThreeUpgradeLevel = 3;
+        // Temporary progression tuning while combat and level-up choices are being tested.
+        private const float TestingExperienceMultiplier = 5f;
 
         [SerializeField] private SpriteRenderer visual;
         [SerializeField] private WeaponDefinition weaponDefinition;
@@ -51,6 +54,16 @@ namespace TAD.Defenders
 
         /// <summary>Shared weapon data currently assigned to this farmhand.</summary>
         public WeaponDefinition WeaponDefinition => weaponDefinition;
+
+        /// <summary>The authoritative Defender resource bank used for this farmhand's weapon purchases.</summary>
+        public ResourceBank DefenderBank => ResolveDefenderBank();
+
+        /// <summary>Returns whether the Defender bank can pay for the supplied level-3 weapon choice.</summary>
+        public bool CanAffordLevelThreeUpgrade(WeaponDefinition definition)
+        {
+            var bank = ResolveDefenderBank();
+            return definition != null && bank != null && bank.CanAfford(definition.Cost);
+        }
 
         /// <summary>True while this farmhand has reached level 3 and must choose its permanent weapon upgrade.</summary>
         public bool IsAwaitingLevelThreeUpgrade => isAwaitingLevelThreeUpgrade;
@@ -174,10 +187,16 @@ namespace TAD.Defenders
             ConfigureRangeVisual();
         }
 
-        /// <summary>Applies the one permanent weapon reward offered when this farmhand reaches level 3.</summary>
+        /// <summary>Charges the Defender bank and applies the one permanent weapon choice offered at level 3.</summary>
         public bool TryChooseLevelThreeUpgrade(WeaponDefinition definition)
         {
             if (definition == null || !isAwaitingLevelThreeUpgrade || currentLevel < LevelThreeUpgradeLevel)
+            {
+                return false;
+            }
+
+            var bank = ResolveDefenderBank();
+            if (bank == null || !bank.TrySpendGold(definition.Cost))
             {
                 return false;
             }
@@ -196,22 +215,46 @@ namespace TAD.Defenders
             ConfigureRangeVisual();
         }
 
-        /// <summary>Awards one non-lethal helped-to-kill experience credit.</summary>
-        internal void AwardHelpedToKillExperience(int expGiven)
-        {
-            AddExperience(GetHelpedToKillExperience(expGiven));
-        }
-
         /// <summary>
-        /// Awards a killing blow, replacing this attacker's earlier assisted-kill experience when present,
-        /// and adds the matching gold to the Defender bank.
+        /// Awards every eligible assisting Farmhand a share of this attacker group's XP, capped at half of the
+        /// distributed total. The killer receives the remaining share, which is therefore never below 50%.
         /// </summary>
-        internal void AwardKillingBlowReward(int expGiven, int killGain, bool replacesHelpedToKillExperience)
+        internal void AwardKillingBlowReward(
+            int expGiven,
+            int killGain,
+            int sendSize,
+            IReadOnlyList<FarmHand> assistRecipients)
         {
-            var experienceAward = Mathf.Max(
-                0f,
-                expGiven - (replacesHelpedToKillExperience ? GetHelpedToKillExperience(expGiven) : 0f));
-            AddExperience(experienceAward);
+            var distributedKillExperience = GetDistributedExperience(expGiven, sendSize);
+            var totalDefeatExperience = ApplyTestingExperienceMultiplier(distributedKillExperience);
+            var eligibleAssistCount = CountEligibleAssistRecipients(assistRecipients);
+            var assistExperiencePerDefender = eligibleAssistCount > 0
+                ? Mathf.Min(
+                    GetHelpedToKillExperience(expGiven, sendSize),
+                    (distributedKillExperience * MaximumAssistExperiencePercent) / eligibleAssistCount)
+                : 0f;
+
+            var awardedAssistExperience = 0f;
+            if (assistExperiencePerDefender > 0f && assistRecipients != null)
+            {
+                foreach (var assistingDefender in assistRecipients)
+                {
+                    if (!IsEligibleExperienceRecipient(assistingDefender))
+                    {
+                        continue;
+                    }
+
+                    awardedAssistExperience = RoundToNearestTenth(
+                        awardedAssistExperience + assistingDefender.AddExperience(assistExperiencePerDefender));
+                }
+            }
+
+            // Keep the complete post-test-multiplier XP pool allocated. Rounding from multiple helpers is
+            // included in the killer's remainder, while the hard floor still guarantees at least half.
+            var killingBlowExperience = Mathf.Max(
+                totalDefeatExperience * MaximumAssistExperiencePercent,
+                totalDefeatExperience - awardedAssistExperience);
+            AddExperience(killingBlowExperience / TestingExperienceMultiplier);
             ResolveDefenderBank()?.AddGold(killGain);
         }
 
@@ -225,23 +268,19 @@ namespace TAD.Defenders
 
             var expGiven = attacker.ExpGiven;
             var killGain = attacker.KillGain;
+            var sendSize = attacker.SendSize;
             if (!attacker.TryTakeDamage(
                     damageAmount,
                     this,
                     out var wasDefeated,
-                    out var helpedToKillAdded,
-                    out var killingBlowReplacedHelpedToKill))
+                    out var assistRecipients))
             {
                 return false;
             }
 
             if (wasDefeated)
             {
-                AwardKillingBlowReward(expGiven, killGain, killingBlowReplacedHelpedToKill);
-            }
-            else if (helpedToKillAdded)
-            {
-                AwardHelpedToKillExperience(expGiven);
+                AwardKillingBlowReward(expGiven, killGain, sendSize, assistRecipients);
             }
 
             return true;
@@ -606,26 +645,61 @@ namespace TAD.Defenders
             rangeVisual.Configure(Range, sortingLayerId, sortingOrder, isRangeIndicatorVisible);
         }
 
-        private static float GetHelpedToKillExperience(int expGiven)
+        private static float GetDistributedExperience(int expGiven, int sendSize)
         {
-            return RoundToNearestTenth(expGiven * HelpedToKillExperiencePercent);
+            return expGiven <= 0 ? 0f : expGiven / (float)Mathf.Max(1, sendSize);
         }
 
-        private void AddExperience(float amount)
+        private static float GetHelpedToKillExperience(int expGiven, int sendSize)
+        {
+            return RoundToNearestTenth(GetDistributedExperience(expGiven, sendSize) * HelpedToKillExperiencePercent);
+        }
+
+        private static int CountEligibleAssistRecipients(IReadOnlyList<FarmHand> assistRecipients)
+        {
+            if (assistRecipients == null)
+            {
+                return 0;
+            }
+
+            var count = 0;
+            foreach (var assistingDefender in assistRecipients)
+            {
+                if (IsEligibleExperienceRecipient(assistingDefender))
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        private static bool IsEligibleExperienceRecipient(FarmHand defender)
+        {
+            return defender != null && defender.isActiveAndEnabled && defender.gameObject.activeInHierarchy;
+        }
+
+        private float AddExperience(float amount)
         {
             if (amount <= 0f)
             {
-                return;
+                return 0f;
+            }
+
+            var awardedAmount = ApplyTestingExperienceMultiplier(amount);
+            if (awardedAmount <= 0f)
+            {
+                return 0f;
             }
 
             // Results can credit every earned point even after no further level can be gained.
-            totalExperience = RoundToNearestTenth(totalExperience + amount);
+            totalExperience = RoundToNearestTenth(totalExperience + awardedAmount);
             var shouldRequestLevelThreeUpgrade = false;
 
             if (!IsAtMaxLevel)
             {
                 var expThreshold = Mathf.Max(1, ExpMax);
-                currentExp = RoundToNearestTenth(currentExp + amount);
+                currentExp = RoundToNearestTenth(currentExp + awardedAmount);
                 while (currentLevel < MaxLevel && currentExp >= expThreshold)
                 {
                     currentExp = RoundToNearestTenth(currentExp - expThreshold);
@@ -651,6 +725,13 @@ namespace TAD.Defenders
             {
                 LevelThreeUpgradeChoiceRequested?.Invoke(this);
             }
+
+            return awardedAmount;
+        }
+
+        private static float ApplyTestingExperienceMultiplier(float amount)
+        {
+            return RoundToNearestTenth(amount * TestingExperienceMultiplier);
         }
         private static float RoundToNearestTenth(float amount)
         {

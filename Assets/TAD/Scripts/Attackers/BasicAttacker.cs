@@ -172,24 +172,23 @@ namespace TAD.Attackers
         /// <summary>Applies damage and returns true when this attacker is defeated.</summary>
         public bool TakeDamage(float damage)
         {
-            TryTakeDamage(damage, null, out var wasDefeated, out _, out _);
+            TryTakeDamage(damage, null, out var wasDefeated, out _);
             return wasDefeated;
         }
 
         /// <summary>
-        /// Applies damage from a defender and reports whether damage was accepted, whether it was lethal,
-        /// whether this defender earned a new helped-to-kill credit, and whether its killing blow replaced one.
+        /// Applies damage from a defender. Every distinct defender that lands a non-lethal hit is recorded as an
+        /// assist recipient. On defeat, the returned snapshot excludes the killer so assist XP can be shared fairly
+        /// while the killer receives the entire unallocated remainder.
         /// </summary>
         public bool TryTakeDamage(
             float damage,
             FarmHand defender,
             out bool wasDefeated,
-            out bool helpedToKillAdded,
-            out bool killingBlowReplacedHelpedToKill)
+            out FarmHand[] assistRecipients)
         {
             wasDefeated = false;
-            helpedToKillAdded = false;
-            killingBlowReplacedHelpedToKill = false;
+            assistRecipients = System.Array.Empty<FarmHand>();
             if (damage <= 0f || currentHealth <= 0f || isDefeated)
             {
                 return false;
@@ -198,17 +197,29 @@ namespace TAD.Attackers
             currentHealth = Mathf.Max(0f, currentHealth - damage);
             if (currentHealth > 0f)
             {
-                helpedToKillAdded = defender != null && helpedToKillDefenders.Add(defender);
+                // A tower receives one assist share for this attacker activation, regardless of how many times it hits.
+                if (defender != null)
+                {
+                    helpedToKillDefenders.Add(defender);
+                }
+
                 return true;
             }
 
             wasDefeated = true;
             if (defender != null)
             {
-                // A defender with an existing assisted-kill credit receives the killing-blow reward instead.
-                killingBlowReplacedHelpedToKill = helpedToKillDefenders.Remove(defender);
+                // A killing defender receives the remaining kill reward rather than a second assist allocation.
+                helpedToKillDefenders.Remove(defender);
             }
 
+            if (helpedToKillDefenders.Count > 0)
+            {
+                assistRecipients = new FarmHand[helpedToKillDefenders.Count];
+                helpedToKillDefenders.CopyTo(assistRecipients);
+            }
+
+            helpedToKillDefenders.Clear();
             BeginDefeat();
             return true;
         }
