@@ -16,6 +16,7 @@ namespace TAD.UI
         private bool isSubscribedToWaveController;
         private bool isSubscribedToQueue;
         private bool isSubscribedToDayCycle;
+        private bool isExternallyBlocked;
 
         /// <summary>Provides the Wave Controller this button should start.</summary>
         public void Bind(WaveController controller)
@@ -34,6 +35,18 @@ namespace TAD.UI
 
         /// <summary>Gets the selectable visual element used for controller focus.</summary>
         public GameObject SelectableGameObject => playButton != null ? playButton.gameObject : gameObject;
+
+        /// <summary>Temporarily prevents a non-modal details card from sending a queued wave.</summary>
+        public void SetExternalInputBlocked(bool blocked)
+        {
+            if (isExternallyBlocked == blocked)
+            {
+                return;
+            }
+
+            isExternallyBlocked = blocked;
+            RefreshInteractableState();
+        }
 
         private void Awake()
         {
@@ -73,7 +86,7 @@ namespace TAD.UI
 
         private void HandlePlayPressed()
         {
-            if (ModalOverlay.IsGameplayInputBlocked || waveController == null)
+            if (ModalOverlay.IsGameplayInputBlocked || isExternallyBlocked || waveController == null)
             {
                 return;
             }
@@ -191,21 +204,20 @@ namespace TAD.UI
                 return;
             }
 
-            var isReadyToPlay = dayCycle != null
-                ? !ModalOverlay.IsGameplayInputBlocked && dayCycle.CanStartQueuedWavesEarly
-                : waveController != null &&
-                  !ModalOverlay.IsGameplayInputBlocked &&
-                  (attackerWaveQueue != null && attackerWaveQueue.HasQueuedAttackers
-                      ? attackerWaveQueue.CanSendQueuedWave
-                      : waveController.CanStartNextWave);
+            var isReadyToPlay = !isExternallyBlocked &&
+                                (dayCycle != null
+                                    ? !ModalOverlay.IsGameplayInputBlocked && dayCycle.CanStartQueuedWavesEarly
+                                    : waveController != null &&
+                                      !ModalOverlay.IsGameplayInputBlocked &&
+                                      (attackerWaveQueue != null && attackerWaveQueue.HasQueuedAttackers
+                                          ? attackerWaveQueue.CanSendQueuedWave
+                                          : waveController.CanStartNextWave));
 
             if (playLabel != null)
             {
                 playLabel.text = ">";
             }
 
-            // The compact play icon only appears once a queued group is ready to send, then returns
-            // at the next preparation period. The presenter remains active to receive those updates.
             if (playButton.gameObject != gameObject)
             {
                 playButton.gameObject.SetActive(isReadyToPlay);

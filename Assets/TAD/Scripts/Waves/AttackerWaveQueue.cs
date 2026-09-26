@@ -17,16 +17,55 @@ namespace TAD.Waves
     {
         private sealed class QueuedAttackerGroup
         {
-            public QueuedAttackerGroup(AttackerDefinition definition)
+            private readonly HashSet<long> spawnedAttackerIds = new();
+
+            public QueuedAttackerGroup(long id, AttackerDefinition definition)
             {
+                Id = id;
                 Definition = definition;
                 Count = definition != null ? definition.SendSize : 0;
                 Income = definition != null ? definition.WaveIncome : 0;
+                RemainingAlive = Count;
             }
 
+            public long Id { get; }
             public AttackerDefinition Definition { get; }
             public int Count { get; }
             public int Income { get; }
+            public int RemainingAlive { get; private set; }
+
+            public AttackerQueuedGroupInfo CreateInfo(bool isDispatching, bool isCurrentGroup)
+            {
+                return new AttackerQueuedGroupInfo(
+                    Id,
+                    Definition,
+                    Count,
+                    RemainingAlive,
+                    isDispatching,
+                    isCurrentGroup);
+            }
+
+            public bool RegisterSpawned(BasicAttacker attacker)
+            {
+                return attacker != null && spawnedAttackerIds.Add(attacker.InstanceId);
+            }
+
+            public bool RegisterResolved(BasicAttacker attacker)
+            {
+                if (attacker == null || !spawnedAttackerIds.Remove(attacker.InstanceId))
+                {
+                    return false;
+                }
+
+                RemainingAlive = Mathf.Max(0, RemainingAlive - 1);
+                return true;
+            }
+
+            public void ResetForRetry()
+            {
+                spawnedAttackerIds.Clear();
+                RemainingAlive = Count;
+            }
         }
 
         [SerializeField, Min(0f)]
@@ -44,8 +83,8 @@ namespace TAD.Waves
         private DayCycleController dayCycle;
         private Coroutine nextGroupRoutine;
         private Action<bool> sequenceCompletion;
-        // Snapshot of recurring income at the start of the currently dispatched sequence.
         private int dispatchedIncome;
+        private long nextGroupId;
         private bool isSending;
 
         public bool HasQueuedAttackers => queuedGroups.Count > 0;
@@ -61,7 +100,7 @@ namespace TAD.Waves
                                           !waveController.IsRunning &&
                                           waveController.CanStartPlayerWave;
 
-        /// <summary>Raised whenever queued groups or their ready state changes.</summary>
+        /// <summary>Raised whenever displayed group data or its ready state changes.</summary>
         public event Action QueueChanged;
 
         private void Awake()
@@ -86,9 +125,68 @@ namespace TAD.Waves
 
             isSending = false;
             sequenceCompletion = null;
+            ResetGroupsForRetry(dispatchedGroups);
             dispatchedGroups.Clear();
             spawnBuffer.Clear();
             dispatchedIncome = 0;
+        }
+
+        /// <summary>
+        /// Copies every group that should remain visible to the player. Groups already dispatched
+        /// appear first, followed by later orders that belong to the next preparation period.
+        /// </summary>
+        public int CopyDisplayGroups(List<AttackerQueuedGroupInfo> destination)
+        {
+            if (destination == null)
+            {
+                throw new ArgumentNullException(nameof(destination));
+            }
+
+            destination.Clear();
+            var currentGroup = dispatchedGroups.Count > 0 ? dispatchedGroups.Peek() : null;
+            foreach (var group in dispatchedGroups)
+            {
+                if (group != null)
+                {
+                    destination.Add(group.CreateInfo(true, ReferenceEquals(group, currentGroup)));
+                }
+            }
+
+            foreach (var group in queuedGroups)
+            {
+                if (group != null)
+                {
+                    destination.Add(group.CreateInfo(false, false));
+                }
+            }
+
+            return destination.Count;
+        }
+
+        /// <summary>Gets the latest immutable presentation state for one stable queued-group identifier.</summary>
+        public bool TryGetDisplayGroup(long groupId, out AttackerQueuedGroupInfo result)
+        {
+            var currentGroup = dispatchedGroups.Count > 0 ? dispatchedGroups.Peek() : null;
+            foreach (var group in dispatchedGroups)
+            {
+                if (group != null && group.Id == groupId)
+                {
+                    result = group.CreateInfo(true, ReferenceEquals(group, currentGroup));
+                    return true;
+                }
+            }
+
+            foreach (var group in queuedGroups)
+            {
+                if (group != null && group.Id == groupId)
+                {
+                    result = group.CreateInfo(false, false);
+                    return true;
+                }
+            }
+
+            result = default;
+            return false;
         }
 
         /// <summary>
@@ -106,7 +204,7 @@ namespace TAD.Waves
                 return false;
             }
 
-            var group = new QueuedAttackerGroup(definition);
+            var group = new QueuedAttackerGroup(AllocateGroupId(), definition);
             queuedGroups.Enqueue(group);
             attackerBank.AddIncome(group.Income);
             RaiseQueueChanged();
@@ -133,13 +231,11 @@ namespace TAD.Waves
             }
 
             sequenceCompletion = completion;
-            // Income ordered during combat remains part of the next sequence payout.
             dispatchedIncome = attackerBank != null ? attackerBank.CurrentIncome : 0;
             isSending = true;
             while (queuedGroups.Count > 0)
             {
-                var group = queuedGroups.Dequeue();
-                dispatchedGroups.Enqueue(group);
+                dispatchedGroups.Enqueue(queuedGroups.Dequeue());
             }
 
             RaiseQueueChanged();
@@ -148,8 +244,6 @@ namespace TAD.Waves
                 return true;
             }
 
-            // Leave a group intact if it cannot be started, so a temporary map or pool issue never
-            // silently consumes the attacker's purchased selection.
             RestoreDispatchedGroupsToQueue();
             isSending = false;
             dispatchedIncome = 0;
@@ -171,6 +265,8 @@ namespace TAD.Waves
             sequenceCompletion = null;
             isSending = false;
             dispatchedIncome = 0;
+            ResetGroupsForRetry(queuedGroups);
+            ResetGroupsForRetry(dispatchedGroups);
             queuedGroups.Clear();
             dispatchedGroups.Clear();
             spawnBuffer.Clear();
@@ -191,6 +287,8 @@ namespace TAD.Waves
             isSending = false;
             sequenceCompletion = null;
             dispatchedIncome = 0;
+            ResetGroupsForRetry(queuedGroups);
+            ResetGroupsForRetry(dispatchedGroups);
             queuedGroups.Clear();
             dispatchedGroups.Clear();
             spawnBuffer.Clear();
@@ -217,7 +315,28 @@ namespace TAD.Waves
                 spawnBuffer.Add(group.Definition);
             }
 
-            return waveController.TryStartPlayerWave(spawnBuffer, spawnInterval, HandleDispatchedGroupFinished);
+            return waveController.TryStartPlayerWave(
+                spawnBuffer,
+                spawnInterval,
+                attacker => HandleGroupAttackerSpawned(group, attacker),
+                attacker => HandleGroupAttackerResolved(group, attacker),
+                HandleDispatchedGroupFinished);
+        }
+
+        private void HandleGroupAttackerSpawned(QueuedAttackerGroup group, BasicAttacker attacker)
+        {
+            if (isSending && group != null && group.RegisterSpawned(attacker))
+            {
+                RaiseQueueChanged();
+            }
+        }
+
+        private void HandleGroupAttackerResolved(QueuedAttackerGroup group, BasicAttacker attacker)
+        {
+            if (isSending && group != null && group.RegisterResolved(attacker))
+            {
+                RaiseQueueChanged();
+            }
         }
 
         private void HandleDispatchedGroupFinished(bool completed)
@@ -236,6 +355,7 @@ namespace TAD.Waves
             if (dispatchedGroups.Count > 0)
             {
                 dispatchedGroups.Dequeue();
+                RaiseQueueChanged();
             }
 
             if (dispatchedGroups.Count == 0)
@@ -303,6 +423,7 @@ namespace TAD.Waves
 
             foreach (var group in unsentGroups)
             {
+                group?.ResetForRetry();
                 queuedGroups.Enqueue(group);
             }
 
@@ -321,6 +442,24 @@ namespace TAD.Waves
             }
 
             return count;
+        }
+
+        private static void ResetGroupsForRetry(IEnumerable<QueuedAttackerGroup> groups)
+        {
+            foreach (var group in groups)
+            {
+                group?.ResetForRetry();
+            }
+        }
+
+        private long AllocateGroupId()
+        {
+            if (nextGroupId == long.MaxValue)
+            {
+                throw new InvalidOperationException("The queued attacker group ID sequence has been exhausted.");
+            }
+
+            return ++nextGroupId;
         }
 
         private void ResolveAttackerBank()

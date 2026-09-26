@@ -7,57 +7,117 @@ using UnityEngine.InputSystem.UI;
 
 namespace TAD.UI
 {
-    /// <summary>Creates and connects the shared attacker selector to this level's Spawn Pool and attacker bank.</summary>
+    /// <summary>Creates and connects the attacker ordering, queued-group, and non-modal details UI for this level.</summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(WaveController))]
     [RequireComponent(typeof(AttackerWaveQueue))]
     public sealed class AttackerSelectionBootstrap : MonoBehaviour
     {
         [SerializeField] private AttackerSelectionPanel selectionPanelPrefab;
+        [SerializeField] private AttackerQueuePanel queuePanelPrefab;
+        [SerializeField] private AttackerDetailsPanel detailsPanelPrefab;
         [SerializeField] private SpawnPool spawnPool;
         [SerializeField] private ResourceBank attackerBank;
 
+        private WaveController waveController;
         private AttackerWaveQueue attackerWaveQueue;
-        private AttackerSelectionPanel spawnedPanel;
-        private bool ownsSpawnedPanel;
+        private AttackerSelectionPanel spawnedSelectionPanel;
+        private AttackerQueuePanel spawnedQueuePanel;
+        private AttackerDetailsPanel spawnedDetailsPanel;
+        private bool ownsSpawnedSelectionPanel;
+        private bool ownsSpawnedQueuePanel;
+        private bool ownsSpawnedDetailsPanel;
 
         private void Awake()
         {
+            waveController = GetComponent<WaveController>();
             attackerWaveQueue = GetComponent<AttackerWaveQueue>();
             ResolveDependencies();
         }
 
         private void Start()
         {
-            if (spawnPool == null || attackerBank == null || attackerWaveQueue == null)
+            if (spawnPool == null || attackerBank == null || attackerWaveQueue == null || waveController == null)
             {
-                Debug.LogError("Attacker Selection needs a Spawn Pool, attacker bank, and attacker wave queue.", this);
+                Debug.LogError("Attacker UI needs a Spawn Pool, attacker bank, Wave Controller, and attacker wave queue.", this);
                 return;
             }
 
             EnsureEventSystem();
-            spawnedPanel = Object.FindFirstObjectByType<AttackerSelectionPanel>(FindObjectsInactive.Include);
-            if (spawnedPanel == null)
+            if (!EnsurePresenters())
             {
-                if (selectionPanelPrefab == null)
-                {
-                    Debug.LogError("Attacker Selection needs an Attacker Selection Panel prefab.", this);
-                    return;
-                }
-
-                spawnedPanel = Instantiate(selectionPanelPrefab);
-                ownsSpawnedPanel = true;
+                return;
             }
 
-            spawnedPanel.Bind(spawnPool, attackerBank, attackerWaveQueue);
+            spawnedSelectionPanel.Bind(spawnPool, attackerBank, attackerWaveQueue);
+            spawnedQueuePanel.Bind(
+                attackerWaveQueue,
+                spawnPool,
+                waveController,
+                spawnedSelectionPanel,
+                spawnedDetailsPanel);
         }
 
         private void OnDestroy()
         {
-            if (ownsSpawnedPanel && spawnedPanel != null)
+            if (ownsSpawnedQueuePanel && spawnedQueuePanel != null)
             {
-                Destroy(spawnedPanel.gameObject);
+                Destroy(spawnedQueuePanel.gameObject);
             }
+
+            if (ownsSpawnedDetailsPanel && spawnedDetailsPanel != null)
+            {
+                Destroy(spawnedDetailsPanel.gameObject);
+            }
+
+            if (ownsSpawnedSelectionPanel && spawnedSelectionPanel != null)
+            {
+                Destroy(spawnedSelectionPanel.gameObject);
+            }
+        }
+
+        private bool EnsurePresenters()
+        {
+            spawnedSelectionPanel = Object.FindFirstObjectByType<AttackerSelectionPanel>(FindObjectsInactive.Include);
+            if (spawnedSelectionPanel == null)
+            {
+                if (selectionPanelPrefab == null)
+                {
+                    Debug.LogError("Attacker UI needs an Attacker Selection Panel prefab.", this);
+                    return false;
+                }
+
+                spawnedSelectionPanel = Instantiate(selectionPanelPrefab);
+                ownsSpawnedSelectionPanel = true;
+            }
+
+            spawnedDetailsPanel = Object.FindFirstObjectByType<AttackerDetailsPanel>(FindObjectsInactive.Include);
+            if (spawnedDetailsPanel == null)
+            {
+                if (detailsPanelPrefab == null)
+                {
+                    Debug.LogError("Attacker UI needs an Attacker Details Panel prefab.", this);
+                    return false;
+                }
+
+                spawnedDetailsPanel = Instantiate(detailsPanelPrefab);
+                ownsSpawnedDetailsPanel = true;
+            }
+
+            spawnedQueuePanel = Object.FindFirstObjectByType<AttackerQueuePanel>(FindObjectsInactive.Include);
+            if (spawnedQueuePanel == null)
+            {
+                if (queuePanelPrefab == null)
+                {
+                    Debug.LogError("Attacker UI needs an Attacker Queue Panel prefab.", this);
+                    return false;
+                }
+
+                spawnedQueuePanel = Instantiate(queuePanelPrefab);
+                ownsSpawnedQueuePanel = true;
+            }
+
+            return true;
         }
 
         private void ResolveDependencies()

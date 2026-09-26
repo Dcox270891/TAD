@@ -184,6 +184,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TAD.UI.AttackerSelectionBootstrap
   selectionPanelPrefab: {fileID: 8486414186020280732, guid: c98364bf207ccae4cb0545f03dfec7e8, type: 3}
+  queuePanelPrefab: {fileID: 4590627619092879825, guid: 456065537eb1fee40aed14afcd22d06f, type: 3}
+  detailsPanelPrefab: {fileID: 5550082761499598705, guid: ac101a49e5f24de47aa5b1bf60ce10ca, type: 3}
   spawnPool: {fileID: 0}
   attackerBank: {fileID: 1410983452086669874}
 --- !u!114 &4745554795119005992
