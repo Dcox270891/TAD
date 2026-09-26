@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 465870676978708901}
   - component: {fileID: 739535124104778831}
   - component: {fileID: 7683781269075355685}
+  - component: {fileID: 1991510340437602593}
   m_Layer: 8
   m_Name: SpawnPool
   m_TagString: Untagged
@@ -133,3 +134,16 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 27eab7ad44021804c9e61d79fd7c8b52, type: 2}
   - {fileID: 11400000, guid: f10c2b2ff3579d140ac2b7b19ae8d4cf, type: 2}
   - {fileID: 11400000, guid: 9b8b2dcaac92681458c4e0eb0a8ba9a5, type: 2}
+--- !u!114 &1991510340437602593
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8974110545092134639}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3404aeb8a94a9b94caee6fef1bfad077, type: 3}
+  m_Name: Defender Details Bootstrap
+  m_EditorClassIdentifier: Assembly-CSharp::TAD.UI.DefenderDetailsBootstrap
+  detailsPanelPrefab: {fileID: 3900441967054408077, guid: e100e153b737e5c4a90f51a1d1ae7231, type: 3}
