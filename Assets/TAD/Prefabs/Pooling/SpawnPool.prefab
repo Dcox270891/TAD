@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 592288151473745849}
   - component: {fileID: 465870676978708901}
   - component: {fileID: 739535124104778831}
+  - component: {fileID: 7683781269075355685}
   m_Layer: 8
   m_Name: SpawnPool
   m_TagString: Untagged
@@ -114,3 +115,21 @@ MonoBehaviour:
   mapSize: {x: 20, y: 12}
   obstaclePadding: 0
   cornerSmoothingLookAheadCells: 8
+--- !u!114 &7683781269075355685
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8974110545092134639}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9cc7a34899a0a9d439d5c27c1cc57614, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TAD.UI.DefenderLevelUpgradeBootstrap
+  overlayPrefab: {fileID: 29308662564694487, guid: 2b385fa21b392714b95328e7fd47959d, type: 3}
+  levelThreeUpgradeOptions:
+  - {fileID: 11400000, guid: 80c7bf7be7647c041b69c346c86af0a5, type: 2}
+  - {fileID: 11400000, guid: 27eab7ad44021804c9e61d79fd7c8b52, type: 2}
+  - {fileID: 11400000, guid: f10c2b2ff3579d140ac2b7b19ae8d4cf, type: 2}
+  - {fileID: 11400000, guid: 9b8b2dcaac92681458c4e0eb0a8ba9a5, type: 2}

@@ -20,6 +20,7 @@ namespace TAD.Defenders
         private const float HelpedToKillExperiencePercent = 0.1f;
         private const float ExperienceDecimalMultiplier = 10f;
         private const float LevelDamageMultiplier = 1.1f;
+        private const int LevelThreeUpgradeLevel = 3;
 
         [SerializeField] private SpriteRenderer visual;
         [SerializeField] private WeaponDefinition weaponDefinition;
@@ -32,6 +33,9 @@ namespace TAD.Defenders
         [System.NonSerialized] private float currentExp;
         [System.NonSerialized] private float totalExperience;
         [System.NonSerialized] private int currentLevel = 1;
+        [System.NonSerialized] private WeaponDefinition baseWeaponDefinition;
+        [System.NonSerialized] private bool isAwaitingLevelThreeUpgrade;
+        [System.NonSerialized] private bool hasSelectedLevelThreeUpgrade;
         private PooledInstance pooledInstance;
         private SpawnPool projectilePool;
         private ResourceBank defenderBank;
@@ -47,6 +51,12 @@ namespace TAD.Defenders
 
         /// <summary>Shared weapon data currently assigned to this farmhand.</summary>
         public WeaponDefinition WeaponDefinition => weaponDefinition;
+
+        /// <summary>True while this farmhand has reached level 3 and must choose its permanent weapon upgrade.</summary>
+        public bool IsAwaitingLevelThreeUpgrade => isAwaitingLevelThreeUpgrade;
+
+        /// <summary>True after this farmhand has completed its one level-3 weapon choice.</summary>
+        public bool HasSelectedLevelThreeUpgrade => hasSelectedLevelThreeUpgrade;
 
         /// <summary>
         /// Session-unique identity assigned by the pool when this defender is created.
@@ -83,6 +93,9 @@ namespace TAD.Defenders
         /// <summary>Raised after a farmhand has configured its non-blocking range sensor.</summary>
         public static event System.Action<FarmHand> FarmHandEnabled;
 
+        /// <summary>Raised once when an active farmhand first reaches level 3 and needs a weapon choice.</summary>
+        public static event System.Action<FarmHand> LevelThreeUpgradeChoiceRequested;
+
         /// <summary>World-space attack range supplied by the currently assigned weapon.</summary>
         public float Range => weaponDefinition != null ? weaponDefinition.Range : 0f;
 
@@ -117,6 +130,7 @@ namespace TAD.Defenders
 
         private void Awake()
         {
+            baseWeaponDefinition ??= weaponDefinition;
             ResetProgression();
             ResolveComponents();
             ConfigureRangeBody();
@@ -158,6 +172,21 @@ namespace TAD.Defenders
             nextFireTime = Time.time;
             ConfigureRangeCollider();
             ConfigureRangeVisual();
+        }
+
+        /// <summary>Applies the one permanent weapon reward offered when this farmhand reaches level 3.</summary>
+        public bool TryChooseLevelThreeUpgrade(WeaponDefinition definition)
+        {
+            if (definition == null || !isAwaitingLevelThreeUpgrade || currentLevel < LevelThreeUpgradeLevel)
+            {
+                return false;
+            }
+
+            isAwaitingLevelThreeUpgrade = false;
+            hasSelectedLevelThreeUpgrade = true;
+            SetWeapon(definition);
+            ProgressionChanged?.Invoke();
+            return true;
         }
 
         /// <summary>Shows or hides the red attack-range circle used when this defender is selected or targeted.</summary>
@@ -240,6 +269,8 @@ namespace TAD.Defenders
 
         void IPoolLifecycle.OnTakenFromPool()
         {
+            baseWeaponDefinition ??= weaponDefinition;
+            weaponDefinition = baseWeaponDefinition;
             CancelLimitedProjectiles();
             ResetProgression();
             ResolveComponents();
@@ -298,7 +329,7 @@ namespace TAD.Defenders
 
         private void TryFireAtFirstAttackableAttacker()
         {
-            if (Time.time < nextFireTime)
+            if (isAwaitingLevelThreeUpgrade || Time.time < nextFireTime)
             {
                 return;
             }
@@ -589,6 +620,7 @@ namespace TAD.Defenders
 
             // Results can credit every earned point even after no further level can be gained.
             totalExperience = RoundToNearestTenth(totalExperience + amount);
+            var shouldRequestLevelThreeUpgrade = false;
 
             if (!IsAtMaxLevel)
             {
@@ -598,6 +630,13 @@ namespace TAD.Defenders
                 {
                     currentExp = RoundToNearestTenth(currentExp - expThreshold);
                     currentLevel++;
+
+                    if (!hasSelectedLevelThreeUpgrade && !isAwaitingLevelThreeUpgrade &&
+                        currentLevel >= LevelThreeUpgradeLevel)
+                    {
+                        isAwaitingLevelThreeUpgrade = true;
+                        shouldRequestLevelThreeUpgrade = true;
+                    }
                 }
 
                 if (IsAtMaxLevel)
@@ -608,8 +647,11 @@ namespace TAD.Defenders
             }
 
             ProgressionChanged?.Invoke();
+            if (shouldRequestLevelThreeUpgrade)
+            {
+                LevelThreeUpgradeChoiceRequested?.Invoke(this);
+            }
         }
-
         private static float RoundToNearestTenth(float amount)
         {
             return Mathf.Round(amount * ExperienceDecimalMultiplier) / ExperienceDecimalMultiplier;
@@ -620,6 +662,8 @@ namespace TAD.Defenders
             currentExp = 0f;
             totalExperience = 0f;
             currentLevel = 1;
+            isAwaitingLevelThreeUpgrade = false;
+            hasSelectedLevelThreeUpgrade = false;
             ProgressionChanged?.Invoke();
         }
 
