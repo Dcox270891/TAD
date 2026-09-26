@@ -6,6 +6,7 @@ namespace TAD.Defenders
     /// <summary>
     /// Renders the part of a Farmhand's range that can really be targeted through its current cover rules.
     /// Melee is clipped by both wall types; ranged attacks pass half cover but are clipped by full cover.
+    /// The same mesh can also be configured for a moving farmhand placement preview.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
@@ -26,9 +27,18 @@ namespace TAD.Defenders
         private MeshFilter meshFilter;
         private MeshRenderer meshRenderer;
         private Mesh rangeMesh;
+        private bool usesPreviewSettings;
+        private float previewRange;
+        private ProjectileType previewProjectileType;
+        private int previewSortingLayerId;
+        private int previewSortingOrder;
         private bool wasVisible;
+        private bool lastUsedPreviewSettings;
         private float lastRange = -1f;
         private WeaponDefinition lastWeapon;
+        private ProjectileType lastProjectileType;
+        private int lastSortingLayerId;
+        private int lastSortingOrder;
         private Vector3 lastPosition;
 
         private void Awake()
@@ -48,37 +58,7 @@ namespace TAD.Defenders
 
         private void LateUpdate()
         {
-            ResolveComponents();
-            if (farmHand == null)
-            {
-                SetVisible(false);
-                return;
-            }
-
-            // The legacy uniform circle remains available to placement previews, but selected Farmhands
-            // use this cover-aware mesh instead.
-            fallbackCircle?.SetVisible(false);
-
-            var shouldBeVisible = farmHand.isActiveAndEnabled && farmHand.IsRangeIndicatorVisible &&
-                                  farmHand.Range > 0f;
-            if (!shouldBeVisible)
-            {
-                SetVisible(false);
-                return;
-            }
-
-            var weapon = farmHand.WeaponDefinition;
-            var currentPosition = farmHand.transform.position;
-            if (!wasVisible || !Mathf.Approximately(lastRange, farmHand.Range) || lastWeapon != weapon ||
-                (currentPosition - lastPosition).sqrMagnitude > 0.000001f)
-            {
-                RebuildMesh();
-                lastRange = farmHand.Range;
-                lastWeapon = weapon;
-                lastPosition = currentPosition;
-            }
-
-            SetVisible(true);
+            RefreshPresentation(forceRebuild: false);
         }
 
         private void OnDestroy()
@@ -87,6 +67,26 @@ namespace TAD.Defenders
             {
                 Destroy(rangeMesh);
             }
+        }
+
+        /// <summary>
+        /// Uses this solid targetable-range mesh for a placement ghost instead of the fading legacy circle.
+        /// The mesh follows this transform and is rebuilt only while the preview moves or its settings change.
+        /// </summary>
+        public void ConfigurePreview(
+            float range,
+            ProjectileType projectileType,
+            int sortingLayerId,
+            int sortingOrder)
+        {
+            usesPreviewSettings = true;
+            previewRange = Mathf.Max(0f, range);
+            previewProjectileType = projectileType;
+            previewSortingLayerId = sortingLayerId;
+            previewSortingOrder = sortingOrder;
+            ResolveComponents();
+            ConfigureLineOfSightFilter();
+            RefreshPresentation(forceRebuild: true);
         }
 
         private void ResolveComponents()
@@ -121,6 +121,79 @@ namespace TAD.Defenders
             lineOfSightFilter.useTriggers = false;
         }
 
+        private void RefreshPresentation(bool forceRebuild)
+        {
+            ResolveComponents();
+            if (!TryGetPresentation(out var origin, out var range, out var projectileType, out var weapon))
+            {
+                SetVisible(false);
+                return;
+            }
+
+            if (!usesPreviewSettings)
+            {
+                // The legacy fading circle remains available for older assets, but placed Farmhands use this
+                // solid cover-aware mesh whenever their range is selected.
+                fallbackCircle?.SetVisible(false);
+            }
+
+            ConfigureRenderer();
+            var currentPosition = (Vector3)origin;
+            var presentationChanged = forceRebuild || !wasVisible ||
+                                      lastUsedPreviewSettings != usesPreviewSettings ||
+                                      !Mathf.Approximately(lastRange, range) ||
+                                      lastWeapon != weapon ||
+                                      lastProjectileType != projectileType ||
+                                      lastSortingLayerId != GetSortingLayerId() ||
+                                      lastSortingOrder != GetSortingOrder() ||
+                                      (currentPosition - lastPosition).sqrMagnitude > 0.000001f;
+            if (presentationChanged)
+            {
+                RebuildMesh(origin, range, projectileType);
+                lastUsedPreviewSettings = usesPreviewSettings;
+                lastRange = range;
+                lastWeapon = weapon;
+                lastProjectileType = projectileType;
+                lastSortingLayerId = GetSortingLayerId();
+                lastSortingOrder = GetSortingOrder();
+                lastPosition = currentPosition;
+            }
+
+            SetVisible(true);
+        }
+
+        private bool TryGetPresentation(
+            out Vector2 origin,
+            out float range,
+            out ProjectileType projectileType,
+            out WeaponDefinition weapon)
+        {
+            if (usesPreviewSettings)
+            {
+                origin = transform.position;
+                range = previewRange;
+                projectileType = previewProjectileType;
+                weapon = null;
+                return range > 0f;
+            }
+
+            if (farmHand == null || !farmHand.isActiveAndEnabled || !farmHand.IsRangeIndicatorVisible)
+            {
+                origin = default;
+                range = 0f;
+                projectileType = ProjectileType.Melee;
+                weapon = null;
+                return false;
+            }
+
+            weapon = farmHand.WeaponDefinition;
+            var projectile = weapon != null ? weapon.ProjectileDefinition : null;
+            origin = farmHand.transform.position;
+            range = farmHand.Range;
+            projectileType = projectile != null ? projectile.ProjectileType : ProjectileType.Melee;
+            return range > 0f;
+        }
+
         private void ConfigureRenderer()
         {
             if (meshRenderer == null)
@@ -129,25 +202,40 @@ namespace TAD.Defenders
             }
 
             meshRenderer.sharedMaterial = GetSharedMaterial(tint);
-            var farmHandVisual = farmHand != null ? farmHand.Visual : null;
-            meshRenderer.sortingLayerID = farmHandVisual != null ? farmHandVisual.sortingLayerID : 0;
-            meshRenderer.sortingOrder = farmHandVisual != null ? farmHandVisual.sortingOrder - 1 : 0;
+            meshRenderer.sortingLayerID = GetSortingLayerId();
+            meshRenderer.sortingOrder = GetSortingOrder();
         }
 
-        private void RebuildMesh()
+        private int GetSortingLayerId()
         {
-            if (rangeMesh == null || farmHand == null)
+            if (usesPreviewSettings)
+            {
+                return previewSortingLayerId;
+            }
+
+            return farmHand != null && farmHand.Visual != null ? farmHand.Visual.sortingLayerID : 0;
+        }
+
+        private int GetSortingOrder()
+        {
+            if (usesPreviewSettings)
+            {
+                return previewSortingOrder;
+            }
+
+            return farmHand != null && farmHand.Visual != null ? farmHand.Visual.sortingOrder - 1 : 0;
+        }
+
+        private void RebuildMesh(Vector2 origin, float range, ProjectileType projectileType)
+        {
+            if (rangeMesh == null)
             {
                 return;
             }
 
-            ConfigureRenderer();
             var sampleCount = Mathf.Max(24, radialSamples);
             var vertices = new Vector3[sampleCount + 2];
             var triangles = new int[sampleCount * 3];
-            var origin = (Vector2)farmHand.transform.position;
-            var range = farmHand.Range;
-            var projectileType = GetProjectileType();
             vertices[0] = transform.InverseTransformPoint(origin);
 
             for (var index = 0; index <= sampleCount; index++)
@@ -170,14 +258,6 @@ namespace TAD.Defenders
             rangeMesh.vertices = vertices;
             rangeMesh.triangles = triangles;
             rangeMesh.RecalculateBounds();
-        }
-
-        private ProjectileType GetProjectileType()
-        {
-            var projectile = farmHand != null && farmHand.WeaponDefinition != null
-                ? farmHand.WeaponDefinition.ProjectileDefinition
-                : null;
-            return projectile != null ? projectile.ProjectileType : ProjectileType.Melee;
         }
 
         // Mirrors FarmHand's live firing rule so the visual never claims an unreachable portion of the map.

@@ -10,6 +10,23 @@ namespace TAD.UI
     [DisallowMultipleComponent]
     public sealed class DefenderDetailsPanel : MonoBehaviour
     {
+        private const float TopPadding = 7f;
+        private const float SidePadding = 11f;
+        private const float HeadingMinimumHeight = 28f;
+        private const float HeadingToImageSpacing = 4f;
+        private const float DefenderImageWidth = 90f;
+        private const float DefenderImageHeight = 76f;
+        private const float ImageToWeaponSpacing = 7f;
+        private const float WeaponMinimumHeight = 34f;
+        private const float WeaponToStatsSpacing = 7f;
+        private const float StatsMinimumHeight = 126f;
+        private const float StatsToBarSpacing = 8f;
+        private const float ExperienceBarHeight = 12f;
+        private const float BarToExperienceSpacing = 4f;
+        private const float ExperienceMinimumHeight = 22f;
+        private const float BottomPadding = 12f;
+        private const float MinimumCardHeight = 360f;
+
         [SerializeField] private UnityEngine.UI.Text headingText;
         [SerializeField] private UnityEngine.UI.Image defenderImage;
         [SerializeField] private UnityEngine.UI.Text weaponText;
@@ -17,6 +34,13 @@ namespace TAD.UI
         [SerializeField] private UnityEngine.UI.Text experienceText;
         [SerializeField] private UnityEngine.UI.Image experienceFill;
 
+        private RectTransform cardRect;
+        private RectTransform headingRect;
+        private RectTransform defenderImageRect;
+        private RectTransform weaponRect;
+        private RectTransform statsRect;
+        private RectTransform experienceRect;
+        private RectTransform experienceBarRect;
         private FarmHand target;
         private bool isSubscribed;
 
@@ -80,18 +104,44 @@ namespace TAD.UI
 
         private void ResolveReferences()
         {
+            cardRect ??= transform.Find("Card") as RectTransform;
             headingText ??= FindText("Card/Heading");
             defenderImage ??= transform.Find("Card/DefenderImage")?.GetComponent<UnityEngine.UI.Image>();
             weaponText ??= FindText("Card/Weapon");
             statsText ??= FindText("Card/Stats");
             experienceText ??= FindText("Card/Experience");
             experienceFill ??= transform.Find("Card/ExperienceBar/Fill")?.GetComponent<UnityEngine.UI.Image>();
+
+            headingRect ??= headingText != null ? headingText.rectTransform : null;
+            defenderImageRect ??= defenderImage != null ? defenderImage.rectTransform : null;
+            weaponRect ??= weaponText != null ? weaponText.rectTransform : null;
+            statsRect ??= statsText != null ? statsText.rectTransform : null;
+            experienceRect ??= experienceText != null ? experienceText.rectTransform : null;
+            experienceBarRect ??= experienceFill != null && experienceFill.transform.parent != null
+                ? experienceFill.transform.parent as RectTransform
+                : null;
+
+            ConfigureTextWrapping(headingText);
+            ConfigureTextWrapping(weaponText);
+            ConfigureTextWrapping(statsText);
+            ConfigureTextWrapping(experienceText);
         }
 
         private UnityEngine.UI.Text FindText(string path)
         {
             var child = transform.Find(path);
             return child != null ? child.GetComponent<UnityEngine.UI.Text>() : null;
+        }
+
+        private static void ConfigureTextWrapping(UnityEngine.UI.Text text)
+        {
+            if (text == null)
+            {
+                return;
+            }
+
+            text.horizontalOverflow = HorizontalWrapMode.Wrap;
+            text.verticalOverflow = VerticalWrapMode.Overflow;
         }
 
         private void Subscribe()
@@ -184,6 +234,79 @@ namespace TAD.UI
                     ? 1f
                     : Mathf.Clamp01(target.CurrentExp / Mathf.Max(1, target.ExpMax));
             }
+
+            RefreshLayout();
+        }
+
+        /// <summary>
+        /// Keeps every text field within the card's width and grows the bottom-anchored card upward
+        /// when a weapon description or any stat needs more vertical space.
+        /// </summary>
+        private void RefreshLayout()
+        {
+            if (cardRect == null || headingRect == null || defenderImageRect == null ||
+                weaponRect == null || statsRect == null || experienceRect == null ||
+                experienceBarRect == null)
+            {
+                return;
+            }
+
+            SetTopStretch(headingRect, TopPadding, HeadingMinimumHeight, SidePadding);
+            Canvas.ForceUpdateCanvases();
+            var headingHeight = GetPreferredHeight(headingText, HeadingMinimumHeight);
+            SetTopStretch(headingRect, TopPadding, headingHeight, SidePadding);
+
+            var imageTop = TopPadding + headingHeight + HeadingToImageSpacing;
+            SetTopCentered(defenderImageRect, imageTop, DefenderImageWidth, DefenderImageHeight);
+
+            var weaponTop = imageTop + DefenderImageHeight + ImageToWeaponSpacing;
+            SetTopStretch(weaponRect, weaponTop, WeaponMinimumHeight, SidePadding);
+            Canvas.ForceUpdateCanvases();
+            var weaponHeight = GetPreferredHeight(weaponText, WeaponMinimumHeight);
+            SetTopStretch(weaponRect, weaponTop, weaponHeight, SidePadding);
+
+            var statsTop = weaponTop + weaponHeight + WeaponToStatsSpacing;
+            SetTopStretch(statsRect, statsTop, StatsMinimumHeight, SidePadding + 4f);
+            Canvas.ForceUpdateCanvases();
+            var statsHeight = GetPreferredHeight(statsText, StatsMinimumHeight);
+            SetTopStretch(statsRect, statsTop, statsHeight, SidePadding + 4f);
+
+            var barTop = statsTop + statsHeight + StatsToBarSpacing;
+            SetTopStretch(experienceBarRect, barTop, ExperienceBarHeight, SidePadding + 2f);
+
+            var experienceTop = barTop + ExperienceBarHeight + BarToExperienceSpacing;
+            SetTopStretch(experienceRect, experienceTop, ExperienceMinimumHeight, SidePadding);
+            Canvas.ForceUpdateCanvases();
+            var experienceHeight = GetPreferredHeight(experienceText, ExperienceMinimumHeight);
+            SetTopStretch(experienceRect, experienceTop, experienceHeight, SidePadding);
+
+            var preferredCardHeight = experienceTop + experienceHeight + BottomPadding;
+            cardRect.SetSizeWithCurrentAnchors(
+                RectTransform.Axis.Vertical,
+                Mathf.Max(MinimumCardHeight, preferredCardHeight));
+        }
+
+        private static float GetPreferredHeight(UnityEngine.UI.Text text, float minimumHeight)
+        {
+            return text != null ? Mathf.Max(minimumHeight, text.preferredHeight) : minimumHeight;
+        }
+
+        private static void SetTopStretch(RectTransform rectTransform, float top, float height, float horizontalPadding)
+        {
+            rectTransform.anchorMin = new Vector2(0f, 1f);
+            rectTransform.anchorMax = new Vector2(1f, 1f);
+            rectTransform.pivot = new Vector2(0.5f, 1f);
+            rectTransform.sizeDelta = new Vector2(-(horizontalPadding * 2f), height);
+            rectTransform.anchoredPosition = new Vector2(0f, -top);
+        }
+
+        private static void SetTopCentered(RectTransform rectTransform, float top, float width, float height)
+        {
+            rectTransform.anchorMin = new Vector2(0.5f, 1f);
+            rectTransform.anchorMax = new Vector2(0.5f, 1f);
+            rectTransform.pivot = new Vector2(0.5f, 1f);
+            rectTransform.sizeDelta = new Vector2(width, height);
+            rectTransform.anchoredPosition = new Vector2(0f, -top);
         }
     }
 }

@@ -213,6 +213,7 @@ namespace TAD.Defenders
             if (selectedFarmHand == farmHand)
             {
                 selectedFarmHand?.SetRangeIndicatorVisible(true);
+                spawnedUi?.SetFarmHandSelected(selectedFarmHand != null);
                 return;
             }
 
@@ -226,6 +227,8 @@ namespace TAD.Defenders
             {
                 selectedFarmHand.SetRangeIndicatorVisible(true);
             }
+
+            spawnedUi?.SetFarmHandSelected(selectedFarmHand != null);
         }
 
         /// <summary>Clears the current farmhand target and hides its range circle.</summary>
@@ -239,7 +242,7 @@ namespace TAD.Defenders
             if (selectedFarmHand != null &&
                 (!selectedFarmHand.isActiveAndEnabled || !selectedFarmHand.gameObject.activeInHierarchy))
             {
-                selectedFarmHand = null;
+                ClearTargetedFarmHand();
             }
 
             var touchscreen = Touchscreen.current;
@@ -464,15 +467,24 @@ namespace TAD.Defenders
             previewRenderer.sortingLayerID = sourceVisual.sortingLayerID;
             previewRenderer.sortingOrder = Mathf.Max(previewSortingOrder, sourceVisual.sortingOrder + 1);
 
-            var rangePreviewObject = new GameObject("Range Preview", typeof(SpriteRenderer), typeof(DefenderRangeVisual));
+            var rangePreviewObject = new GameObject(
+                "Range Preview",
+                typeof(MeshFilter),
+                typeof(MeshRenderer),
+                typeof(DefenderTargetableRangeVisual));
             rangePreviewObject.layer = previewObject.layer;
             rangePreviewObject.transform.SetParent(previewObject.transform, worldPositionStays: false);
-            var rangePreview = rangePreviewObject.GetComponent<DefenderRangeVisual>();
-            rangePreview.Configure(
+
+            var projectile = farmHandPrefab.WeaponDefinition != null
+                ? farmHandPrefab.WeaponDefinition.ProjectileDefinition
+                : null;
+            var projectileType = projectile != null ? projectile.ProjectileType : ProjectileType.Melee;
+            var rangePreview = rangePreviewObject.GetComponent<DefenderTargetableRangeVisual>();
+            rangePreview.ConfigurePreview(
                 farmHandPrefab.Range,
+                projectileType,
                 sourceVisual.sortingLayerID,
-                previewRenderer.sortingOrder - 1,
-                shouldBeVisible: true);
+                previewRenderer.sortingOrder - 1);
             return true;
         }
 

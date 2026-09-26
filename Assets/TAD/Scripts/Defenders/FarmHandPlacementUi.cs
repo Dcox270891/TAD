@@ -15,6 +15,8 @@ namespace TAD.Defenders
 
         private FarmHandPlacementController placementController;
         private bool isSubscribed;
+        private bool isPlacementActive;
+        private bool isFarmHandSelected;
 
         private void Awake()
         {
@@ -37,24 +39,41 @@ namespace TAD.Defenders
         {
             placementController = controller;
             SetPlacementActive(controller != null && controller.IsPlacementActive);
+            SetFarmHandSelected(controller != null && controller.TargetedFarmHand != null);
         }
 
         /// <summary>Shows Buy while idle, or the tick and cross buttons while a preview is active.</summary>
         public void SetPlacementActive(bool isActive)
         {
+            isPlacementActive = isActive;
+            RefreshControlVisibility();
+        }
+
+        /// <summary>
+        /// Hides the Buy button while a placed Farmhand is selected, preventing it from covering
+        /// the non-modal defender information card. Placement confirmation controls are unaffected.
+        /// </summary>
+        public void SetFarmHandSelected(bool isSelected)
+        {
+            isFarmHandSelected = isSelected;
+            RefreshControlVisibility();
+        }
+
+        private void RefreshControlVisibility()
+        {
             if (buyButton != null)
             {
-                buyButton.gameObject.SetActive(!isActive);
+                buyButton.gameObject.SetActive(!isPlacementActive && !isFarmHandSelected);
             }
 
             if (confirmButton != null)
             {
-                confirmButton.gameObject.SetActive(isActive);
+                confirmButton.gameObject.SetActive(isPlacementActive);
             }
 
             if (cancelButton != null)
             {
-                cancelButton.gameObject.SetActive(isActive);
+                cancelButton.gameObject.SetActive(isPlacementActive);
             }
         }
 
