@@ -1,4 +1,5 @@
 using TAD.Economy;
+using TAD.Match;
 using TAD.Navigation;
 using TAD.Pooling;
 using TAD.UI;
@@ -53,6 +54,7 @@ namespace TAD.Defenders
         private bool ownsInsufficientFundsOverlay;
         private bool ignoreMouseUntilReleased;
         private bool isMousePlacementLocked;
+        private bool isPlacementInputEnabled = true;
 
         /// <summary>True while a translucent farmhand is awaiting confirmation or cancellation.</summary>
         public bool IsPlacementActive => isPlacing;
@@ -60,12 +62,21 @@ namespace TAD.Defenders
         /// <summary>The currently selected defender whose range circle is visible, if any.</summary>
         public FarmHand TargetedFarmHand => selectedFarmHand;
 
+        /// <summary>Whether the human player can use the Buy, confirm, and cancel placement controls.</summary>
+        public bool IsPlacementInputEnabled => isPlacementInputEnabled;
+
         private void Awake()
         {
+            isPlacementInputEnabled = MatchRoleSelection.IsPlayerDefender;
             spawnPool = GetComponent<SpawnPool>();
             routeMapper = spawnPool != null
                 ? spawnPool.RouteMapper
                 : routeMapper ?? Object.FindAnyObjectByType<FarmRouteMapper>();
+
+            if (!isPlacementInputEnabled)
+            {
+                HidePlacementUi();
+            }
         }
 
         private void OnEnable()
@@ -74,19 +85,46 @@ namespace TAD.Defenders
             // UI connection whenever this controller becomes active so the Buy button is never left
             // pointing at an unbound placement view.
             EnsureEventSystem();
-            EnsurePlacementUi();
+            if (isPlacementInputEnabled)
+            {
+                EnsurePlacementUi();
+            }
+            else
+            {
+                HidePlacementUi();
+            }
         }
 
         private void Start()
         {
             EnsureEventSystem();
-            EnsurePlacementUi();
+            if (isPlacementInputEnabled)
+            {
+                EnsurePlacementUi();
+            }
+            else
+            {
+                HidePlacementUi();
+            }
         }
 
         private void Update()
         {
             if (ModalOverlay.IsGameplayInputBlocked)
             {
+                return;
+            }
+
+            // Defender information is a shared panel, so an Attacker player may still target a
+            // farmhand. Only the placement controls are removed from their input scope.
+            if (!isPlacementInputEnabled)
+            {
+                if (isPlacing)
+                {
+                    CancelPlacement();
+                }
+
+                UpdateDefenderSelection();
                 return;
             }
 
@@ -127,9 +165,56 @@ namespace TAD.Defenders
             }
         }
 
+        /// <summary>
+        /// Enables or hides the player-facing placement controls without disabling shared defender inspection.
+        /// </summary>
+        public void SetPlacementInputEnabled(bool enabled)
+        {
+            if (!enabled)
+            {
+                isPlacementInputEnabled = false;
+                CancelPlacement();
+                HidePlacementUi();
+                return;
+            }
+
+            isPlacementInputEnabled = true;
+            EnsurePlacementUi();
+        }
+
+        /// <summary>
+        /// Places one paid farmhand at a visible map position without opening player placement UI.
+        /// The opposing defender AI uses the exact same pool and bank validation as a human player.
+        /// </summary>
+        public bool TryPlaceFarmHandAt(Vector2 requestedPosition)
+        {
+            if (spawnPool == null || ModalOverlay.IsGameplayInputBlocked)
+            {
+                return false;
+            }
+
+            routeMapper ??= spawnPool.RouteMapper;
+            if (routeMapper == null || !routeMapper.TryClampToVisibleMap(requestedPosition, out var constrainedPosition))
+            {
+                return false;
+            }
+
+            if (isPlacing)
+            {
+                CancelPlacement();
+            }
+
+            return TrySpawnPaidFarmHand(constrainedPosition, showInsufficientFundsMessage: false);
+        }
+
         /// <summary>Begins a placement preview at the centre of the visible map.</summary>
         public void BeginPlacement()
         {
+            if (!isPlacementInputEnabled)
+            {
+                return;
+            }
+
             EnsurePlacementUi();
 
             if (isPlacing || ModalOverlay.IsGameplayInputBlocked || !TryGetInitialPreviewPosition(out var initialPosition))
@@ -153,44 +238,15 @@ namespace TAD.Defenders
         /// <summary>Spawns a paid pooled defender at the preview position and ends placement mode.</summary>
         public void ConfirmPlacement()
         {
-            if (!isPlacing || ModalOverlay.IsGameplayInputBlocked || spawnPool == null)
+            if (!isPlacementInputEnabled || !isPlacing || ModalOverlay.IsGameplayInputBlocked || spawnPool == null)
             {
                 return;
             }
 
-            var farmHandCost = GetFarmHandCost();
-            var bank = ResolveDefenderBank();
-            if (bank == null || !bank.CanAfford(farmHandCost))
+            if (TrySpawnPaidFarmHand(previewPosition, showInsufficientFundsMessage: true))
             {
-                ShowInsufficientFundsMessage();
-                return;
+                EndPlacement();
             }
-
-            var spawnedFarmHand = spawnPool.Spawn(PooledObjectType.Defender, previewPosition, Quaternion.identity);
-            if (spawnedFarmHand == null)
-            {
-                return;
-            }
-
-            // The check above keeps this failure path exceptional, but returning the object protects
-            // the player from a charge if another system changes the balance during the same frame.
-            if (!bank.TrySpendGold(farmHandCost))
-            {
-                var pooledInstance = spawnedFarmHand.GetComponent<PooledInstance>();
-                if (pooledInstance != null)
-                {
-                    pooledInstance.ReturnToPool();
-                }
-                else
-                {
-                    spawnedFarmHand.SetActive(false);
-                }
-
-                ShowInsufficientFundsMessage();
-                return;
-            }
-
-            EndPlacement();
         }
 
         /// <summary>Removes the preview without consuming a pooled farmhand.</summary>
@@ -539,6 +595,51 @@ namespace TAD.Defenders
             Debug.LogWarning(InsufficientFundsMessage, this);
         }
 
+        private bool TrySpawnPaidFarmHand(Vector2 position, bool showInsufficientFundsMessage)
+        {
+            var farmHandCost = GetFarmHandCost();
+            var bank = ResolveDefenderBank();
+            if (bank == null || !bank.CanAfford(farmHandCost))
+            {
+                if (showInsufficientFundsMessage)
+                {
+                    ShowInsufficientFundsMessage();
+                }
+
+                return false;
+            }
+
+            var spawnedFarmHand = spawnPool.Spawn(PooledObjectType.Defender, position, Quaternion.identity);
+            if (spawnedFarmHand == null)
+            {
+                return false;
+            }
+
+            // The affordability check above keeps this failure path exceptional, but returning the
+            // object protects either player or AI from a charge if the bank changes this frame.
+            if (bank.TrySpendGold(farmHandCost))
+            {
+                return true;
+            }
+
+            var pooledInstance = spawnedFarmHand.GetComponent<PooledInstance>();
+            if (pooledInstance != null)
+            {
+                pooledInstance.ReturnToPool();
+            }
+            else
+            {
+                spawnedFarmHand.SetActive(false);
+            }
+
+            if (showInsufficientFundsMessage)
+            {
+                ShowInsufficientFundsMessage();
+            }
+
+            return false;
+        }
+
         private void EndPlacement()
         {
             isPlacing = false;
@@ -559,6 +660,11 @@ namespace TAD.Defenders
 
         private void EnsurePlacementUi()
         {
+            if (!isPlacementInputEnabled)
+            {
+                return;
+            }
+
             if (spawnedUi == null)
             {
                 spawnedUi = Object.FindAnyObjectByType<FarmHandPlacementUi>(FindObjectsInactive.Include);
@@ -569,7 +675,27 @@ namespace TAD.Defenders
                 }
             }
 
-            spawnedUi?.Bind(this);
+            if (spawnedUi != null)
+            {
+                if (!spawnedUi.gameObject.activeSelf)
+                {
+                    spawnedUi.gameObject.SetActive(true);
+                }
+
+                spawnedUi.Bind(this);
+            }
+        }
+
+        private void HidePlacementUi()
+        {
+            spawnedUi ??= Object.FindAnyObjectByType<FarmHandPlacementUi>(FindObjectsInactive.Include);
+            if (spawnedUi == null)
+            {
+                return;
+            }
+
+            spawnedUi.SetPlacementActive(false);
+            spawnedUi.gameObject.SetActive(false);
         }
 
         private void EnsureInsufficientFundsOverlay()

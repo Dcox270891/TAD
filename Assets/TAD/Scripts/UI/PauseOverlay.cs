@@ -1,3 +1,4 @@
+using TAD.Match;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
@@ -13,12 +14,15 @@ namespace TAD.UI
     {
         [SerializeField] private ModalOverlay modalOverlay;
         [SerializeField] private UnityEngine.UI.Button playButton;
+        [SerializeField] private UnityEngine.UI.Button restartButton;
         [SerializeField] private UnityEngine.UI.Button mainMenuButton;
         [SerializeField] private UnityEngine.UI.Button quitButton;
         [SerializeField] private string mainMenuSceneName = "MainMenu";
 
         private GameObject resumeSelectionTarget;
         private bool buttonsSubscribed;
+        private bool isChoosingRestartRole;
+        private bool isRestarting;
 
         public bool IsVisible => modalOverlay != null && modalOverlay.IsVisible;
 
@@ -78,6 +82,62 @@ namespace TAD.UI
             }
         }
 
+        /// <summary>Prompts for the player side, then restarts the active level.</summary>
+        public void Restart()
+        {
+            ResolveReferences();
+            if (isRestarting || isChoosingRestartRole)
+            {
+                return;
+            }
+
+            isChoosingRestartRole = true;
+            RestartRoleChoiceOverlay roleChoice = RestartRoleChoiceOverlay.Show(
+                transform,
+                restartButton,
+                restartButton != null ? restartButton.gameObject : null,
+                RestartWithRole,
+                CancelRestartRoleChoice);
+
+            if (roleChoice != null)
+            {
+                return;
+            }
+
+            isChoosingRestartRole = false;
+            Debug.LogError("Pause Overlay could not show the restart side selection.", this);
+            SelectRestartButton();
+        }
+
+        private void RestartWithRole(PlayerRole role)
+        {
+            isChoosingRestartRole = false;
+            if (isRestarting)
+            {
+                return;
+            }
+
+            var activeScene = SceneManager.GetActiveScene();
+            if (!activeScene.IsValid() || activeScene.buildIndex < 0)
+            {
+                SelectRestartButton();
+                return;
+            }
+
+            MatchRoleSelection.Select(role);
+            isRestarting = true;
+            resumeSelectionTarget = null;
+            modalOverlay?.Hide();
+            Time.timeScale = 1f;
+            SceneManager.LoadScene(activeScene.buildIndex);
+        }
+
+        private void CancelRestartRoleChoice()
+        {
+            isChoosingRestartRole = false;
+            SelectRestartButton();
+        }
+
         /// <summary>Leaves the paused match and loads the project's Main Menu scene.</summary>
         public void GoToMainMenu()
         {
@@ -117,6 +177,7 @@ namespace TAD.UI
             playButton = play;
             mainMenuButton = mainMenu;
             quitButton = quit;
+            EnsureRestartButton();
 
             if (Application.isPlaying && isActiveAndEnabled)
             {
@@ -136,6 +197,11 @@ namespace TAD.UI
             if (playButton != null)
             {
                 playButton.onClick.AddListener(Play);
+            }
+
+            if (restartButton != null)
+            {
+                restartButton.onClick.AddListener(Restart);
             }
 
             if (mainMenuButton != null)
@@ -163,6 +229,11 @@ namespace TAD.UI
                 playButton.onClick.RemoveListener(Play);
             }
 
+            if (restartButton != null)
+            {
+                restartButton.onClick.RemoveListener(Restart);
+            }
+
             if (mainMenuButton != null)
             {
                 mainMenuButton.onClick.RemoveListener(GoToMainMenu);
@@ -184,29 +255,75 @@ namespace TAD.UI
             }
         }
 
+        private void SelectRestartButton()
+        {
+            if (EventSystem.current != null && restartButton != null)
+            {
+                EventSystem.current.SetSelectedGameObject(restartButton.gameObject);
+            }
+        }
+
         private void ResolveReferences()
         {
             modalOverlay ??= GetComponent<ModalOverlay>();
 
-            if (playButton != null && mainMenuButton != null && quitButton != null)
+            if (playButton == null || mainMenuButton == null || quitButton == null)
+            {
+                foreach (var button in GetComponentsInChildren<UnityEngine.UI.Button>(true))
+                {
+                    switch (button.gameObject.name)
+                    {
+                        case "PlayButton":
+                            playButton ??= button;
+                            break;
+                        case "RestartButton":
+                            restartButton ??= button;
+                            break;
+                        case "MainMenuButton":
+                            mainMenuButton ??= button;
+                            break;
+                        case "QuitButton":
+                            quitButton ??= button;
+                            break;
+                    }
+                }
+            }
+
+            EnsureRestartButton();
+        }
+
+        private void EnsureRestartButton()
+        {
+            if (restartButton != null || playButton == null || playButton.transform.parent == null)
             {
                 return;
             }
 
-            foreach (var button in GetComponentsInChildren<UnityEngine.UI.Button>(true))
+            GameObject restartObject = Instantiate(playButton.gameObject, playButton.transform.parent);
+            restartObject.name = "RestartButton";
+            restartObject.layer = gameObject.layer;
+            restartObject.transform.SetSiblingIndex(playButton.transform.GetSiblingIndex() + 1);
+
+            restartButton = restartObject.GetComponent<UnityEngine.UI.Button>();
+            if (restartButton == null)
             {
-                switch (button.gameObject.name)
-                {
-                    case "PlayButton":
-                        playButton ??= button;
-                        break;
-                    case "MainMenuButton":
-                        mainMenuButton ??= button;
-                        break;
-                    case "QuitButton":
-                        quitButton ??= button;
-                        break;
-                }
+                Destroy(restartObject);
+                return;
+            }
+
+            restartButton.onClick.RemoveAllListeners();
+            UnityEngine.UI.Text label = restartButton.GetComponentInChildren<UnityEngine.UI.Text>(true);
+            if (label != null)
+            {
+                label.text = "Restart";
+            }
+
+            var pausePanelRect = playButton.transform.parent as RectTransform;
+            if (pausePanelRect != null)
+            {
+                pausePanelRect.sizeDelta = new Vector2(
+                    pausePanelRect.sizeDelta.x,
+                    Mathf.Max(pausePanelRect.sizeDelta.y, 500f));
             }
         }
     }

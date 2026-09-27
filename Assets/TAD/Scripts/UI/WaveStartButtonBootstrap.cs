@@ -1,3 +1,4 @@
+using TAD.Match;
 using TAD.Waves;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -6,7 +7,8 @@ using UnityEngine.InputSystem.UI;
 namespace TAD.UI
 {
     /// <summary>
-    /// Suppresses automatic waves and creates the Play UI plus its Input System EventSystem.
+    /// Suppresses automatic waves and creates the compact attacker dispatch control.
+    /// The control is hidden when the attacking side is AI-controlled.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(WaveController))]
@@ -31,6 +33,19 @@ namespace TAD.UI
                 return;
             }
 
+            if (!MatchRoleSelection.IsPlayerAttacker)
+            {
+                // The shared pause control remains visible, but this arrow dispatches attacker
+                // orders and must not let a Defender player control the attacking AI.
+                spawnedPlayButton = Object.FindFirstObjectByType<WaveStartButton>(FindObjectsInactive.Include);
+                if (spawnedPlayButton != null)
+                {
+                    spawnedPlayButton.gameObject.SetActive(false);
+                }
+
+                return;
+            }
+
             var eventSystem = EnsureEventSystem();
             spawnedPlayButton = Object.FindFirstObjectByType<WaveStartButton>(FindObjectsInactive.Include);
             if (spawnedPlayButton == null)
@@ -44,6 +59,7 @@ namespace TAD.UI
                 ownsSpawnedPlayButton = true;
             }
 
+            spawnedPlayButton.gameObject.SetActive(true);
             spawnedPlayButton.Bind(waveController);
 
             if (eventSystem != null && spawnedPlayButton.SelectableGameObject.activeInHierarchy)

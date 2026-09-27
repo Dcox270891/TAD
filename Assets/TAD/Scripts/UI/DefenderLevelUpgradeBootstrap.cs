@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using TAD.Defenders;
+using TAD.Match;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem.UI;
@@ -8,8 +9,8 @@ using UnityEngine.InputSystem.UI;
 namespace TAD.UI
 {
     /// <summary>
-    /// Owns level-3 defender upgrade requests for one level. It queues farmhands so each player choice
-    /// is resolved through one modal at a time, even if multiple farmhands reach level 3 together.
+    /// Owns level-3 defender upgrade requests for one level. Human Defenders choose through a
+    /// single modal; AI-controlled Defenders automatically take the first affordable valid upgrade.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class DefenderLevelUpgradeBootstrap : MonoBehaviour
@@ -35,14 +36,24 @@ namespace TAD.UI
 
         private void Start()
         {
-            EnsureEventSystem();
-            EnsureOverlay();
+            if (MatchRoleSelection.IsPlayerDefender)
+            {
+                EnsureEventSystem();
+                EnsureOverlay();
+            }
+
             QueueExistingPendingFarmHands();
             TryPresentNext();
         }
 
         private void Update()
         {
+            if (!MatchRoleSelection.IsPlayerDefender)
+            {
+                TryPresentNext();
+                return;
+            }
+
             if (presentedFarmHand == null && pendingFarmHands.Count > 0 && !ModalOverlay.IsGameplayInputBlocked)
             {
                 TryPresentNext();
@@ -71,11 +82,12 @@ namespace TAD.UI
             levelThreeUpgradeOptions = CopyOptions(upgradeOptions);
             hasReportedConfigurationError = false;
 
-            if (Application.isPlaying)
+            if (Application.isPlaying && MatchRoleSelection.IsPlayerDefender)
             {
                 EnsureOverlay();
-                TryPresentNext();
             }
+
+            TryPresentNext();
         }
 
         private void Subscribe()
@@ -128,6 +140,12 @@ namespace TAD.UI
 
         private void TryPresentNext()
         {
+            if (!MatchRoleSelection.IsPlayerDefender)
+            {
+                TryResolveAiUpgrades();
+                return;
+            }
+
             if (presentedFarmHand != null || ModalOverlay.IsGameplayInputBlocked ||
                 !HasCompleteConfiguration())
             {
@@ -159,6 +177,54 @@ namespace TAD.UI
                 QueueFarmHand(candidate);
                 return;
             }
+        }
+
+        private void TryResolveAiUpgrades()
+        {
+            if (pendingFarmHands.Count == 0)
+            {
+                return;
+            }
+
+            var attemptsThisFrame = pendingFarmHands.Count;
+            while (attemptsThisFrame-- > 0 && pendingFarmHands.Count > 0)
+            {
+                var candidate = pendingFarmHands.Dequeue();
+                pendingFarmHandSet.Remove(candidate);
+                if (!IsPendingFarmHand(candidate))
+                {
+                    continue;
+                }
+
+                if (TryChooseAffordableAiUpgrade(candidate))
+                {
+                    continue;
+                }
+
+                // No affordable option is available yet. Keep the request for a later resource gain.
+                QueueFarmHand(candidate);
+                return;
+            }
+        }
+
+        private bool TryChooseAffordableAiUpgrade(FarmHand farmHand)
+        {
+            if (farmHand == null || levelThreeUpgradeOptions == null)
+            {
+                return false;
+            }
+
+            foreach (var option in levelThreeUpgradeOptions)
+            {
+                if (option != null &&
+                    farmHand.CanAffordLevelThreeUpgrade(option) &&
+                    farmHand.TryChooseLevelThreeUpgrade(option))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private void HandleChoiceResolved()

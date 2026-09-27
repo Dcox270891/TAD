@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using TAD.Levels;
+using TAD.Match;
 using TAD.Progression;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -62,6 +63,7 @@ namespace TAD.UI
             SaveProfile();
         }
 
+        /// <summary>Opens the level list. Choosing a level then asks the player which side to control.</summary>
         public void SelectLevel()
         {
             if (levelCatalog == null)
@@ -70,12 +72,15 @@ namespace TAD.UI
                 return;
             }
 
-            if (levelSelectionOverlay == null || !levelSelectionOverlay.Show(levelCatalog, LoadLevel, selectLevelButton != null ? selectLevelButton.gameObject : null))
+            if (levelSelectionOverlay == null ||
+                !levelSelectionOverlay.Show(levelCatalog, ChooseRoleForLevel,
+                    selectLevelButton != null ? selectLevelButton.gameObject : null))
             {
                 Debug.LogError("Main Menu could not show the Select Level overlay.", this);
             }
         }
 
+        /// <summary>Starts a random available level and randomly assigns the player to Attack or Defend.</summary>
         public void Play()
         {
             if (levelCatalog == null || !levelCatalog.TryGetRandomLevel(out LevelDefinition level))
@@ -84,7 +89,10 @@ namespace TAD.UI
                 return;
             }
 
-            LoadLevel(level);
+            var randomRole = UnityEngine.Random.value < 0.5f
+                ? PlayerRole.Attacker
+                : PlayerRole.Defender;
+            LoadLevel(level, randomRole);
         }
 
         public void OpenSettings()
@@ -134,7 +142,19 @@ namespace TAD.UI
             }
         }
 
-        private void LoadLevel(LevelDefinition level)
+        private void ChooseRoleForLevel(LevelDefinition level)
+        {
+            if (levelSelectionOverlay == null ||
+                !levelSelectionOverlay.ShowRoleChoice(
+                    level,
+                    selectedRole => LoadLevel(level, selectedRole),
+                    selectLevelButton != null ? selectLevelButton.gameObject : null))
+            {
+                Debug.LogError("Main Menu could not show the Attack or Defend choice.", this);
+            }
+        }
+
+        private void LoadLevel(LevelDefinition level, PlayerRole playerRole)
         {
             if (isLoadingLevel)
             {
@@ -167,6 +187,7 @@ namespace TAD.UI
 
             playerProfile.lastPlayedLevelId = level.Id;
             SaveProfile();
+            MatchRoleSelection.Select(playerRole);
             Time.timeScale = 1f;
             isLoadingLevel = levelLoadingOverlay.TryLoadScene(sceneBuildIndex, level.SceneName, HandleLevelLoadFailed);
             if (!isLoadingLevel)

@@ -1,4 +1,5 @@
 using TAD.Economy;
+using TAD.Match;
 using TAD.Pooling;
 using TAD.Waves;
 using UnityEngine;
@@ -7,7 +8,10 @@ using UnityEngine.InputSystem.UI;
 
 namespace TAD.UI
 {
-    /// <summary>Creates and connects the attacker ordering, queued-group, and non-modal details UI for this level.</summary>
+    /// <summary>
+    /// Creates and connects the shared attacker queue/details presentation for every level.
+    /// The send-wave card panel is created only when the human player selected the Attacker role.
+    /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(WaveController))]
     [RequireComponent(typeof(AttackerWaveQueue))]
@@ -49,7 +53,13 @@ namespace TAD.UI
                 return;
             }
 
-            spawnedSelectionPanel.Bind(spawnPool, attackerBank, attackerWaveQueue);
+            // The attacker card panel is the player-only send-wave control. The queue cue and
+            // attacker detail card remain shared, so a Defender player can inspect AI-planned waves.
+            if (spawnedSelectionPanel != null)
+            {
+                spawnedSelectionPanel.Bind(spawnPool, attackerBank, attackerWaveQueue);
+            }
+
             spawnedQueuePanel.Bind(
                 attackerWaveQueue,
                 spawnPool,
@@ -78,20 +88,40 @@ namespace TAD.UI
 
         private bool EnsurePresenters()
         {
-            spawnedSelectionPanel = Object.FindFirstObjectByType<AttackerSelectionPanel>(FindObjectsInactive.Include);
-            if (spawnedSelectionPanel == null)
+            if (MatchRoleSelection.IsPlayerAttacker)
             {
-                if (selectionPanelPrefab == null)
+                spawnedSelectionPanel = Object.FindAnyObjectByType<AttackerSelectionPanel>(FindObjectsInactive.Include);
+                if (spawnedSelectionPanel == null)
                 {
-                    Debug.LogError("Attacker UI needs an Attacker Selection Panel prefab.", this);
-                    return false;
+                    if (selectionPanelPrefab == null)
+                    {
+                        Debug.LogError("Attacker UI needs an Attacker Selection Panel prefab.", this);
+                        return false;
+                    }
+
+                    spawnedSelectionPanel = Instantiate(selectionPanelPrefab);
+                    ownsSpawnedSelectionPanel = true;
                 }
 
-                spawnedSelectionPanel = Instantiate(selectionPanelPrefab);
-                ownsSpawnedSelectionPanel = true;
+                spawnedSelectionPanel.gameObject.SetActive(true);
+            }
+            else
+            {
+                // A defender must not see or use the attacking AI's send-wave controls. This also
+                // clears a panel retained by the editor/play-mode lifecycle or a prior scene load.
+                var existingSelectionPanel =
+                    Object.FindAnyObjectByType<AttackerSelectionPanel>(FindObjectsInactive.Include);
+                if (existingSelectionPanel != null)
+                {
+                    existingSelectionPanel.gameObject.SetActive(false);
+                }
+
+                // Keeping this reference null makes AttackerQueuePanel treat the send panel as absent,
+                // while the shared queue cue and attacker-details panel continue to work.
+                spawnedSelectionPanel = null;
             }
 
-            spawnedDetailsPanel = Object.FindFirstObjectByType<AttackerDetailsPanel>(FindObjectsInactive.Include);
+            spawnedDetailsPanel = Object.FindAnyObjectByType<AttackerDetailsPanel>(FindObjectsInactive.Include);
             if (spawnedDetailsPanel == null)
             {
                 if (detailsPanelPrefab == null)
@@ -104,7 +134,7 @@ namespace TAD.UI
                 ownsSpawnedDetailsPanel = true;
             }
 
-            spawnedQueuePanel = Object.FindFirstObjectByType<AttackerQueuePanel>(FindObjectsInactive.Include);
+            spawnedQueuePanel = Object.FindAnyObjectByType<AttackerQueuePanel>(FindObjectsInactive.Include);
             if (spawnedQueuePanel == null)
             {
                 if (queuePanelPrefab == null)

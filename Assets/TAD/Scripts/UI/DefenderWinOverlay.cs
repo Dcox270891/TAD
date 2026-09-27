@@ -1,3 +1,4 @@
+using TAD.Match;
 using TAD.Waves;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -24,6 +25,7 @@ namespace TAD.UI
         private bool buttonsSubscribed;
         private bool dayCycleSubscribed;
         private bool isRestarting;
+        private bool isChoosingRestartRole;
 
         public bool IsVisible => modalOverlay != null && modalOverlay.IsVisible;
 
@@ -64,9 +66,36 @@ namespace TAD.UI
             ShowIfDefendersHaveWon();
         }
 
-        /// <summary>Reloads the active gameplay scene through the shared loading-screen transition.</summary>
+        /// <summary>Prompts for the player side, then reloads the active scene through the loading transition.</summary>
         public void Restart()
         {
+            ResolveReferences();
+            if (isRestarting || isChoosingRestartRole)
+            {
+                return;
+            }
+
+            isChoosingRestartRole = true;
+            RestartRoleChoiceOverlay roleChoice = RestartRoleChoiceOverlay.Show(
+                transform,
+                restartButton,
+                restartButton != null ? restartButton.gameObject : null,
+                RestartWithRole,
+                CancelRestartRoleChoice);
+
+            if (roleChoice != null)
+            {
+                return;
+            }
+
+            isChoosingRestartRole = false;
+            Debug.LogError("Defender Win Overlay could not show the restart side selection.", this);
+            SelectRestartButton();
+        }
+
+        private void RestartWithRole(PlayerRole role)
+        {
+            isChoosingRestartRole = false;
             if (isRestarting)
             {
                 return;
@@ -75,17 +104,21 @@ namespace TAD.UI
             var activeScene = SceneManager.GetActiveScene();
             if (!activeScene.IsValid() || activeScene.buildIndex < 0)
             {
+                SelectRestartButton();
                 return;
             }
 
             if (levelLoadingOverlayPrefab == null)
             {
                 Debug.LogError("Defender Win Overlay is missing its Level Loading Overlay prefab.", this);
+                SelectRestartButton();
                 return;
             }
 
+            MatchRoleSelection.Select(role);
             modalOverlay?.Hide();
             Time.timeScale = 1f;
+
             var loadingOverlay = Instantiate(levelLoadingOverlayPrefab);
             isRestarting = loadingOverlay.TryLoadScene(
                 activeScene.buildIndex,
@@ -95,6 +128,12 @@ namespace TAD.UI
             {
                 HandleRestartLoadFailed(loadingOverlay);
             }
+        }
+
+        private void CancelRestartRoleChoice()
+        {
+            isChoosingRestartRole = false;
+            SelectRestartButton();
         }
 
         private void HandleRestartLoadFailed(LevelLoadingOverlay loadingOverlay)
