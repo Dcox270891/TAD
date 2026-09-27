@@ -42,7 +42,13 @@ namespace TAD.Match
         [Tooltip("How far the AI begins positioning farmhands beside the attacker route.")]
         private float defenderAiSideOffset = 1.4f;
 
+        private const int RecentAttackerAiSelectionLimit = 4;
+
         private readonly List<AttackerDefinition> attackerDefinitions = new();
+        private readonly List<AttackerAiCandidate> attackerAiCandidates = new();
+        private readonly List<AttackerAiDefenderThreat> attackerAiDefenderThreats = new();
+        private readonly List<AttackerDefinition> recentAttackerAiSelections = new();
+        private readonly List<Vector3> attackerAiRoutePoints = new();
 
         private WaveController waveController;
         private AttackerWaveQueue attackerWaveQueue;
@@ -162,6 +168,14 @@ namespace TAD.Match
                 baseAttackerGroupsPerDay +
                 (dayCycle.CurrentDay / Mathf.Max(1, attackerAiAdditionalGroupEveryDays)));
 
+            if (!IsAttackerAiRouteMapReady())
+            {
+                // FarmRouteMapper builds its cached fields in Start. Do not consume this preparation
+                // decision if script execution order reaches us one frame before that work completes.
+                return;
+            }
+
+            BuildAttackerAiDefenderThreats();
             for (var groupIndex = 0; groupIndex < groupsToQueue; groupIndex++)
             {
                 if (!TryQueueAiAttackerGroup(dayCycle.CurrentDay, groupIndex))
@@ -175,36 +189,122 @@ namespace TAD.Match
             lastAttackerAiQueuedDay = dayCycle.CurrentDay;
         }
 
+        private bool IsAttackerAiRouteMapReady()
+        {
+            var routeMapper = spawnPool != null ? spawnPool.RouteMapper : null;
+            return routeMapper != null && routeMapper.FoodStore != null && routeMapper.CachedRouteFieldCount > 0;
+        }
+
         private bool TryQueueAiAttackerGroup(int day, int groupIndex)
         {
-            var rosterCount = attackerDefinitions.Count;
-            if (rosterCount == 0)
+            if (!BuildAttackerAiCandidates())
             {
                 return false;
             }
 
-            // Rotate the roster by day so the opponent gradually exercises all configured animals.
-            var firstIndex = Mathf.Abs(day + groupIndex) % rosterCount;
-            for (var offset = 0; offset < rosterCount; offset++)
+            if (!AttackerWavePlanner.TryChoose(
+                    attackerAiCandidates,
+                    attackerAiDefenderThreats,
+                    recentAttackerAiSelections,
+                    day,
+                    groupIndex,
+                    out var decision) ||
+                !decision.IsValid)
             {
-                var definition = attackerDefinitions[(firstIndex + offset) % rosterCount];
-                if (definition == null || definition.SendSize <= 0)
+                return false;
+            }
+
+            if (!attackerWaveQueue.TryQueueAttackers(decision.Definition))
+            {
+                return false;
+            }
+
+            RememberAttackerAiSelection(decision.Definition);
+            Debug.Log(
+                $"Attacker AI queued {decision.Definition.DisplayName} ({decision.Definition.Archetype}, score {decision.Score:0.0}): {decision.Reason}.",
+                this);
+            return true;
+        }
+
+        private bool BuildAttackerAiCandidates()
+        {
+            attackerAiCandidates.Clear();
+            var routeMapper = spawnPool != null ? spawnPool.RouteMapper : null;
+            if (routeMapper == null || routeMapper.FoodStore == null || waveController == null)
+            {
+                return false;
+            }
+
+            foreach (var definition in attackerDefinitions)
+            {
+                if (definition == null || definition.SendSize <= 0 || definition.MaximumHealth <= 0f ||
+                    definition.MovementSpeed <= 0f ||
+                    (attackerBank != null && !attackerBank.CanAfford(definition.SendCost)))
                 {
                     continue;
                 }
 
-                if (attackerBank != null && !attackerBank.CanAfford(definition.SendCost))
+                attackerAiRoutePoints.Clear();
+                if (!routeMapper.TryGetFastestRoute(
+                        waveController.SpawnPosition,
+                        definition.Size,
+                        definition.TraversalProfile,
+                        attackerAiRoutePoints))
                 {
                     continue;
                 }
 
-                if (attackerWaveQueue.TryQueueAttackers(definition))
+                var candidate = new AttackerAiCandidate(definition, attackerAiRoutePoints);
+                if (candidate.HasUsableRoute)
                 {
-                    return true;
+                    attackerAiCandidates.Add(candidate);
                 }
             }
 
-            return false;
+            return attackerAiCandidates.Count > 0;
+        }
+
+        private void BuildAttackerAiDefenderThreats()
+        {
+            attackerAiDefenderThreats.Clear();
+            foreach (var farmHand in Object.FindObjectsByType<FarmHand>(FindObjectsInactive.Exclude))
+            {
+                if (farmHand == null || !farmHand.isActiveAndEnabled || farmHand.IsAwaitingLevelThreeUpgrade)
+                {
+                    continue;
+                }
+
+                var weapon = farmHand.WeaponDefinition;
+                var projectile = weapon != null ? weapon.ProjectileDefinition : null;
+                if (weapon == null || projectile == null || farmHand.Range <= 0f || farmHand.Damage <= 0f ||
+                    weapon.AttackSpeed <= 0f)
+                {
+                    continue;
+                }
+
+                attackerAiDefenderThreats.Add(new AttackerAiDefenderThreat(
+                    farmHand.transform.position,
+                    farmHand.Range,
+                    farmHand.Damage * weapon.AttackSpeed,
+                    projectile.ProjectileType,
+                    projectile.ProjectileBehavior));
+            }
+        }
+
+        private void RememberAttackerAiSelection(AttackerDefinition definition)
+        {
+            if (definition == null)
+            {
+                return;
+            }
+
+            recentAttackerAiSelections.Insert(0, definition);
+            if (recentAttackerAiSelections.Count > RecentAttackerAiSelectionLimit)
+            {
+                recentAttackerAiSelections.RemoveRange(
+                    RecentAttackerAiSelectionLimit,
+                    recentAttackerAiSelections.Count - RecentAttackerAiSelectionLimit);
+            }
         }
 
         private void RunDefenderAi()
