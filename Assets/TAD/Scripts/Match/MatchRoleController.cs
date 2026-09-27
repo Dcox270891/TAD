@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using TAD.Attackers;
 using TAD.Defenders;
 using TAD.Economy;
+using TAD.Navigation;
 using TAD.Pooling;
 using TAD.UI;
 using TAD.Waves;
@@ -43,12 +44,21 @@ namespace TAD.Match
         private float defenderAiSideOffset = 1.4f;
 
         private const int RecentAttackerAiSelectionLimit = 4;
+        private const int MaximumDefenderAiPlacementCandidates = 128;
+        private const float DefenderAiCandidateSpacing = 0.4f;
 
         private readonly List<AttackerDefinition> attackerDefinitions = new();
         private readonly List<AttackerAiCandidate> attackerAiCandidates = new();
         private readonly List<AttackerAiDefenderThreat> attackerAiDefenderThreats = new();
         private readonly List<AttackerDefinition> recentAttackerAiSelections = new();
         private readonly List<Vector3> attackerAiRoutePoints = new();
+
+        private readonly List<AttackerQueuedGroupInfo> defenderAiQueuedGroups = new();
+        private readonly List<DefenderAiRoutePlan> defenderAiRoutePlans = new();
+        private readonly List<Vector3> defenderAiRoutePoints = new();
+        private readonly List<Vector2> defenderAiPlacementCandidates = new();
+        private readonly List<DefenderAiCoverage> defenderAiExistingCoverage = new();
+        private readonly List<WeaponDefinition> defenderAiAffordableUpgradeOptions = new();
 
         private WaveController waveController;
         private AttackerWaveQueue attackerWaveQueue;
@@ -59,6 +69,8 @@ namespace TAD.Match
         private PlayerRole playerRole;
         private int lastAttackerAiQueuedDay = int.MinValue;
         private int lastDefenderAiPreparedDay = int.MinValue;
+        private bool defenderAiPlanDirty = true;
+        private bool isSubscribedToAttackerQueue;
         private int roleUiStabilizationFrames = 3;
 
         /// <summary>The side controlled by the human for this level instance.</summary>
@@ -67,6 +79,22 @@ namespace TAD.Match
         public bool IsPlayerAttacker => playerRole == PlayerRole.Attacker;
         public bool IsPlayerDefender => playerRole == PlayerRole.Defender;
 
+        private void OnEnable()
+        {
+            defenderAiPlanDirty = true;
+            SubscribeToAttackerQueue();
+        }
+
+        private void OnDisable()
+        {
+            UnsubscribeFromAttackerQueue();
+        }
+
+        private void OnDestroy()
+        {
+            UnsubscribeFromAttackerQueue();
+        }
+
         private void Awake()
         {
             playerRole = MatchRoleSelection.SelectedRole;
@@ -74,11 +102,13 @@ namespace TAD.Match
             attackerWaveQueue = GetComponent<AttackerWaveQueue>();
             dayCycle = GetComponent<DayCycleController>();
             ResolveDependencies();
+            SubscribeToAttackerQueue();
         }
 
         private void Start()
         {
             ResolveDependencies();
+            SubscribeToAttackerQueue();
             // FarmHandPlacementController itself still handles shared defender inspection when this
             // is false. This call only gates its Buy/confirm/cancel controls.
             farmHandPlacement?.SetPlacementInputEnabled(IsPlayerDefender);
@@ -307,30 +337,95 @@ namespace TAD.Match
             }
         }
 
+        /// <summary>
+        /// Chooses and purchases a legal level-three weapon for an AI farmhand. The UI bootstrap
+        /// keeps ownership of the upgrade request while this controller owns defender-side policy.
+        /// </summary>
+        public bool TryChooseDefenderAiUpgrade(
+            FarmHand farmHand,
+            IReadOnlyList<WeaponDefinition> upgradeOptions)
+        {
+            if (!IsPlayerAttacker ||
+                farmHand == null ||
+                !farmHand.IsAwaitingLevelThreeUpgrade ||
+                upgradeOptions == null)
+            {
+                return false;
+            }
+
+            ResolveDependencies();
+            if (!RefreshDefenderAiRoutePlans() || defenderAiRoutePlans.Count == 0)
+            {
+                // Keep the request pending until the attacking player has committed a next-wave group.
+                return false;
+            }
+
+            defenderAiAffordableUpgradeOptions.Clear();
+            for (var index = 0; index < upgradeOptions.Count; index++)
+            {
+                var option = upgradeOptions[index];
+                if (option != null && farmHand.CanAffordLevelThreeUpgrade(option))
+                {
+                    defenderAiAffordableUpgradeOptions.Add(option);
+                }
+            }
+
+            if (defenderAiAffordableUpgradeOptions.Count == 0)
+            {
+                return false;
+            }
+
+            var currentWeapon = farmHand.WeaponDefinition;
+            var progressionDamageMultiplier = currentWeapon != null && currentWeapon.Damage > 0.001f
+                ? farmHand.Damage / currentWeapon.Damage
+                : 1f;
+            if (!DefenderAiPlanner.TryChooseWeapon(
+                    farmHand.transform.position,
+                    progressionDamageMultiplier,
+                    defenderAiAffordableUpgradeOptions,
+                    defenderAiRoutePlans,
+                    out var decision) ||
+                !decision.IsValid ||
+                !farmHand.TryChooseLevelThreeUpgrade(decision.Weapon))
+            {
+                return false;
+            }
+
+            defenderAiPlanDirty = true;
+            Debug.Log(
+                $"Defender AI upgraded a farmhand to {decision.Weapon.DisplayName} (score {decision.Score:0.0}): {decision.Reason}.",
+                this);
+            return true;
+        }
+
         private void RunDefenderAi()
         {
             if (farmHandPlacement == null || spawnPool == null ||
-                lastDefenderAiPreparedDay == dayCycle.CurrentDay)
+                (!defenderAiPlanDirty && lastDefenderAiPreparedDay == dayCycle.CurrentDay))
             {
                 return;
             }
 
-            var routeMapper = spawnPool.RouteMapper;
-            if (routeMapper == null || routeMapper.FoodStore == null)
+            if (!RefreshDefenderAiRoutePlans())
             {
-                // The route mapper builds during level start. Try again next frame without marking
-                // this preparation phase as handled.
+                // FarmRouteMapper builds during level startup. Do not consume this preparation
+                // decision until the actual cached animal routes are available.
                 return;
             }
 
-            var desiredFarmHandCount = Mathf.Min(
-                Mathf.Max(1, defenderAiMaximumFarmhands),
+            var maximumFarmHands = Mathf.Max(1, defenderAiMaximumFarmhands);
+            var dailyFarmHandTarget = Mathf.Min(
+                maximumFarmHands,
                 1 + (dayCycle.CurrentDay / Mathf.Max(1, defenderAiAdditionalFarmHandEveryDays)));
+            var routeAwareFarmHandTarget = DefenderAiPlanner.GetSuggestedFarmHandCount(
+                defenderAiRoutePlans,
+                maximumFarmHands);
+            var desiredFarmHandCount = Mathf.Max(dailyFarmHandTarget, routeAwareFarmHandTarget);
 
             var activeFarmHandCount = CountActiveFarmHands();
             while (activeFarmHandCount < desiredFarmHandCount)
             {
-                if (!TryPlaceAiFarmHand(activeFarmHandCount))
+                if (!TryPlaceAiFarmHand(activeFarmHandCount, defenderAiRoutePlans))
                 {
                     break;
                 }
@@ -341,7 +436,201 @@ namespace TAD.Match
             lastDefenderAiPreparedDay = dayCycle.CurrentDay;
         }
 
-        private bool TryPlaceAiFarmHand(int farmHandIndex)
+        private bool RefreshDefenderAiRoutePlans()
+        {
+            if (!defenderAiPlanDirty)
+            {
+                return true;
+            }
+
+            if (!IsAttackerAiRouteMapReady() || attackerWaveQueue == null || waveController == null)
+            {
+                return false;
+            }
+
+            defenderAiQueuedGroups.Clear();
+            defenderAiRoutePlans.Clear();
+            attackerWaveQueue.CopyPendingGroups(defenderAiQueuedGroups);
+
+            var routeMapper = spawnPool.RouteMapper;
+            for (var index = 0; index < defenderAiQueuedGroups.Count; index++)
+            {
+                var group = defenderAiQueuedGroups[index];
+                var definition = group.Definition;
+                if (definition == null || group.TotalCount <= 0)
+                {
+                    continue;
+                }
+
+                defenderAiRoutePoints.Clear();
+                if (!routeMapper.TryGetFastestRoute(
+                        waveController.SpawnPosition,
+                        definition.Size,
+                        definition.TraversalProfile,
+                        defenderAiRoutePoints))
+                {
+                    continue;
+                }
+
+                var routePlan = new DefenderAiRoutePlan(
+                    definition,
+                    group.TotalCount,
+                    defenderAiRoutePoints);
+                if (routePlan.HasUsableRoute)
+                {
+                    defenderAiRoutePlans.Add(routePlan);
+                }
+            }
+
+            defenderAiPlanDirty = false;
+            return true;
+        }
+
+        private bool TryPlaceAiFarmHand(
+            int farmHandIndex,
+            IReadOnlyList<DefenderAiRoutePlan> plannedRoutes)
+        {
+            var routeMapper = spawnPool != null ? spawnPool.RouteMapper : null;
+            if (routeMapper == null)
+            {
+                return false;
+            }
+
+            if (plannedRoutes != null && plannedRoutes.Count > 0)
+            {
+                BuildDefenderAiPlacementCandidates(routeMapper, plannedRoutes);
+                BuildDefenderAiExistingCoverage();
+                if (DefenderAiPlanner.TryChoosePlacement(
+                        plannedRoutes,
+                        defenderAiPlacementCandidates,
+                        defenderAiExistingCoverage,
+                        GetDefaultAiFarmHandRange(),
+                        out var decision) &&
+                    decision.IsValid &&
+                    farmHandPlacement.TryPlaceFarmHandAt(decision.Position))
+                {
+                    return true;
+                }
+            }
+
+            // Retain a route-independent fallback for a fresh map before the human attacker has
+            // selected a group, or for an unusually dense environment with no valid route samples.
+            return TryPlaceFallbackFarmHand(farmHandIndex);
+        }
+
+        private void BuildDefenderAiPlacementCandidates(
+            FarmRouteMapper routeMapper,
+            IReadOnlyList<DefenderAiRoutePlan> plannedRoutes)
+        {
+            defenderAiPlacementCandidates.Clear();
+            if (routeMapper == null || plannedRoutes == null)
+            {
+                return;
+            }
+
+            var maximumSegmentsPerRoute = Mathf.Max(
+                1,
+                MaximumDefenderAiPlacementCandidates / Mathf.Max(1, plannedRoutes.Count * 4));
+            for (var routeIndex = 0;
+                 routeIndex < plannedRoutes.Count &&
+                 defenderAiPlacementCandidates.Count < MaximumDefenderAiPlacementCandidates;
+                 routeIndex++)
+            {
+                var route = plannedRoutes[routeIndex];
+                if (!route.HasUsableRoute)
+                {
+                    continue;
+                }
+
+                var routeSegmentCount = route.RoutePoints.Count - 1;
+                var sampleStep = Mathf.Max(
+                    1,
+                    Mathf.CeilToInt((float)routeSegmentCount / maximumSegmentsPerRoute));
+                for (var pointIndex = 1;
+                     pointIndex < route.RoutePoints.Count &&
+                     defenderAiPlacementCandidates.Count < MaximumDefenderAiPlacementCandidates;
+                     pointIndex += sampleStep)
+                {
+                    var start = route.RoutePoints[pointIndex - 1];
+                    var end = route.RoutePoints[pointIndex];
+                    var midpoint = Vector2.Lerp(start, end, 0.5f);
+                    TryAddDefenderAiPlacementCandidate(routeMapper, start);
+                    TryAddDefenderAiPlacementCandidate(routeMapper, midpoint);
+
+                    var segment = end - start;
+                    if (segment.sqrMagnitude <= 0.0001f)
+                    {
+                        continue;
+                    }
+
+                    var normal = new Vector2(-segment.y, segment.x).normalized;
+                    var sideOffset = Mathf.Min(
+                        0.4f,
+                        Mathf.Max(0.15f, defenderAiSideOffset * 0.30f));
+                    TryAddDefenderAiPlacementCandidate(routeMapper, midpoint + (normal * sideOffset));
+                    TryAddDefenderAiPlacementCandidate(routeMapper, midpoint - (normal * sideOffset));
+                }
+            }
+        }
+
+        private void TryAddDefenderAiPlacementCandidate(
+            FarmRouteMapper routeMapper,
+            Vector2 requestedPosition)
+        {
+            if (routeMapper == null ||
+                defenderAiPlacementCandidates.Count >= MaximumDefenderAiPlacementCandidates ||
+                !routeMapper.TryClampToVisibleMap(requestedPosition, out var candidate) ||
+                IsEnvironmentOccupied(candidate))
+            {
+                return;
+            }
+
+            var minimumCandidateSpacingSquared = DefenderAiCandidateSpacing * DefenderAiCandidateSpacing;
+            for (var index = 0; index < defenderAiPlacementCandidates.Count; index++)
+            {
+                if ((defenderAiPlacementCandidates[index] - candidate).sqrMagnitude <
+                    minimumCandidateSpacingSquared)
+                {
+                    return;
+                }
+            }
+
+            defenderAiPlacementCandidates.Add(candidate);
+        }
+
+        private void BuildDefenderAiExistingCoverage()
+        {
+            defenderAiExistingCoverage.Clear();
+            foreach (var farmHand in Object.FindObjectsByType<FarmHand>(FindObjectsInactive.Exclude))
+            {
+                if (farmHand != null && farmHand.isActiveAndEnabled && farmHand.Range > 0f)
+                {
+                    defenderAiExistingCoverage.Add(
+                        new DefenderAiCoverage(farmHand.transform.position, farmHand.Range));
+                }
+            }
+        }
+
+        private static float GetDefaultAiFarmHandRange()
+        {
+            var smallestConfiguredRange = float.PositiveInfinity;
+            foreach (var farmHand in Object.FindObjectsByType<FarmHand>(FindObjectsInactive.Include))
+            {
+                if (farmHand != null && farmHand.Range > 0f)
+                {
+                    // The base unarmed farmhand is the shortest-range authored weapon. Selecting
+                    // the smallest value prevents an upgraded active farmhand from making a newly
+                    // placed unarmed farmhand overestimate its initial coverage.
+                    smallestConfiguredRange = Mathf.Min(smallestConfiguredRange, farmHand.Range);
+                }
+            }
+
+            // The authored Unarmed weapon begins at range one. This fallback keeps the policy safe
+            // until a pool has finished prewarming its first reusable defender instance.
+            return float.IsPositiveInfinity(smallestConfiguredRange) ? 1f : smallestConfiguredRange;
+        }
+
+        private bool TryPlaceFallbackFarmHand(int farmHandIndex)
         {
             var routeMapper = spawnPool != null ? spawnPool.RouteMapper : null;
             var foodStore = routeMapper != null ? routeMapper.FoodStore : null;
@@ -357,8 +646,8 @@ namespace TAD.Match
             var routeDirection = routeLength > 0.001f ? routeVector / routeLength : Vector2.right;
             var sideDirection = new Vector2(-routeDirection.y, routeDirection.x);
 
-            // Test several alternating lane-side candidates. This keeps defenders away from the
-            // food itself and avoids fixed positions that may be occupied by a wall on one map.
+            // Test several alternating lane-side candidates. This retains compatibility with maps
+            // that have no selected attacker group yet.
             for (var attempt = 0; attempt < 8; attempt++)
             {
                 var alternatingIndex = farmHandIndex + attempt;
@@ -396,8 +685,46 @@ namespace TAD.Match
             return Object.FindObjectsByType<FarmHand>(FindObjectsInactive.Exclude).Length;
         }
 
+        private void SubscribeToAttackerQueue()
+        {
+            if (isSubscribedToAttackerQueue)
+            {
+                return;
+            }
+
+            attackerWaveQueue ??= GetComponent<AttackerWaveQueue>();
+            if (attackerWaveQueue == null)
+            {
+                return;
+            }
+
+            attackerWaveQueue.QueueChanged += HandleAttackerQueueChanged;
+            isSubscribedToAttackerQueue = true;
+        }
+
+        private void UnsubscribeFromAttackerQueue()
+        {
+            if (!isSubscribedToAttackerQueue)
+            {
+                return;
+            }
+
+            if (attackerWaveQueue != null)
+            {
+                attackerWaveQueue.QueueChanged -= HandleAttackerQueueChanged;
+            }
+
+            isSubscribedToAttackerQueue = false;
+        }
+
+        private void HandleAttackerQueueChanged()
+        {
+            defenderAiPlanDirty = true;
+        }
+
         private void ResolveDependencies()
         {
+            attackerWaveQueue ??= GetComponent<AttackerWaveQueue>();
             spawnPool ??= Object.FindAnyObjectByType<SpawnPool>();
             farmHandPlacement ??= spawnPool != null
                 ? spawnPool.GetComponent<FarmHandPlacementController>()

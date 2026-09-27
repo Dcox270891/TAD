@@ -10,7 +10,7 @@ namespace TAD.UI
 {
     /// <summary>
     /// Owns level-3 defender upgrade requests for one level. Human Defenders choose through a
-    /// single modal; AI-controlled Defenders automatically take the first affordable valid upgrade.
+    /// single modal; AI-controlled Defenders choose the best affordable upgrade for the queued attacker routes.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class DefenderLevelUpgradeBootstrap : MonoBehaviour
@@ -28,6 +28,7 @@ namespace TAD.UI
         private bool isSubscribed;
         private bool isOverlaySubscribed;
         private bool hasReportedConfigurationError;
+        private MatchRoleController matchRoleController;
 
         private void OnEnable()
         {
@@ -214,6 +215,17 @@ namespace TAD.UI
                 return false;
             }
 
+            matchRoleController ??= UnityEngine.Object.FindAnyObjectByType<MatchRoleController>();
+            if (matchRoleController != null && matchRoleController.IsPlayerAttacker)
+            {
+                // Route-aware policy owns the choice and calls FarmHand's paid upgrade API itself.
+                // Returning false deliberately leaves the request queued until the attacker commits
+                // a future group or the defender bank can afford a useful counter.
+                return matchRoleController.TryChooseDefenderAiUpgrade(farmHand, levelThreeUpgradeOptions);
+            }
+
+            // Retain the original safe fallback for lightweight test scenes that do not use a
+            // MatchRoleController at all.
             foreach (var option in levelThreeUpgradeOptions)
             {
                 if (option != null &&

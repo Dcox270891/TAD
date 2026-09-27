@@ -163,6 +163,30 @@ namespace TAD.Waves
             return destination.Count;
         }
 
+        /// <summary>
+        /// Copies only attacker groups that have not yet been dispatched. Defender AI uses this
+        /// view during preparation so it plans against the next wave without double-counting
+        /// animals already active on the map.
+        /// </summary>
+        public int CopyPendingGroups(List<AttackerQueuedGroupInfo> destination)
+        {
+            if (destination == null)
+            {
+                throw new ArgumentNullException(nameof(destination));
+            }
+
+            destination.Clear();
+            foreach (var group in queuedGroups)
+            {
+                if (group != null)
+                {
+                    destination.Add(group.CreateInfo(false, false));
+                }
+            }
+
+            return destination.Count;
+        }
+
         /// <summary>Gets the latest immutable presentation state for one stable queued-group identifier.</summary>
         public bool TryGetDisplayGroup(long groupId, out AttackerQueuedGroupInfo result)
         {
