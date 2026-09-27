@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 namespace TAD.UI
 {
-    /// <summary>One circular, clickable summary of a distinct player-selected attacker group.</summary>
+    /// <summary>One circular, clickable summary of a distinct attacker group in the ordered upcoming-wave list.</summary>
     [DisallowMultipleComponent]
     public sealed class AttackerQueueGroupButton : MonoBehaviour
     {
@@ -65,8 +65,8 @@ namespace TAD.UI
             if (stateText != null)
             {
                 stateText.text = group.IsDispatching
-                    ? group.IsCurrentGroup ? "ACTIVE" : "NEXT"
-                    : "QUEUED";
+                    ? group.IsCurrentGroup ? "NOW" : "UP NEXT"
+                    : "NEXT WAVE";
                 stateText.color = group.IsCurrentGroup
                     ? new Color(1f, 0.84f, 0.26f, 1f)
                     : group.IsDispatching

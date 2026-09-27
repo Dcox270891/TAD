@@ -423,7 +423,7 @@ namespace TAD.Editor
                     weaponVisualsProperty.GetArrayElementAtIndex(index).objectReferenceValue = weaponVisuals[index];
                 }
 
-                controllerSerialized.FindProperty("fallbackMovementFrameDuration").floatValue = 0.16f;
+                controllerSerialized.FindProperty("aimTransitionDuration").floatValue = 0.16f;
                 controllerSerialized.ApplyModifiedPropertiesWithoutUndo();
                 EditorUtility.SetDirty(bodyRenderer);
                 EditorUtility.SetDirty(farmHand);

@@ -90,10 +90,31 @@ namespace TAD.UI
 
         private void ApplyOrderInputState()
         {
-            inputCanvasGroup ??= GetComponent<CanvasGroup>() ?? gameObject.AddComponent<CanvasGroup>();
+            if (!ResolveInputCanvasGroup())
+            {
+                return;
+            }
+
             inputCanvasGroup.interactable = isOrderInputEnabled;
             inputCanvasGroup.blocksRaycasts = isOrderInputEnabled;
             inputCanvasGroup.alpha = isOrderInputEnabled ? 1f : 0.5f;
+        }
+
+        private bool ResolveInputCanvasGroup()
+        {
+            // A CanvasGroup left over from an unloaded scene can look non-null to C# while Unity
+            // treats it as destroyed. Use Unity's null semantics before accessing it.
+            if (inputCanvasGroup == null)
+            {
+                inputCanvasGroup = GetComponent<CanvasGroup>();
+            }
+
+            if (inputCanvasGroup == null)
+            {
+                inputCanvasGroup = gameObject.AddComponent<CanvasGroup>();
+            }
+
+            return inputCanvasGroup != null;
         }
 
         /// <summary>Resolves the exact right-facing image used by attacker selection cards and group indicators.</summary>

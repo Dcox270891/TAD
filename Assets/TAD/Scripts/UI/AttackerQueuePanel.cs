@@ -7,7 +7,7 @@ using UnityEngine;
 namespace TAD.UI
 {
     /// <summary>
-    /// Presents each distinct player-selected attacker group as a right-side circular control and
+    /// Presents each distinct player-selected attacker group as a left-side circular control and
     /// coordinates the non-modal details card, route highlight, and local ordering-input suspension.
     /// </summary>
     [DisallowMultipleComponent]
@@ -33,6 +33,33 @@ namespace TAD.UI
         private void Awake()
         {
             content ??= transform.Find("ScrollView/Viewport/Content") as RectTransform;
+            ConfigureLeftSideLayout();
+        }
+
+        private void ConfigureLeftSideLayout()
+        {
+            ConfigureTopLeft(transform.Find("ScrollView") as RectTransform, new Vector2(16f, -114f));
+
+            var heading = transform.Find("Heading");
+            ConfigureTopLeft(heading as RectTransform, new Vector2(16f, -91f));
+            var headingText = heading != null ? heading.GetComponent<UnityEngine.UI.Text>() : null;
+            if (headingText != null)
+            {
+                headingText.text = "UP NEXT";
+            }
+        }
+
+        private static void ConfigureTopLeft(RectTransform target, Vector2 anchoredPosition)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            target.anchorMin = new Vector2(0f, 1f);
+            target.anchorMax = new Vector2(0f, 1f);
+            target.pivot = new Vector2(0f, 1f);
+            target.anchoredPosition = anchoredPosition;
         }
 
         private void OnEnable()

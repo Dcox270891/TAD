@@ -1,5 +1,6 @@
 using TAD.Pooling;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace TAD.Defenders
 {
@@ -23,13 +24,17 @@ namespace TAD.Defenders
         [Header("Appearance")]
         [SerializeField] private FarmHandAppearanceDefinition appearance;
         [SerializeField] private FarmHandWeaponVisualDefinition[] weaponVisuals;
-        [SerializeField, Min(0.01f)] private float fallbackMovementFrameDuration = 0.16f;
+        [FormerlySerializedAs("fallbackMovementFrameDuration")]
+        [SerializeField, Min(0.01f)]
+        [Tooltip("How long the farmhand briefly shifts into a newly selected aim pose.")]
+        private float aimTransitionDuration = 0.08f;
 
         private FarmHand farmHand;
-        private float movementElapsed;
+        private float aimElapsed;
         private float firingElapsed;
         private int directionIndex;
         private bool isFiring;
+        private bool isAiming;
         private bool isSubscribed;
 
         /// <summary>The active modular appearance; future cosmetic systems can safely replace it at runtime.</summary>
@@ -67,7 +72,15 @@ namespace TAD.Defenders
                 directionIndex = ToDirectionIndex(facing);
             }
 
-            movementElapsed += Time.deltaTime;
+            if (isAiming)
+            {
+                aimElapsed += Time.deltaTime;
+                if (aimElapsed >= aimTransitionDuration)
+                {
+                    isAiming = false;
+                }
+            }
+
             RefreshBodyAndCosmetics();
 
             if (isFiring)
@@ -97,7 +110,8 @@ namespace TAD.Defenders
         public void SetAppearance(FarmHandAppearanceDefinition definition)
         {
             appearance = definition;
-            movementElapsed = 0f;
+            aimElapsed = 0f;
+            isAiming = false;
             RefreshAllLayers();
         }
 
@@ -168,6 +182,8 @@ namespace TAD.Defenders
         void IPoolLifecycle.OnReturnedToPool()
         {
             isFiring = false;
+            isAiming = false;
+            aimElapsed = 0f;
             firingElapsed = 0f;
         }
 
@@ -206,7 +222,8 @@ namespace TAD.Defenders
                 directionIndex = ToDirectionIndex(firingDirection);
             }
 
-            movementElapsed = 0f;
+            aimElapsed = 0f;
+            isAiming = true;
             firingElapsed = 0f;
             var weaponVisual = GetWeaponVisual(weapon);
             isFiring = weaponVisual != null && weaponVisual.HasFiringSprites;
@@ -217,13 +234,15 @@ namespace TAD.Defenders
         {
             isFiring = false;
             firingElapsed = 0f;
-            movementElapsed = 0f;
+            aimElapsed = 0f;
+            isAiming = false;
             RefreshAllLayers();
         }
 
         private void ResetPresentation()
         {
-            movementElapsed = 0f;
+            aimElapsed = 0f;
+            isAiming = false;
             firingElapsed = 0f;
             isFiring = false;
             directionIndex = farmHand != null && farmHand.FacingDirection.sqrMagnitude > DirectionThreshold
@@ -240,7 +259,7 @@ namespace TAD.Defenders
 
         private void RefreshBodyAndCosmetics()
         {
-            var frameIndex = GetMovementFrameIndex();
+            var frameIndex = GetAimFrameIndex();
             SetSprite(bodyRenderer, appearance != null && appearance.Body != null
                 ? appearance.Body.GetMovementSprite(directionIndex, frameIndex)
                 : bodyRenderer != null ? bodyRenderer.sprite : null);
@@ -259,7 +278,7 @@ namespace TAD.Defenders
 
         private Sprite GetBodySprite()
         {
-            var frameIndex = GetMovementFrameIndex();
+            var frameIndex = GetAimFrameIndex();
             return appearance != null && appearance.Body != null
                 ? appearance.Body.GetMovementSprite(directionIndex, frameIndex)
                 : bodyRenderer != null ? bodyRenderer.sprite : null;
@@ -268,14 +287,14 @@ namespace TAD.Defenders
         private Sprite GetHairSprite()
         {
             return appearance != null && appearance.Hair != null
-                ? appearance.Hair.GetMovementSprite(directionIndex, GetMovementFrameIndex())
+                ? appearance.Hair.GetMovementSprite(directionIndex, GetAimFrameIndex())
                 : null;
         }
 
         private Sprite GetOutfitSprite()
         {
             return appearance != null && appearance.Outfit != null
-                ? appearance.Outfit.GetMovementSprite(directionIndex, GetMovementFrameIndex())
+                ? appearance.Outfit.GetMovementSprite(directionIndex, GetAimFrameIndex())
                 : null;
         }
 
@@ -283,17 +302,13 @@ namespace TAD.Defenders
         {
             var weaponVisual = GetWeaponVisual(farmHand != null ? farmHand.WeaponDefinition : null);
             return weaponVisual != null
-                ? weaponVisual.GetMovementSprite(directionIndex, GetMovementFrameIndex())
+                ? weaponVisual.GetMovementSprite(directionIndex, GetAimFrameIndex())
                 : null;
         }
 
-        private int GetMovementFrameIndex()
+        private int GetAimFrameIndex()
         {
-            var duration = appearance != null && appearance.Body != null
-                ? appearance.Body.MovementFrameDuration
-                : fallbackMovementFrameDuration;
-            return Mathf.FloorToInt(movementElapsed / Mathf.Max(0.01f, duration)) %
-                   FarmHandDirectionalLayerDefinition.MovementFrameCount;
+            return isAiming ? FarmHandDirectionalLayerDefinition.MovementFrameCount - 1 : 0;
         }
 
         private FarmHandWeaponVisualDefinition GetWeaponVisual(WeaponDefinition weapon)
@@ -401,7 +416,7 @@ namespace TAD.Defenders
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            fallbackMovementFrameDuration = Mathf.Max(0.01f, fallbackMovementFrameDuration);
+            aimTransitionDuration = Mathf.Max(0.01f, aimTransitionDuration);
             ResolveReferences();
         }
 #endif
