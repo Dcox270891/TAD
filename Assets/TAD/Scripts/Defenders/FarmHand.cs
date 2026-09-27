@@ -19,12 +19,16 @@ namespace TAD.Defenders
         private const int LineOfSightHitCapacity = 16;
         private const float LevelDamageMultiplier = 1.1f;
         private const int LevelThreeUpgradeLevel = 3;
+        private const float RelocationArrivalDistance = 0.001f;
+        private const float RelocationCostMultiplier = 0.25f;
 
         [SerializeField] private SpriteRenderer visual;
         [SerializeField] private FarmHandVisualController visualController;
         [SerializeField] private WeaponDefinition weaponDefinition;
         [SerializeField] private CircleCollider2D rangeCollider;
         [SerializeField] private Rigidbody2D rangeBody;
+        [SerializeField] private BoxCollider2D placementCollider;
+        [SerializeField, Min(0.01f)] private float relocationSpeed = 1f;
         [SerializeField] private DefenderRangeVisual rangeVisual;
         [SerializeField, Min(1)] private int expMax = 10;
         [SerializeField, Min(1)] private int maxLevel = 10;
@@ -35,6 +39,10 @@ namespace TAD.Defenders
         [System.NonSerialized] private WeaponDefinition baseWeaponDefinition;
         [System.NonSerialized] private bool isAwaitingLevelThreeUpgrade;
         [System.NonSerialized] private bool hasSelectedLevelThreeUpgrade;
+        [System.NonSerialized] private int investedGold;
+        [System.NonSerialized] private bool isRelocating;
+        [System.NonSerialized] private Vector2 relocationDestination;
+        [System.NonSerialized] private Sprite placementFootprintSprite;
         [System.NonSerialized] private Vector2 facingDirection = Vector2.right;
         private PooledInstance pooledInstance;
         private SpawnPool projectilePool;
@@ -54,6 +62,28 @@ namespace TAD.Defenders
 
         /// <summary>The authoritative Defender resource bank used for this farmhand's weapon purchases.</summary>
         public ResourceBank DefenderBank => ResolveDefenderBank();
+
+        /// <summary>25% of the base farmhand and permanently purchased upgrade costs, rounded up to whole gold.</summary>
+        public int RelocationCost => Mathf.CeilToInt(Mathf.Max(0, investedGold) * RelocationCostMultiplier);
+
+        /// <summary>True while this farmhand is walking to a paid relocation destination.</summary>
+        public bool IsRelocating => isRelocating;
+
+        /// <summary>World-space destination of the active relocation, if any.</summary>
+        public Vector2 RelocationDestination => relocationDestination;
+
+        /// <summary>World-space size of this farmhand's doubled-sprite placement footprint.</summary>
+        public Vector2 PlacementFootprintSize => placementCollider != null && placementCollider.enabled
+            ? placementCollider.bounds.size
+            : GetDoubledSpriteFootprintSize();
+
+        /// <summary>World-space offset from the farmhand origin to its footprint centre.</summary>
+        public Vector2 PlacementFootprintCenterOffset => placementCollider != null && placementCollider.enabled
+            ? (Vector2)(placementCollider.bounds.center - transform.position)
+            : GetSpriteFootprintCenterOffset();
+
+        /// <summary>Dedicated trigger used only to prevent overlapping farmhand placement.</summary>
+        public BoxCollider2D PlacementCollider => placementCollider;
 
         /// <summary>Returns whether the Defender bank can pay for the supplied level-3 weapon choice.</summary>
         public bool CanAffordLevelThreeUpgrade(WeaponDefinition definition)
@@ -152,6 +182,8 @@ namespace TAD.Defenders
             baseWeaponDefinition ??= weaponDefinition;
             ResetProgression();
             ResolveComponents();
+            EnsurePlacementCollider();
+            ResetRelocation();
             ConfigureRangeBody();
             ConfigureRangeCollider();
             ConfigureNonBlockingColliders();
@@ -161,8 +193,11 @@ namespace TAD.Defenders
         private void OnEnable()
         {
             ClearAttackersInRange();
+            ResetRelocation();
             nextFireTime = Time.time;
             isRangeIndicatorVisible = false;
+            ResolveComponents();
+            EnsurePlacementCollider();
             ConfigureRangeBody();
             ConfigureRangeCollider();
             ConfigureNonBlockingColliders();
@@ -172,13 +207,28 @@ namespace TAD.Defenders
 
         private void Update()
         {
+            UpdatePlacementColliderIfNeeded();
+            if (isRelocating)
+            {
+                return;
+            }
+
             TryFireAtFirstAttackableAttacker();
+        }
+
+        private void FixedUpdate()
+        {
+            if (isRelocating)
+            {
+                UpdateRelocation();
+            }
         }
 
         private void OnDisable()
         {
             CancelLimitedProjectiles();
             ClearAttackersInRange();
+            ResetRelocation();
             SetRangeIndicatorVisible(false);
         }
 
@@ -210,8 +260,43 @@ namespace TAD.Defenders
 
             isAwaitingLevelThreeUpgrade = false;
             hasSelectedLevelThreeUpgrade = true;
+            investedGold += Mathf.Max(0, definition.Cost);
             SetWeapon(definition);
             ProgressionChanged?.Invoke();
+            return true;
+        }
+
+        /// <summary>
+        /// Starts an already-authorised relocation. Placement validation and the relocation fee belong to
+        /// FarmHandPlacementController so this component remains reusable by pooling and AI code.
+        /// </summary>
+        public bool TryBeginRelocation(Vector2 destination)
+        {
+            if (!isActiveAndEnabled || isRelocating)
+            {
+                return false;
+            }
+
+            ResolveComponents();
+            if (rangeBody == null || (destination - (Vector2)transform.position).sqrMagnitude <=
+                RelocationArrivalDistance * RelocationArrivalDistance)
+            {
+                return false;
+            }
+
+            relocationDestination = destination;
+            isRelocating = true;
+            ClearAttackersInRange();
+            nextFireTime = float.PositiveInfinity;
+
+            var direction = destination - (Vector2)transform.position;
+            if (direction.sqrMagnitude > 0.0001f)
+            {
+                facingDirection = direction.normalized;
+            }
+
+            rangeBody.linearVelocity = Vector2.zero;
+            rangeBody.constraints = RigidbodyConstraints2D.FreezeRotation;
             return true;
         }
 
@@ -295,7 +380,7 @@ namespace TAD.Defenders
         private void OnTriggerExit2D(Collider2D other)
         {
             var attacker = other.GetComponentInParent<BasicAttacker>();
-            if (attacker != null)
+            if (attacker != null && !IsAttackerWithinRange(attacker))
             {
                 attackersInRange.Remove(attacker);
             }
@@ -315,8 +400,10 @@ namespace TAD.Defenders
             }
 
             ClearAttackersInRange();
+            ResetRelocation();
             nextFireTime = Time.time;
             isRangeIndicatorVisible = false;
+            EnsurePlacementCollider();
             ConfigureRangeBody();
             ConfigureRangeCollider();
             ConfigureNonBlockingColliders();
@@ -328,6 +415,7 @@ namespace TAD.Defenders
         {
             CancelLimitedProjectiles();
             ClearAttackersInRange();
+            ResetRelocation();
             nextFireTime = 0f;
             SetRangeIndicatorVisible(false);
         }
@@ -338,6 +426,7 @@ namespace TAD.Defenders
             visualController ??= GetComponent<FarmHandVisualController>();
             rangeCollider ??= GetComponent<CircleCollider2D>();
             rangeBody ??= GetComponent<Rigidbody2D>();
+            placementCollider ??= transform.Find("PlacementHitbox")?.GetComponent<BoxCollider2D>();
             rangeVisual ??= GetComponentInChildren<DefenderRangeVisual>(true);
             pooledInstance ??= GetComponent<PooledInstance>();
             ConfigureLineOfSightFilter();
@@ -354,7 +443,7 @@ namespace TAD.Defenders
         private void TrackAttacker(Collider2D other)
         {
             var attacker = other.GetComponentInParent<BasicAttacker>();
-            if (!IsValidAttacker(attacker) || attackersInRange.Contains(attacker))
+            if (!IsValidAttacker(attacker) || !IsAttackerWithinRange(attacker) || attackersInRange.Contains(attacker))
             {
                 return;
             }
@@ -365,7 +454,7 @@ namespace TAD.Defenders
 
         private void TryFireAtFirstAttackableAttacker()
         {
-            if (isAwaitingLevelThreeUpgrade || Time.time < nextFireTime)
+            if (isRelocating || isAwaitingLevelThreeUpgrade || Time.time < nextFireTime)
             {
                 return;
             }
@@ -599,7 +688,9 @@ namespace TAD.Defenders
             rangeBody.bodyType = RigidbodyType2D.Kinematic;
             rangeBody.gravityScale = 0f;
             rangeBody.useFullKinematicContacts = true;
-            rangeBody.constraints = RigidbodyConstraints2D.FreezeAll;
+            rangeBody.constraints = isRelocating
+                ? RigidbodyConstraints2D.FreezeRotation
+                : RigidbodyConstraints2D.FreezeAll;
             rangeBody.simulated = true;
         }
 
@@ -620,6 +711,127 @@ namespace TAD.Defenders
                 ? worldRange / largestWorldScale
                 : 0f;
             rangeCollider.enabled = worldRange > 0f && largestWorldScale > Mathf.Epsilon;
+        }
+
+        private void EnsurePlacementCollider()
+        {
+            if (placementCollider == null)
+            {
+                var footprintTransform = transform.Find("PlacementHitbox");
+                if (footprintTransform == null)
+                {
+                    var footprintObject = new GameObject("PlacementHitbox");
+                    footprintObject.layer = gameObject.layer;
+                    footprintTransform = footprintObject.transform;
+                    footprintTransform.SetParent(transform, false);
+                }
+
+                placementCollider = footprintTransform.GetComponent<BoxCollider2D>();
+                if (placementCollider == null)
+                {
+                    placementCollider = footprintTransform.gameObject.AddComponent<BoxCollider2D>();
+                }
+            }
+
+            ConfigurePlacementCollider();
+        }
+
+        private void ConfigurePlacementCollider()
+        {
+            if (placementCollider == null)
+            {
+                return;
+            }
+
+            placementCollider.isTrigger = true;
+            placementCollider.gameObject.layer = gameObject.layer;
+
+            if (visual == null || visual.sprite == null)
+            {
+                placementCollider.enabled = false;
+                placementFootprintSprite = null;
+                return;
+            }
+
+            var rootScale = transform.lossyScale;
+            var worldSize = visual.bounds.size * 2f;
+            var localSize = new Vector2(
+                Mathf.Abs(rootScale.x) > Mathf.Epsilon ? worldSize.x / Mathf.Abs(rootScale.x) : visual.sprite.bounds.size.x * 2f,
+                Mathf.Abs(rootScale.y) > Mathf.Epsilon ? worldSize.y / Mathf.Abs(rootScale.y) : visual.sprite.bounds.size.y * 2f);
+
+            placementCollider.transform.localPosition = transform.InverseTransformPoint(visual.bounds.center);
+            placementCollider.transform.localRotation = Quaternion.identity;
+            placementCollider.transform.localScale = Vector3.one;
+            placementCollider.offset = Vector2.zero;
+            placementCollider.size = localSize;
+            placementCollider.enabled = localSize.x > Mathf.Epsilon && localSize.y > Mathf.Epsilon;
+            placementFootprintSprite = visual.sprite;
+        }
+
+        private void UpdatePlacementColliderIfNeeded()
+        {
+            if (placementCollider != null && visual != null && visual.sprite != placementFootprintSprite)
+            {
+                ConfigurePlacementCollider();
+            }
+        }
+
+        private Vector2 GetDoubledSpriteFootprintSize()
+        {
+            if (visual == null || visual.sprite == null)
+            {
+                return Vector2.zero;
+            }
+
+            var spriteSize = visual.sprite.bounds.size;
+            var worldScale = visual.transform.lossyScale;
+            return new Vector2(
+                Mathf.Abs(spriteSize.x * worldScale.x) * 2f,
+                Mathf.Abs(spriteSize.y * worldScale.y) * 2f);
+        }
+
+        private Vector2 GetSpriteFootprintCenterOffset()
+        {
+            return visual != null && visual.sprite != null
+                ? (Vector2)(visual.transform.TransformPoint(visual.sprite.bounds.center) - transform.position)
+                : Vector2.zero;
+        }
+
+        private void UpdateRelocation()
+        {
+            if (rangeBody == null)
+            {
+                ResetRelocation();
+                return;
+            }
+
+            var currentPosition = rangeBody.position;
+            var remaining = relocationDestination - currentPosition;
+            var step = Mathf.Max(0.01f, relocationSpeed) * Time.fixedDeltaTime;
+            if (remaining.sqrMagnitude <= RelocationArrivalDistance * RelocationArrivalDistance || remaining.magnitude <= step)
+            {
+                rangeBody.position = relocationDestination;
+                CompleteRelocation();
+                return;
+            }
+
+            var nextPosition = Vector2.MoveTowards(currentPosition, relocationDestination, step);
+            rangeBody.MovePosition(nextPosition);
+            facingDirection = remaining.normalized;
+        }
+
+        private void CompleteRelocation()
+        {
+            isRelocating = false;
+            relocationDestination = transform.position;
+            ConfigureRangeBody();
+            nextFireTime = Time.time;
+        }
+
+        private void ResetRelocation()
+        {
+            isRelocating = false;
+            relocationDestination = transform.position;
         }
 
         /// <summary>
@@ -722,6 +934,8 @@ namespace TAD.Defenders
             currentLevel = 1;
             isAwaitingLevelThreeUpgrade = false;
             hasSelectedLevelThreeUpgrade = false;
+            var startingWeapon = baseWeaponDefinition ?? weaponDefinition;
+            investedGold = startingWeapon != null ? Mathf.Max(0, startingWeapon.Cost) : 0;
             facingDirection = Vector2.right;
             ProgressionChanged?.Invoke();
         }
@@ -735,11 +949,21 @@ namespace TAD.Defenders
         {
             for (var index = attackersInRange.Count - 1; index >= 0; index--)
             {
-                if (!IsValidAttacker(attackersInRange[index]))
+                if (!IsValidAttacker(attackersInRange[index]) || !IsAttackerWithinRange(attackersInRange[index]))
                 {
                     attackersInRange.RemoveAt(index);
                 }
             }
+        }
+
+        private bool IsAttackerWithinRange(BasicAttacker attacker)
+        {
+            if (attacker == null || Range <= 0f)
+            {
+                return false;
+            }
+
+            return (attacker.CurrentPosition - (Vector2)transform.position).sqrMagnitude <= Range * Range + 0.0001f;
         }
 
         private static bool IsValidAttacker(BasicAttacker attacker)
@@ -756,7 +980,9 @@ namespace TAD.Defenders
         {
             expMax = Mathf.Max(1, expMax);
             maxLevel = Mathf.Max(1, maxLevel);
+            relocationSpeed = Mathf.Max(0.01f, relocationSpeed);
             ResolveComponents();
+            ConfigurePlacementCollider();
             ConfigureRangeBody();
             ConfigureRangeCollider();
             ConfigureNonBlockingColliders();

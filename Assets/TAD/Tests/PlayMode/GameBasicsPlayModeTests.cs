@@ -155,6 +155,50 @@ namespace TAD.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator DefenderPlacement_UsesDoubledSpriteFootprintAndPaidRelocation()
+        {
+            var fixture = GameBasicsTestSupport.CreateQueueFixture();
+            var defenderBank = GameBasicsTestSupport.CreateBank(BankSide.Defender);
+            yield return null;
+
+            Assert.That(fixture.SpawnPool.RouteMapper.RebuildRoutes(), Is.True);
+            var placementController = fixture.SpawnPool.GetComponent<FarmHandPlacementController>();
+            Assert.That(placementController, Is.Not.Null);
+
+            var initialPosition = new Vector2(0f, 0f);
+            var goldBeforePlacement = defenderBank.CurrentGold;
+            Assert.That(placementController.TryPlaceFarmHandAt(initialPosition), Is.True);
+            yield return null;
+            Physics2D.SyncTransforms();
+
+            var farmHand = Object.FindAnyObjectByType<FarmHand>();
+            Assert.That(farmHand, Is.Not.Null);
+            Assert.That(farmHand.PlacementCollider, Is.Not.Null);
+            Assert.That(farmHand.PlacementCollider.isTrigger, Is.True);
+            Assert.That(farmHand.PlacementCollider.bounds.size.x,
+                Is.EqualTo(farmHand.Visual.bounds.size.x * 2f).Within(0.01f));
+            Assert.That(farmHand.PlacementCollider.bounds.size.y,
+                Is.EqualTo(farmHand.Visual.bounds.size.y * 2f).Within(0.01f));
+            Assert.That(defenderBank.CurrentGold,
+                Is.EqualTo(goldBeforePlacement - farmHand.WeaponDefinition.Cost));
+
+            Assert.That(placementController.TryPlaceFarmHandAt(initialPosition), Is.False);
+            Assert.That(defenderBank.CurrentGold,
+                Is.EqualTo(goldBeforePlacement - farmHand.WeaponDefinition.Cost));
+
+            var relocationCost = farmHand.RelocationCost;
+            var targetPosition = (Vector2)farmHand.transform.position + Vector2.up;
+            Assert.That(placementController.TryRelocateFarmHandAt(farmHand, targetPosition), Is.True);
+            Assert.That(farmHand.IsRelocating, Is.True);
+            Assert.That(defenderBank.CurrentGold,
+                Is.EqualTo(goldBeforePlacement - farmHand.WeaponDefinition.Cost - relocationCost));
+
+            yield return new WaitForSeconds(1.2f);
+            Assert.That(farmHand.IsRelocating, Is.False);
+            Assert.That(Vector2.Distance(farmHand.transform.position, targetPosition), Is.LessThan(0.02f));
+        }
+
+        [UnityTest]
         public IEnumerator AttackerQueue_RefundsRemovedGroupsAndKeepsWaveIncomePersistent()
         {
             var fixture = GameBasicsTestSupport.CreateQueueFixture();

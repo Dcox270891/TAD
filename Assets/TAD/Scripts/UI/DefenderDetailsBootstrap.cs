@@ -79,12 +79,14 @@ namespace TAD.UI
         {
             if (spawnedPanel != null)
             {
+                spawnedPanel.BindPlacementController(placementController);
                 return;
             }
 
             spawnedPanel = Object.FindFirstObjectByType<DefenderDetailsPanel>(FindObjectsInactive.Include);
             if (spawnedPanel != null)
             {
+                spawnedPanel.BindPlacementController(placementController);
                 return;
             }
 
@@ -96,6 +98,7 @@ namespace TAD.UI
 
             spawnedPanel = Instantiate(detailsPanelPrefab);
             ownsSpawnedPanel = true;
+            spawnedPanel.BindPlacementController(placementController);
         }
     }
 }

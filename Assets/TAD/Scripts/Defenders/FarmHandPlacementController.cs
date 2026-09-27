@@ -19,6 +19,16 @@ namespace TAD.Defenders
     public sealed class FarmHandPlacementController : MonoBehaviour
     {
         private const string InsufficientFundsMessage = "you do not you have the required amount to place this";
+        private const string OccupiedPlacementMessage = "Another farmhand is already stationed there.";
+        private const string RelocationFundsMessage = "You do not have the required amount to move this farmhand.";
+        private const int PlacementOverlapCapacity = 16;
+
+        private enum PlacementMode
+        {
+            None,
+            Purchase,
+            Relocation
+        }
 
         [Header("Prefab References")]
         [SerializeField] private FarmHand farmHandPrefab;
@@ -50,11 +60,15 @@ namespace TAD.Defenders
         private GameObject previewObject;
         private Vector2 previewPosition;
         private bool isPlacing;
+        private PlacementMode placementMode;
+        private FarmHand relocatingFarmHand;
         private bool ownsSpawnedUi;
         private bool ownsInsufficientFundsOverlay;
         private bool ignoreMouseUntilReleased;
         private bool isMousePlacementLocked;
         private bool isPlacementInputEnabled = true;
+        private readonly Collider2D[] placementOverlapResults = new Collider2D[PlacementOverlapCapacity];
+        private ContactFilter2D defenderPlacementFilter;
 
         /// <summary>True while a translucent farmhand is awaiting confirmation or cancellation.</summary>
         public bool IsPlacementActive => isPlacing;
@@ -72,6 +86,7 @@ namespace TAD.Defenders
             routeMapper = spawnPool != null
                 ? spawnPool.RouteMapper
                 : routeMapper ?? Object.FindAnyObjectByType<FarmRouteMapper>();
+            ConfigureDefenderPlacementFilter();
 
             if (!isPlacementInputEnabled)
             {
@@ -207,6 +222,56 @@ namespace TAD.Defenders
             return TrySpawnPaidFarmHand(constrainedPosition, showInsufficientFundsMessage: false);
         }
 
+        /// <summary>
+        /// Pays for and starts a validated defender relocation. It is public for deterministic gameplay tests,
+        /// while player-facing calls must still enter through <see cref="BeginRelocation"/> to use the preview.
+        /// </summary>
+        public bool TryRelocateFarmHandAt(FarmHand farmHand, Vector2 requestedPosition, bool showMessage = false)
+        {
+            if (!isPlacementInputEnabled || spawnPool == null || farmHand == null ||
+                !farmHand.isActiveAndEnabled || !farmHand.gameObject.activeInHierarchy || farmHand.IsRelocating ||
+                ModalOverlay.IsGameplayInputBlocked)
+            {
+                return false;
+            }
+
+            routeMapper ??= spawnPool.RouteMapper;
+            if (routeMapper == null || !routeMapper.TryClampToVisibleMap(requestedPosition, out var constrainedPosition))
+            {
+                return false;
+            }
+
+            if (!IsFarmHandPlacementAvailable(constrainedPosition, farmHand, farmHand))
+            {
+                if (showMessage)
+                {
+                    ShowPlacementMessage(OccupiedPlacementMessage);
+                }
+
+                return false;
+            }
+
+            var relocationCost = farmHand.RelocationCost;
+            var bank = ResolveDefenderBank();
+            if (bank == null || !bank.CanAfford(relocationCost) || !bank.TrySpendGold(relocationCost))
+            {
+                if (showMessage)
+                {
+                    ShowPlacementMessage(RelocationFundsMessage);
+                }
+
+                return false;
+            }
+
+            if (farmHand.TryBeginRelocation(constrainedPosition))
+            {
+                return true;
+            }
+
+            bank.AddGold(relocationCost);
+            return false;
+        }
+
         /// <summary>Begins a placement preview at the centre of the visible map.</summary>
         public void BeginPlacement()
         {
@@ -222,20 +287,51 @@ namespace TAD.Defenders
                 return;
             }
 
-            if (!CreatePreview())
+            if (!CreatePreview(farmHandPrefab))
             {
                 return;
             }
 
             ClearTargetedFarmHand();
             isPlacing = true;
+            placementMode = PlacementMode.Purchase;
             ignoreMouseUntilReleased = Mouse.current != null && Mouse.current.leftButton.isPressed;
             isMousePlacementLocked = false;
             SetPreviewPosition(initialPosition);
             spawnedUi?.SetPlacementActive(true);
         }
 
-        /// <summary>Spawns a paid pooled defender at the preview position and ends placement mode.</summary>
+        /// <summary>
+        /// Uses the same translucent preview and confirm/cancel controls to move an existing defender.
+        /// Only the Defender player can enter this mode; the final charge is taken at confirmation.
+        /// </summary>
+        public bool BeginRelocation(FarmHand farmHand)
+        {
+            if (!isPlacementInputEnabled || farmHand == null || !farmHand.isActiveAndEnabled ||
+                !farmHand.gameObject.activeInHierarchy || farmHand.IsRelocating || isPlacing ||
+                ModalOverlay.IsGameplayInputBlocked || !TryGetInitialPreviewPosition(out _))
+            {
+                return false;
+            }
+
+            EnsurePlacementUi();
+            if (!CreatePreview(farmHand))
+            {
+                return false;
+            }
+
+            relocatingFarmHand = farmHand;
+            placementMode = PlacementMode.Relocation;
+            isPlacing = true;
+            ignoreMouseUntilReleased = Mouse.current != null && Mouse.current.leftButton.isPressed;
+            isMousePlacementLocked = false;
+            SetPreviewPosition((Vector2)farmHand.transform.position);
+            ClearTargetedFarmHand();
+            spawnedUi?.SetPlacementActive(true);
+            return true;
+        }
+
+        /// <summary>Confirms either a paid new defender or a paid relocation, then closes the preview.</summary>
         public void ConfirmPlacement()
         {
             if (!isPlacementInputEnabled || !isPlacing || ModalOverlay.IsGameplayInputBlocked || spawnPool == null)
@@ -243,7 +339,10 @@ namespace TAD.Defenders
                 return;
             }
 
-            if (TrySpawnPaidFarmHand(previewPosition, showInsufficientFundsMessage: true))
+            var completed = placementMode == PlacementMode.Relocation
+                ? TryRelocateFarmHandAt(relocatingFarmHand, previewPosition, showMessage: true)
+                : TrySpawnPaidFarmHand(previewPosition, showInsufficientFundsMessage: true);
+            if (completed)
             {
                 EndPlacement();
             }
@@ -495,9 +594,9 @@ namespace TAD.Defenders
                 routeMapper.transform.position.z);
         }
 
-        private bool CreatePreview()
+        private bool CreatePreview(FarmHand sourceFarmHand)
         {
-            if (farmHandPrefab == null || farmHandPrefab.Visual == null || farmHandPrefab.Visual.sprite == null)
+            if (sourceFarmHand == null || sourceFarmHand.Visual == null || sourceFarmHand.Visual.sprite == null)
             {
                 Debug.LogError("Farmhand placement needs a FarmHand prefab with a Sprite Renderer.", this);
                 return false;
@@ -508,12 +607,12 @@ namespace TAD.Defenders
             previewObject = new GameObject("FarmHand Placement Preview");
             var defenderLayer = LayerMask.NameToLayer("Defender");
             previewObject.layer = defenderLayer >= 0 ? defenderLayer : gameObject.layer;
-            previewObject.transform.localScale = farmHandPrefab.transform.localScale;
+            previewObject.transform.localScale = sourceFarmHand.transform.localScale;
 
-            var sourceVisual = farmHandPrefab.Visual;
+            var sourceVisual = sourceFarmHand.Visual;
             var previewRenderer = previewObject.AddComponent<SpriteRenderer>();
             var previewBodySortingOrder = Mathf.Max(previewSortingOrder, sourceVisual.sortingOrder + 1);
-            var visualController = farmHandPrefab.GetComponent<FarmHandVisualController>();
+            var visualController = sourceFarmHand.GetComponent<FarmHandVisualController>();
             if (visualController == null ||
                 !visualController.ConfigurePlacementPreview(
                     previewRenderer,
@@ -543,13 +642,13 @@ namespace TAD.Defenders
             rangePreviewObject.layer = previewObject.layer;
             rangePreviewObject.transform.SetParent(previewObject.transform, worldPositionStays: false);
 
-            var projectile = farmHandPrefab.WeaponDefinition != null
-                ? farmHandPrefab.WeaponDefinition.ProjectileDefinition
+            var projectile = sourceFarmHand.WeaponDefinition != null
+                ? sourceFarmHand.WeaponDefinition.ProjectileDefinition
                 : null;
             var projectileType = projectile != null ? projectile.ProjectileType : ProjectileType.Melee;
             var rangePreview = rangePreviewObject.GetComponent<DefenderTargetableRangeVisual>();
             rangePreview.ConfigurePreview(
-                farmHandPrefab.Range,
+                sourceFarmHand.Range,
                 projectileType,
                 sourceVisual.sortingLayerID,
                 previewRenderer.sortingOrder - 1);
@@ -583,20 +682,89 @@ namespace TAD.Defenders
             return defenderBank;
         }
 
+        private void ConfigureDefenderPlacementFilter()
+        {
+            defenderPlacementFilter = new ContactFilter2D
+            {
+                useLayerMask = true,
+                layerMask = LayerMask.GetMask("Defender"),
+                useTriggers = true
+            };
+        }
+
+        private bool IsFarmHandPlacementAvailable(Vector2 position, FarmHand footprintSource, FarmHand ignoredFarmHand = null)
+        {
+            if (footprintSource == null)
+            {
+                return false;
+            }
+
+            var footprintSize = footprintSource.PlacementFootprintSize;
+            if (footprintSize.x <= Mathf.Epsilon || footprintSize.y <= Mathf.Epsilon)
+            {
+                return false;
+            }
+
+            var overlapCount = Physics2D.OverlapBox(
+                position + footprintSource.PlacementFootprintCenterOffset,
+                footprintSize,
+                0f,
+                defenderPlacementFilter,
+                placementOverlapResults);
+            if (overlapCount >= placementOverlapResults.Length)
+            {
+                // A saturated query could conceal another placement footprint, so reject the position safely.
+                return false;
+            }
+
+            for (var index = 0; index < overlapCount; index++)
+            {
+                var collider = placementOverlapResults[index];
+                if (collider == null)
+                {
+                    continue;
+                }
+
+                var farmHand = collider.GetComponentInParent<FarmHand>();
+                if (farmHand != null && farmHand != ignoredFarmHand && farmHand.isActiveAndEnabled &&
+                    farmHand.gameObject.activeInHierarchy && farmHand.PlacementCollider == collider)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         private void ShowInsufficientFundsMessage()
+        {
+            ShowPlacementMessage(InsufficientFundsMessage);
+        }
+
+        private void ShowPlacementMessage(string message)
         {
             EnsureInsufficientFundsOverlay();
             if (spawnedInsufficientFundsOverlay != null)
             {
-                spawnedInsufficientFundsOverlay.ShowMessage(InsufficientFundsMessage);
+                spawnedInsufficientFundsOverlay.ShowMessage(message);
                 return;
             }
 
-            Debug.LogWarning(InsufficientFundsMessage, this);
+            Debug.LogWarning(message, this);
         }
 
         private bool TrySpawnPaidFarmHand(Vector2 position, bool showInsufficientFundsMessage)
         {
+            if (!IsFarmHandPlacementAvailable(position, farmHandPrefab))
+            {
+                if (showInsufficientFundsMessage)
+                {
+                    ShowPlacementMessage(OccupiedPlacementMessage);
+                }
+
+                return false;
+            }
+
             var farmHandCost = GetFarmHandCost();
             var bank = ResolveDefenderBank();
             if (bank == null || !bank.CanAfford(farmHandCost))
@@ -643,6 +811,8 @@ namespace TAD.Defenders
         private void EndPlacement()
         {
             isPlacing = false;
+            placementMode = PlacementMode.None;
+            relocatingFarmHand = null;
             ignoreMouseUntilReleased = false;
             isMousePlacementLocked = false;
             DestroyPreview();

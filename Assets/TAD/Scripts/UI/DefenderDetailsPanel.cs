@@ -1,4 +1,6 @@
+using TAD.Economy;
 using TAD.Defenders;
+using TAD.Match;
 using UnityEngine;
 
 namespace TAD.UI
@@ -24,6 +26,9 @@ namespace TAD.UI
         private const float ExperienceBarHeight = 12f;
         private const float BarToExperienceSpacing = 4f;
         private const float ExperienceMinimumHeight = 22f;
+        private const float ExperienceToMoveSpacing = 8f;
+        private const float MoveButtonWidth = 220f;
+        private const float MoveButtonHeight = 36f;
         private const float BottomPadding = 12f;
         private const float MinimumCardHeight = 360f;
 
@@ -33,6 +38,8 @@ namespace TAD.UI
         [SerializeField] private UnityEngine.UI.Text statsText;
         [SerializeField] private UnityEngine.UI.Text experienceText;
         [SerializeField] private UnityEngine.UI.Image experienceFill;
+        [SerializeField] private UnityEngine.UI.Button moveButton;
+        [SerializeField] private UnityEngine.UI.Text moveButtonText;
 
         private RectTransform cardRect;
         private RectTransform headingRect;
@@ -41,11 +48,22 @@ namespace TAD.UI
         private RectTransform statsRect;
         private RectTransform experienceRect;
         private RectTransform experienceBarRect;
+        private RectTransform moveButtonRect;
         private FarmHand target;
+        private FarmHandPlacementController placementController;
+        private ResourceBank observedBank;
         private bool isSubscribed;
+        private bool isBankSubscribed;
 
         /// <summary>The farmhand currently represented by this card, if any.</summary>
         public FarmHand Target => target;
+
+        /// <summary>Provides the defender-only relocation action without coupling this reusable card to a scene object.</summary>
+        public void BindPlacementController(FarmHandPlacementController controller)
+        {
+            placementController = controller;
+            Refresh();
+        }
 
         private void Awake()
         {
@@ -111,6 +129,8 @@ namespace TAD.UI
             statsText ??= FindText("Card/Stats");
             experienceText ??= FindText("Card/Experience");
             experienceFill ??= transform.Find("Card/ExperienceBar/Fill")?.GetComponent<UnityEngine.UI.Image>();
+            moveButton ??= transform.Find("Card/MoveButton")?.GetComponent<UnityEngine.UI.Button>();
+            moveButtonText ??= FindText("Card/MoveButton/Label");
 
             headingRect ??= headingText != null ? headingText.rectTransform : null;
             defenderImageRect ??= defenderImage != null ? defenderImage.rectTransform : null;
@@ -120,11 +140,54 @@ namespace TAD.UI
             experienceBarRect ??= experienceFill != null && experienceFill.transform.parent != null
                 ? experienceFill.transform.parent as RectTransform
                 : null;
+            moveButtonRect ??= moveButton != null ? moveButton.GetComponent<RectTransform>() : null;
+
+            EnsureMoveButton();
 
             ConfigureTextWrapping(headingText);
             ConfigureTextWrapping(weaponText);
             ConfigureTextWrapping(statsText);
             ConfigureTextWrapping(experienceText);
+        }
+
+        private void EnsureMoveButton()
+        {
+            if (moveButton != null || cardRect == null)
+            {
+                return;
+            }
+
+            var buttonObject = new GameObject(
+                "MoveButton",
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(UnityEngine.UI.Image),
+                typeof(UnityEngine.UI.Button));
+            buttonObject.layer = cardRect.gameObject.layer;
+            buttonObject.transform.SetParent(cardRect, worldPositionStays: false);
+
+            var buttonImage = buttonObject.GetComponent<UnityEngine.UI.Image>();
+            buttonImage.color = new Color(0.18f, 0.42f, 0.22f, 0.96f);
+            moveButton = buttonObject.GetComponent<UnityEngine.UI.Button>();
+            moveButton.targetGraphic = buttonImage;
+            moveButton.onClick.AddListener(HandleMovePressed);
+            moveButtonRect = buttonObject.GetComponent<RectTransform>();
+
+            var labelObject = new GameObject("Label", typeof(RectTransform), typeof(CanvasRenderer), typeof(UnityEngine.UI.Text));
+            labelObject.layer = buttonObject.layer;
+            labelObject.transform.SetParent(buttonObject.transform, worldPositionStays: false);
+            moveButtonText = labelObject.GetComponent<UnityEngine.UI.Text>();
+            moveButtonText.font = headingText != null ? headingText.font : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            moveButtonText.fontSize = 15;
+            moveButtonText.alignment = TextAnchor.MiddleCenter;
+            moveButtonText.color = Color.white;
+            moveButtonText.horizontalOverflow = HorizontalWrapMode.Overflow;
+            moveButtonText.verticalOverflow = VerticalWrapMode.Truncate;
+            var labelRect = moveButtonText.rectTransform;
+            labelRect.anchorMin = Vector2.zero;
+            labelRect.anchorMax = Vector2.one;
+            labelRect.offsetMin = Vector2.zero;
+            labelRect.offsetMax = Vector2.zero;
         }
 
         private UnityEngine.UI.Text FindText(string path)
@@ -153,21 +216,56 @@ namespace TAD.UI
 
             target.ProgressionChanged += Refresh;
             isSubscribed = true;
+            SubscribeToBank();
         }
 
         private void Unsubscribe()
         {
-            if (!isSubscribed)
+            if (!isSubscribed && !isBankSubscribed)
             {
                 return;
             }
 
-            if (target != null)
+            if (isSubscribed && target != null)
             {
                 target.ProgressionChanged -= Refresh;
             }
 
+            UnsubscribeFromBank();
             isSubscribed = false;
+        }
+
+        private void SubscribeToBank()
+        {
+            var desiredBank = target != null ? target.DefenderBank : null;
+            if (observedBank == desiredBank && isBankSubscribed)
+            {
+                return;
+            }
+
+            UnsubscribeFromBank();
+            observedBank = desiredBank;
+            if (observedBank != null)
+            {
+                observedBank.GoldChanged += HandleBankGoldChanged;
+                isBankSubscribed = true;
+            }
+        }
+
+        private void UnsubscribeFromBank()
+        {
+            if (isBankSubscribed && observedBank != null)
+            {
+                observedBank.GoldChanged -= HandleBankGoldChanged;
+            }
+
+            observedBank = null;
+            isBankSubscribed = false;
+        }
+
+        private void HandleBankGoldChanged(int _)
+        {
+            Refresh();
         }
 
         private void Refresh()
@@ -177,6 +275,8 @@ namespace TAD.UI
                 Hide();
                 return;
             }
+
+            SubscribeToBank();
 
             var weapon = target.WeaponDefinition;
             var projectile = weapon != null ? weapon.ProjectileDefinition : null;
@@ -235,7 +335,44 @@ namespace TAD.UI
                     : Mathf.Clamp01(target.CurrentExp / Mathf.Max(1, target.ExpMax));
             }
 
+            UpdateMoveButton();
             RefreshLayout();
+        }
+
+        private void UpdateMoveButton()
+        {
+            if (moveButton == null)
+            {
+                return;
+            }
+
+            var canShowMove = MatchRoleSelection.IsPlayerDefender && target != null &&
+                target.isActiveAndEnabled && target.gameObject.activeInHierarchy && !target.IsRelocating &&
+                placementController != null && !placementController.IsPlacementActive;
+            moveButton.gameObject.SetActive(canShowMove);
+            if (!canShowMove)
+            {
+                return;
+            }
+
+            if (moveButtonText != null)
+            {
+                moveButtonText.text = $"MOVE  •  {target.RelocationCost} GOLD";
+            }
+
+            var bank = target.DefenderBank;
+            moveButton.interactable = bank != null && bank.CanAfford(target.RelocationCost);
+        }
+
+        private void HandleMovePressed()
+        {
+            if (target == null || placementController == null || !MatchRoleSelection.IsPlayerDefender ||
+                target.IsRelocating)
+            {
+                return;
+            }
+
+            placementController.BeginRelocation(target);
         }
 
         /// <summary>
@@ -281,6 +418,13 @@ namespace TAD.UI
             SetTopStretch(experienceRect, experienceTop, experienceHeight, SidePadding);
 
             var preferredCardHeight = experienceTop + experienceHeight + BottomPadding;
+            if (moveButtonRect != null && moveButton != null && moveButton.gameObject.activeSelf)
+            {
+                var moveTop = experienceTop + experienceHeight + ExperienceToMoveSpacing;
+                SetTopCentered(moveButtonRect, moveTop, MoveButtonWidth, MoveButtonHeight);
+                preferredCardHeight = moveTop + MoveButtonHeight + BottomPadding;
+            }
+
             cardRect.SetSizeWithCurrentAnchors(
                 RectTransform.Axis.Vertical,
                 Mathf.Max(MinimumCardHeight, preferredCardHeight));
