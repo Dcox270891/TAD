@@ -1,5 +1,6 @@
 using System;
 using TAD.Attackers;
+using TAD.Match;
 using TAD.Waves;
 using UnityEngine;
 using UnityEngine.UI;
@@ -16,6 +17,7 @@ namespace TAD.UI
         [SerializeField] private Text statsText;
         [SerializeField] private Text routeText;
         [SerializeField] private Button closeButton;
+        [SerializeField] private Button removeFromQueueButton;
 
         private AttackerWaveQueue attackerWaveQueue;
         private Sprite rightFacingSprite;
@@ -42,6 +44,11 @@ namespace TAD.UI
                 closeButton.onClick.AddListener(Hide);
             }
 
+            if (removeFromQueueButton != null)
+            {
+                removeFromQueueButton.onClick.AddListener(HandleRemoveFromQueuePressed);
+            }
+
             Subscribe();
             Refresh();
         }
@@ -51,6 +58,11 @@ namespace TAD.UI
             if (closeButton != null)
             {
                 closeButton.onClick.RemoveListener(Hide);
+            }
+
+            if (removeFromQueueButton != null)
+            {
+                removeFromQueueButton.onClick.RemoveListener(HandleRemoveFromQueuePressed);
             }
 
             var wasShowing = groupId != 0;
@@ -119,6 +131,7 @@ namespace TAD.UI
             statsText ??= FindText("Card/Stats");
             routeText ??= FindText("Card/Route");
             closeButton ??= transform.Find("Card/Close")?.GetComponent<Button>();
+            removeFromQueueButton ??= transform.Find("Card/RemoveFromQueue")?.GetComponent<Button>();
             ConfigureWrapping(headingText);
             ConfigureWrapping(statusText);
             ConfigureWrapping(statsText);
@@ -181,6 +194,8 @@ namespace TAD.UI
                 return;
             }
 
+            UpdateRemoveFromQueueButton(group);
+
             var definition = group.Definition;
             if (headingText != null)
             {
@@ -223,6 +238,40 @@ namespace TAD.UI
             {
                 routeText.text = "Route highlighted on the farm";
             }
+        }
+
+        private void HandleRemoveFromQueuePressed()
+        {
+            if (attackerWaveQueue == null ||
+                groupId == 0 ||
+                !attackerWaveQueue.TryGetDisplayGroup(groupId, out var group) ||
+                !CanRemoveFromQueue(group))
+            {
+                return;
+            }
+
+            attackerWaveQueue.TryRemoveQueuedGroup(groupId);
+        }
+
+        private void UpdateRemoveFromQueueButton(AttackerQueuedGroupInfo group)
+        {
+            if (removeFromQueueButton == null)
+            {
+                return;
+            }
+
+            var canRemove = CanRemoveFromQueue(group);
+            if (removeFromQueueButton.gameObject.activeSelf != canRemove)
+            {
+                removeFromQueueButton.gameObject.SetActive(canRemove);
+            }
+
+            removeFromQueueButton.interactable = canRemove;
+        }
+
+        private static bool CanRemoveFromQueue(AttackerQueuedGroupInfo group)
+        {
+            return MatchRoleSelection.IsPlayerAttacker && !group.IsDispatching;
         }
     }
 }

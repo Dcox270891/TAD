@@ -24,6 +24,7 @@ namespace TAD.Waves
                 Id = id;
                 Definition = definition;
                 Count = definition != null ? definition.SendSize : 0;
+                Cost = definition != null ? definition.SendCost : 0;
                 Income = definition != null ? definition.WaveIncome : 0;
                 RemainingAlive = Count;
             }
@@ -31,6 +32,7 @@ namespace TAD.Waves
             public long Id { get; }
             public AttackerDefinition Definition { get; }
             public int Count { get; }
+            public int Cost { get; }
             public int Income { get; }
             public int RemainingAlive { get; private set; }
 
@@ -236,9 +238,8 @@ namespace TAD.Waves
         }
 
         /// <summary>
-        /// Removes one still-pending attacker group. Its income is removed from the persistent total; its
-        /// purchase cost remains spent until the later refund feature is intentionally introduced.
-        /// Groups that are already being dispatched cannot be removed.
+        /// Removes one still-pending attacker group, refunds the exact cost paid for that group, and removes
+        /// only that group's income from the persistent total. Groups already being dispatched cannot be removed.
         /// </summary>
         public bool TryRemoveQueuedGroup(long groupId)
         {
@@ -266,6 +267,7 @@ namespace TAD.Waves
                 return false;
             }
 
+            attackerBank?.AddGold(removedGroup.Cost);
             attackerBank?.TryRemoveIncome(removedGroup.Income);
             RaiseQueueChanged();
             return true;

@@ -137,6 +137,7 @@ namespace TAD.Tests.PlayMode
             stats = AddText(card.transform, "Stats");
             route = AddText(card.transform, "Route");
             AddButton(card.transform, "Close");
+            AddButton(card.transform, "RemoveFromQueue");
 
             var panel = root.AddComponent<AttackerDetailsPanel>();
             return panel;

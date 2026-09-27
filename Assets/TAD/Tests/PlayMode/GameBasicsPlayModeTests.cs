@@ -5,6 +5,7 @@ using TAD.Attackers;
 using TAD.Defenders;
 using TAD.Economy;
 using TAD.Environment;
+using TAD.Match;
 using TAD.Pooling;
 using TAD.UI;
 using TAD.Waves;
@@ -26,6 +27,7 @@ namespace TAD.Tests.PlayMode
         {
             originalMaximumDeltaTime = Time.maximumDeltaTime;
             Time.timeScale = 1f;
+            MatchRoleSelection.Select(PlayerRole.Defender);
             yield return GameBasicsTestSupport.DestroyAllTestObjects();
         }
 
@@ -34,6 +36,7 @@ namespace TAD.Tests.PlayMode
         {
             Time.maximumDeltaTime = originalMaximumDeltaTime;
             Time.timeScale = 1f;
+            MatchRoleSelection.Select(PlayerRole.Defender);
             yield return GameBasicsTestSupport.DestroyAllTestObjects();
         }
 
@@ -152,7 +155,7 @@ namespace TAD.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator AttackerQueue_ChargesDisplaysRoutesRemovesGroupsAndKeepsWaveIncomePersistent()
+        public IEnumerator AttackerQueue_RefundsRemovedGroupsAndKeepsWaveIncomePersistent()
         {
             var fixture = GameBasicsTestSupport.CreateQueueFixture();
             var definition = Resources.Load<AttackerDefinition>("TADTests/ChickenDefinition");
@@ -174,11 +177,19 @@ namespace TAD.Tests.PlayMode
             Assert.That(fixture.AttackerBank.CurrentGold, Is.EqualTo(goldBeforeQueue - definition.SendCost));
             Assert.That(fixture.AttackerBank.CurrentIncome, Is.EqualTo(definition.WaveIncome));
 
+            Assert.That(fixture.WaveQueue.TryQueueAttackers(definition), Is.True);
+            fixture.WaveQueue.CopyDisplayGroups(groups);
+            Assert.That(groups, Has.Count.EqualTo(2));
+            var retainedGroup = groups[1];
+            Assert.That(fixture.AttackerBank.CurrentGold, Is.EqualTo(goldBeforeQueue - (definition.SendCost * 2)));
+            Assert.That(fixture.AttackerBank.CurrentIncome, Is.EqualTo(definition.WaveIncome * 2));
+
             var panel = GameBasicsTestSupport.CreateAttackerDetailsPanel(
                 out Text heading,
                 out Text status,
                 out Text stats,
                 out Text route);
+            MatchRoleSelection.Select(PlayerRole.Attacker);
             panel.Show(fixture.WaveQueue, group, null);
             Assert.That(panel.IsShowing, Is.True);
             Assert.That(heading.text, Is.EqualTo(definition.DisplayName));
@@ -195,18 +206,24 @@ namespace TAD.Tests.PlayMode
                 Is.True);
             Assert.That(routePreview.GetComponent<LineRenderer>().positionCount, Is.GreaterThan(1));
 
+            var removeButton = panel.transform.Find("Card/RemoveFromQueue")?.GetComponent<Button>();
+            Assert.That(removeButton, Is.Not.Null);
+            Assert.That(removeButton.gameObject.activeSelf, Is.True);
+            Assert.That(removeButton.interactable, Is.True);
+            removeButton.onClick.Invoke();
+
+            Assert.That(fixture.WaveQueue.TryGetDisplayGroup(group.Id, out _), Is.False);
+            Assert.That(fixture.WaveQueue.TryGetDisplayGroup(retainedGroup.Id, out _), Is.True);
+            Assert.That(fixture.WaveQueue.QueuedAttackerCount, Is.EqualTo(definition.SendSize));
+            Assert.That(fixture.AttackerBank.CurrentGold, Is.EqualTo(goldBeforeQueue - definition.SendCost));
+            Assert.That(fixture.AttackerBank.CurrentIncome, Is.EqualTo(definition.WaveIncome));
+            Assert.That(panel.IsShowing, Is.False);
+
             var incomeSnapshot = fixture.AttackerBank.CurrentIncome;
             var goldBeforeIncome = fixture.AttackerBank.CurrentGold;
             Assert.That(fixture.AttackerBank.PayIncome(incomeSnapshot), Is.EqualTo(incomeSnapshot));
             Assert.That(fixture.AttackerBank.CurrentGold, Is.EqualTo(goldBeforeIncome + incomeSnapshot));
             Assert.That(fixture.AttackerBank.CurrentIncome, Is.EqualTo(incomeSnapshot));
-
-            Assert.That(fixture.WaveQueue.TryRemoveQueuedGroup(group.Id), Is.True);
-            Assert.That(fixture.WaveQueue.TryGetDisplayGroup(group.Id, out _), Is.False);
-            Assert.That(fixture.WaveQueue.QueuedAttackerCount, Is.EqualTo(0));
-            Assert.That(fixture.AttackerBank.CurrentGold, Is.EqualTo(goldBeforeIncome + incomeSnapshot));
-            Assert.That(fixture.AttackerBank.CurrentIncome, Is.EqualTo(0));
-            Assert.That(panel.IsShowing, Is.False);
         }
 
         [UnityTest]
