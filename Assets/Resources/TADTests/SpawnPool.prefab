@@ -1,0 +1,149 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &8974110545092134639
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1569693026300897906}
+  - component: {fileID: 592288151473745849}
+  - component: {fileID: 465870676978708901}
+  - component: {fileID: 739535124104778831}
+  - component: {fileID: 7683781269075355685}
+  - component: {fileID: 1991510340437602593}
+  m_Layer: 8
+  m_Name: SpawnPool
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1569693026300897906
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8974110545092134639}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &592288151473745849
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8974110545092134639}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e85281209270ca4384b0410715836c2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TAD.Pooling.SpawnPool
+  poolSettings:
+  - objectType: 0
+    prefab: {fileID: 2873045118861995736, guid: 2de21738b2dad7a44a6ca93751e72e83, type: 3}
+    initialCapacity: 5
+  - objectType: 1
+    prefab: {fileID: 1396477453823266386, guid: 4c99c4a4f94ca3749b8f88c3f81e3163, type: 3}
+    initialCapacity: 5
+  - objectType: 2
+    prefab: {fileID: 6925713925554940803, guid: 6b047fba528a63740813a18ead69958a, type: 3}
+    initialCapacity: 5
+  additionalAttackerPrefabs:
+  - {fileID: 4465617851278540577, guid: 3169f21287e34d442ad61a9a61eb808d, type: 3}
+  - {fileID: 4539596133536927622, guid: 686c6b1a9a7532849b65f4c4908ebca2, type: 3}
+  - {fileID: 4965499273711243573, guid: 1eaf45c3092402a488719ac3ee7bcc45, type: 3}
+  - {fileID: 1555546248635430462, guid: 32be4df7b10e68f489a900a0ec01048c, type: 3}
+  - {fileID: 3156591042286869188, guid: 457d1aea706922543b9f8111bd43987e, type: 3}
+  - {fileID: 1541242498398724688, guid: 921e907ad0f72234db813d595886cb18, type: 3}
+  - {fileID: 160060337164289261, guid: 03e7a0f7ca41aa8478cecd14d156f419, type: 3}
+  - {fileID: 718988378918846499, guid: 67cba16a785c4b847854d897e3f37052, type: 3}
+  - {fileID: 295905137268638908, guid: caed7fca8627bbc4fb91680d50223a64, type: 3}
+  - {fileID: 7380514914642394048, guid: 3dc1798705f367b4f9d5282ed4f8a271, type: 3}
+  - {fileID: 1133527070088945012, guid: 4667ed6be8f017a43854e57e992ee79f, type: 3}
+  additionalAttackerInitialCapacity: 5
+  additionalProjectilePrefabs:
+  - {fileID: 2074273349284568064, guid: ff4fd6ba21af5704b81faf95406d3461, type: 3}
+  - {fileID: 2511437359071816503, guid: 70cae31e09c43cb498c3a44db79aeb6b, type: 3}
+  - {fileID: 1958398127359794655, guid: 1d5d2105462eb724b94bba69f475fab9, type: 3}
+  - {fileID: 3479797706705336641, guid: cc83f71ace6e7e44dab448c06be1d467, type: 3}
+  additionalProjectileInitialCapacity: 5
+  routeMapper: {fileID: 739535124104778831}
+--- !u!114 &465870676978708901
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8974110545092134639}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fb4c0b839a947924893412070d93752a, type: 3}
+  m_Name: FarmHandPlacementController
+  m_EditorClassIdentifier: Assembly-CSharp::TAD.Defenders.FarmHandPlacementController
+  farmHandPrefab: {fileID: 5875131552720761380, guid: 4c99c4a4f94ca3749b8f88c3f81e3163, type: 3}
+  placementUiPrefab: {fileID: 3840638929522613190, guid: 725ddcd66b2056745877c723a5ac73bd, type: 3}
+  insufficientFundsOverlayPrefab: {fileID: 4873677521582702159, guid: 197f26201ef53cd448b8b4a06a903a06, type: 3}
+  controllerPlacementSpeed: 5
+  previewOpacity: 0.5
+  previewSortingOrder: 3
+  routeMapper: {fileID: 0}
+--- !u!114 &739535124104778831
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8974110545092134639}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d1b498a87f0d6341915242cb5ac1637, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TAD.Navigation.FarmRouteMapper
+  foodStore: {fileID: 0}
+  defaultAttackerSize: 1
+  attackerDefinitionsToPrecompute: []
+  cellSize: 0.25
+  mapSize: {x: 20, y: 12}
+  obstaclePadding: 0
+  cornerSmoothingLookAheadCells: 8
+--- !u!114 &7683781269075355685
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8974110545092134639}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9cc7a34899a0a9d439d5c27c1cc57614, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TAD.UI.DefenderLevelUpgradeBootstrap
+  overlayPrefab: {fileID: 29308662564694487, guid: 2b385fa21b392714b95328e7fd47959d, type: 3}
+  levelThreeUpgradeOptions:
+  - {fileID: 11400000, guid: 80c7bf7be7647c041b69c346c86af0a5, type: 2}
+  - {fileID: 11400000, guid: 27eab7ad44021804c9e61d79fd7c8b52, type: 2}
+  - {fileID: 11400000, guid: f10c2b2ff3579d140ac2b7b19ae8d4cf, type: 2}
+  - {fileID: 11400000, guid: 9b8b2dcaac92681458c4e0eb0a8ba9a5, type: 2}
+--- !u!114 &1991510340437602593
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8974110545092134639}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3404aeb8a94a9b94caee6fef1bfad077, type: 3}
+  m_Name: Defender Details Bootstrap
+  m_EditorClassIdentifier: Assembly-CSharp::TAD.UI.DefenderDetailsBootstrap
+  detailsPanelPrefab: {fileID: 3900441967054408077, guid: e100e153b737e5c4a90f51a1d1ae7231, type: 3}

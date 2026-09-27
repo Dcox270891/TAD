@@ -148,6 +148,17 @@ namespace TAD.Attackers
             BuildCachedRoute();
         }
 
+        /// <summary>
+        /// Assigns this reusable attacker its shared data and resets all per-activation state.
+        /// Pool setups normally serialize this reference; this method also supports data-driven runtime spawners.
+        /// </summary>
+        public void ConfigureDefinition(AttackerDefinition attackerDefinition)
+        {
+            definition = attackerDefinition;
+            ResetRuntimeState();
+            BuildCachedRoute();
+        }
+
         /// <summary>Constrain this active animal to the mapper's visible play area.</summary>
         public bool TryClampToVisibleMap()
         {

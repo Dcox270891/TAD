@@ -27,6 +27,17 @@ namespace TAD.Economy
         public int CurrentGold => currentGold;
         public int CurrentIncome => currentIncome;
 
+        /// <summary>
+        /// Configures this bank for a level-side owner and resets it to the supplied starting gold.
+        /// This is useful for level bootstrap code that creates a bank dynamically.
+        /// </summary>
+        public void Configure(BankSide side, int initialGold)
+        {
+            bankSide = side;
+            startingGold = Mathf.Max(0, initialGold);
+            ResetGold();
+        }
+
         private void Awake()
         {
             ResetGold();
@@ -106,6 +117,21 @@ namespace TAD.Economy
 
             AddGold(paidIncome);
             return paidIncome;
+        }
+
+        /// <summary>
+        /// Removes income associated with a cancelled attacker order without touching the current gold.
+        /// Returns false when there was no positive income to remove.
+        /// </summary>
+        public bool TryRemoveIncome(int amount)
+        {
+            if (amount <= 0 || currentIncome <= 0)
+            {
+                return false;
+            }
+
+            SetIncome(Mathf.Max(0, currentIncome - amount));
+            return true;
         }
 
         /// <summary>Clears the stored income total without adding it to the current gold.</summary>

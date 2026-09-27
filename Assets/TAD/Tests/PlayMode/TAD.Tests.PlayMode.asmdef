@@ -1,0 +1,19 @@
+{
+  "name": "TAD.Tests.PlayMode",
+  "rootNamespace": "TAD.Tests.PlayMode",
+  "references": [
+    "TAD.Runtime"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false,
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}

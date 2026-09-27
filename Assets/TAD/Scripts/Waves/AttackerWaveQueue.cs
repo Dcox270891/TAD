@@ -236,6 +236,42 @@ namespace TAD.Waves
         }
 
         /// <summary>
+        /// Removes one still-pending attacker group. Its income is removed from the persistent total; its
+        /// purchase cost remains spent until the later refund feature is intentionally introduced.
+        /// Groups that are already being dispatched cannot be removed.
+        /// </summary>
+        public bool TryRemoveQueuedGroup(long groupId)
+        {
+            if (groupId <= 0 || queuedGroups.Count == 0)
+            {
+                return false;
+            }
+
+            QueuedAttackerGroup removedGroup = null;
+            var groupCount = queuedGroups.Count;
+            for (var index = 0; index < groupCount; index++)
+            {
+                var group = queuedGroups.Dequeue();
+                if (removedGroup == null && group != null && group.Id == groupId)
+                {
+                    removedGroup = group;
+                    continue;
+                }
+
+                queuedGroups.Enqueue(group);
+            }
+
+            if (removedGroup == null)
+            {
+                return false;
+            }
+
+            attackerBank?.TryRemoveIncome(removedGroup.Income);
+            RaiseQueueChanged();
+            return true;
+        }
+
+        /// <summary>
         /// Sends a snapshot of all currently queued groups. This legacy entry point preserves existing callers.
         /// </summary>
         public bool TrySendQueuedWave()

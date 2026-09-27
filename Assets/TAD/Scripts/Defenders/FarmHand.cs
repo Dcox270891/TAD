@@ -17,13 +17,8 @@ namespace TAD.Defenders
     {
         private const float BlockedTargetRetryInterval = 0.1f;
         private const int LineOfSightHitCapacity = 16;
-        private const float HelpedToKillExperiencePercent = 0.1f;
-        private const float MaximumAssistExperiencePercent = 0.5f;
-        private const float ExperienceDecimalMultiplier = 10f;
         private const float LevelDamageMultiplier = 1.1f;
         private const int LevelThreeUpgradeLevel = 3;
-        // Temporary progression tuning while combat and level-up choices are being tested.
-        private const float TestingExperienceMultiplier = 5f;
 
         [SerializeField] private SpriteRenderer visual;
         [SerializeField] private FarmHandVisualController visualController;
@@ -230,48 +225,36 @@ namespace TAD.Defenders
         /// <summary>
         /// Awards every eligible assisting Farmhand a share of this attacker group's XP, capped at half of the
         /// distributed total. The killer receives the remaining share, which is therefore never below 50%.
+        /// This is public so every combat source uses the same authoritative reward path.
         /// </summary>
-        internal void AwardKillingBlowReward(
+        public void AwardKillingBlowReward(
             int expGiven,
             int killGain,
             int sendSize,
             IReadOnlyList<FarmHand> assistRecipients)
         {
-            var distributedKillExperience = GetDistributedExperience(expGiven, sendSize);
-            var totalDefeatExperience = ApplyTestingExperienceMultiplier(distributedKillExperience);
-            var eligibleAssistCount = CountEligibleAssistRecipients(assistRecipients);
-            var assistExperiencePerDefender = eligibleAssistCount > 0
-                ? Mathf.Min(
-                    GetHelpedToKillExperience(expGiven, sendSize),
-                    (distributedKillExperience * MaximumAssistExperiencePercent) / eligibleAssistCount)
-                : 0f;
+            var eligibleAssistRecipients = GetEligibleAssistRecipients(assistRecipients);
+            eligibleAssistRecipients.Sort((left, right) => left.InstanceId.CompareTo(right.InstanceId));
 
-            var awardedAssistExperience = 0f;
-            if (assistExperiencePerDefender > 0f && assistRecipients != null)
+            var distribution = DefenderRewardCalculator.Calculate(
+                expGiven,
+                sendSize,
+                eligibleAssistRecipients.Count);
+            for (var index = 0; index < eligibleAssistRecipients.Count; index++)
             {
-                foreach (var assistingDefender in assistRecipients)
+                var assistExperience = distribution.GetAssistExperienceForRecipient(index);
+                if (assistExperience > 0f)
                 {
-                    if (!IsEligibleExperienceRecipient(assistingDefender))
-                    {
-                        continue;
-                    }
-
-                    awardedAssistExperience = RoundToNearestTenth(
-                        awardedAssistExperience + assistingDefender.AddExperience(assistExperiencePerDefender));
+                    eligibleAssistRecipients[index].AddExperience(assistExperience);
                 }
             }
 
-            // Keep the complete post-test-multiplier XP pool allocated. Rounding from multiple helpers is
-            // included in the killer's remainder, while the hard floor still guarantees at least half.
-            var killingBlowExperience = Mathf.Max(
-                totalDefeatExperience * MaximumAssistExperiencePercent,
-                totalDefeatExperience - awardedAssistExperience);
-            AddExperience(killingBlowExperience / TestingExperienceMultiplier);
+            AddExperience(distribution.KillerExperience);
             ResolveDefenderBank()?.AddGold(killGain);
         }
 
-        /// <summary>Applies projectile damage while preserving this defender's assisted XP, kill XP, and gold rules.</summary>
-        internal bool TryDamageAttacker(BasicAttacker attacker, float damageAmount)
+        /// <summary>Applies damage while preserving this defender's assisted XP, kill XP, and gold rules.</summary>
+        public bool TryDamageAttacker(BasicAttacker attacker, float damageAmount)
         {
             if (!IsValidAttacker(attacker) || damageAmount <= 0f)
             {
@@ -666,64 +649,46 @@ namespace TAD.Defenders
             rangeVisual.Configure(Range, sortingLayerId, sortingOrder, isRangeIndicatorVisible);
         }
 
-        private static float GetDistributedExperience(int expGiven, int sendSize)
+        private static List<FarmHand> GetEligibleAssistRecipients(IReadOnlyList<FarmHand> assistRecipients)
         {
-            return expGiven <= 0 ? 0f : expGiven / (float)Mathf.Max(1, sendSize);
-        }
-
-        private static float GetHelpedToKillExperience(int expGiven, int sendSize)
-        {
-            return RoundToNearestTenth(GetDistributedExperience(expGiven, sendSize) * HelpedToKillExperiencePercent);
-        }
-
-        private static int CountEligibleAssistRecipients(IReadOnlyList<FarmHand> assistRecipients)
-        {
+            var eligibleRecipients = new List<FarmHand>();
             if (assistRecipients == null)
             {
-                return 0;
+                return eligibleRecipients;
             }
 
-            var count = 0;
             foreach (var assistingDefender in assistRecipients)
             {
-                if (IsEligibleExperienceRecipient(assistingDefender))
+                if (assistingDefender != null &&
+                    assistingDefender.isActiveAndEnabled &&
+                    assistingDefender.gameObject.activeInHierarchy)
                 {
-                    count++;
+                    eligibleRecipients.Add(assistingDefender);
                 }
             }
 
-            return count;
+            return eligibleRecipients;
         }
 
-        private static bool IsEligibleExperienceRecipient(FarmHand defender)
+        private float AddExperience(float awardedAmount)
         {
-            return defender != null && defender.isActiveAndEnabled && defender.gameObject.activeInHierarchy;
-        }
-
-        private float AddExperience(float amount)
-        {
-            if (amount <= 0f)
-            {
-                return 0f;
-            }
-
-            var awardedAmount = ApplyTestingExperienceMultiplier(amount);
+            awardedAmount = DefenderRewardCalculator.RoundToNearestTenth(awardedAmount);
             if (awardedAmount <= 0f)
             {
                 return 0f;
             }
 
             // Results can credit every earned point even after no further level can be gained.
-            totalExperience = RoundToNearestTenth(totalExperience + awardedAmount);
+            totalExperience = DefenderRewardCalculator.RoundToNearestTenth(totalExperience + awardedAmount);
             var shouldRequestLevelThreeUpgrade = false;
 
             if (!IsAtMaxLevel)
             {
                 var expThreshold = Mathf.Max(1, ExpMax);
-                currentExp = RoundToNearestTenth(currentExp + awardedAmount);
+                currentExp = DefenderRewardCalculator.RoundToNearestTenth(currentExp + awardedAmount);
                 while (currentLevel < MaxLevel && currentExp >= expThreshold)
                 {
-                    currentExp = RoundToNearestTenth(currentExp - expThreshold);
+                    currentExp = DefenderRewardCalculator.RoundToNearestTenth(currentExp - expThreshold);
                     currentLevel++;
 
                     if (!hasSelectedLevelThreeUpgrade && !isAwaitingLevelThreeUpgrade &&
@@ -748,15 +713,6 @@ namespace TAD.Defenders
             }
 
             return awardedAmount;
-        }
-
-        private static float ApplyTestingExperienceMultiplier(float amount)
-        {
-            return RoundToNearestTenth(amount * TestingExperienceMultiplier);
-        }
-        private static float RoundToNearestTenth(float amount)
-        {
-            return Mathf.Round(amount * ExperienceDecimalMultiplier) / ExperienceDecimalMultiplier;
         }
 
         private void ResetProgression()
