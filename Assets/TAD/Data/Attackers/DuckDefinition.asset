@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TAD.Attackers.AttackerDefinition
   attackerId: 002
   displayName: Duck
-  maximumHealth: 16
-  movementSpeed: 3.15
+  maximumHealth: 13
+  movementSpeed: 2.7
   size: 1.05
-  sendCost: 7
+  sendCost: 14
   waveIncome: 2
-  expGiven: 12
-  killGain: 12
-  sendSize: 5
+  expGiven: 2
+  killGain: 3
+  sendSize: 4
   archetype: 0
   challengeTier: 2
   traversalProfile: 0

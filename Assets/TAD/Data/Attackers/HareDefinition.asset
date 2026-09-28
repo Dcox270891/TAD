@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TAD.Attackers.AttackerDefinition
   attackerId: 004
   displayName: Hare
-  maximumHealth: 6
-  movementSpeed: 4.4
+  maximumHealth: 5
+  movementSpeed: 3.9
   size: 0.75
-  sendCost: 6
-  waveIncome: 2
-  expGiven: 9
-  killGain: 8
-  sendSize: 5
+  sendCost: 9
+  waveIncome: 1
+  expGiven: 1
+  killGain: 2
+  sendSize: 4
   archetype: 1
   challengeTier: 1
   traversalProfile: 0

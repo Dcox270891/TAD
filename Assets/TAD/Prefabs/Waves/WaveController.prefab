@@ -45,7 +45,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TAD.Economy.ResourceBank
   bankSide: 1
-  startingGold: 100
+  startingGold: 150
 --- !u!1 &1192416457459520193
 GameObject:
   m_ObjectHideFlags: 0
@@ -220,8 +220,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TAD.Match.MatchRoleController
   baseAttackerGroupsPerDay: 1
-  attackerAiAdditionalGroupEveryDays: 3
-  defenderAiMaximumFarmhands: 4
+  attackerAiAdditionalGroupEveryDays: 4
+  defenderAiMaximumFarmhands: 6
   defenderAiAdditionalFarmHandEveryDays: 2
   defenderAiSideOffset: 1.4
 --- !u!1 &1418298064396871470
@@ -269,7 +269,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TAD.Economy.ResourceBank
   bankSide: 0
-  startingGold: 100
+  startingGold: 70
 --- !u!1 &3175488205663211672
 GameObject:
   m_ObjectHideFlags: 0

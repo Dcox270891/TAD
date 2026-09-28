@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TAD.Attackers.AttackerDefinition
   attackerId: 008
   displayName: Bull
-  maximumHealth: 45
-  movementSpeed: 2.35
+  maximumHealth: 28
+  movementSpeed: 2.05
   size: 1.35
-  sendCost: 15
-  waveIncome: 5
-  expGiven: 27
-  killGain: 32
-  sendSize: 6
+  sendCost: 28
+  waveIncome: 2
+  expGiven: 3
+  killGain: 8
+  sendSize: 3
   archetype: 2
   challengeTier: 2
   traversalProfile: 0

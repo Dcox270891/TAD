@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TAD.Attackers.AttackerDefinition
   attackerId: 012
   displayName: Eagle
-  maximumHealth: 21
-  movementSpeed: 3.45
+  maximumHealth: 16
+  movementSpeed: 3.4
   size: 0.95
-  sendCost: 17
-  waveIncome: 6
-  expGiven: 27
-  killGain: 35
-  sendSize: 6
+  sendCost: 29
+  waveIncome: 3
+  expGiven: 3
+  killGain: 6
+  sendSize: 4
   archetype: 3
   challengeTier: 3
   traversalProfile: 1

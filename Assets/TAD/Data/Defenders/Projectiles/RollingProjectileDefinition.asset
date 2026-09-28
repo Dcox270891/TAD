@@ -18,7 +18,7 @@ MonoBehaviour:
   projectilePrefab: {fileID: 2511437359071816503, guid: 70cae31e09c43cb498c3a44db79aeb6b, type: 3}
   projectileSpeed: 4
   projectileLifetime: 3.5
-  maximumActiveProjectiles: 0
+  maximumActiveProjectiles: 2
   initialSpeedMultiplier: 0.2
   rollingAcceleration: 5
   poleSweepAngle: 180

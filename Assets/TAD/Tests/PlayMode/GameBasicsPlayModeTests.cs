@@ -438,7 +438,9 @@ namespace TAD.Tests.PlayMode
             Assert.That(dayCycle.CurrentDay, Is.EqualTo(0));
 
             Time.maximumDeltaTime = 10f;
-            Time.timeScale = 1000f;
+            // Unity 6 caps editor time scale at 100. This still advances the deterministic
+            // preparation/empty-day test quickly without emitting an unexpected error log.
+            Time.timeScale = 100f;
             var deadline = Time.realtimeSinceStartup + 3f;
             while (dayCycle.CurrentDay < 1 && Time.realtimeSinceStartup < deadline)
             {
@@ -459,7 +461,8 @@ namespace TAD.Tests.PlayMode
 
             overlay.Bind(dayCycle);
             Time.maximumDeltaTime = 10f;
-            Time.timeScale = 1000f;
+            // Keep within Unity 6's editor time-scale limit while accelerating the ten-day test.
+            Time.timeScale = 100f;
             var deadline = Time.realtimeSinceStartup + 5f;
             while (!overlay.IsVisible && Time.realtimeSinceStartup < deadline)
             {
@@ -541,11 +544,17 @@ namespace TAD.Tests.PlayMode
                 attackerObject.GetComponent<PooledInstance>().ReturnToPool();
             }
 
+            var secondWave = new List<GameObject>();
             var secondWaveIds = new HashSet<long>();
             for (var index = 0; index < waveSize; index++)
             {
                 var attackerObject = pool.Spawn(PooledObjectType.Attacker, Vector3.zero, Quaternion.identity);
                 secondWaveIds.Add(attackerObject.GetComponent<PooledInstance>().RuntimeInstanceId);
+                secondWave.Add(attackerObject);
+            }
+
+            foreach (var attackerObject in secondWave)
+            {
                 attackerObject.GetComponent<PooledInstance>().ReturnToPool();
             }
 

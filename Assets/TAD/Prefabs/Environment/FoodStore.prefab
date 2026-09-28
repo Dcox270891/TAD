@@ -214,7 +214,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 32561367581043641a9fa013edcd36a4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TAD.Environment.FoodStore
-  startingFood: 200
+  startingFood: 300
 --- !u!114 &5968805547786594147
 MonoBehaviour:
   m_ObjectHideFlags: 0

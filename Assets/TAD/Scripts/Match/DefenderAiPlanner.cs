@@ -107,7 +107,10 @@ namespace TAD.Match
     {
         private const float MinimumRouteLength = 0.001f;
         private const float PlacementTieTolerance = 0.001f;
-        private const float FarmHandPressurePerUnit = 100f;
+        // This deliberately favours the side that has to protect the store for ten days.  A lower
+        // pressure threshold makes the defender AI commit its affordable starting farmhands before
+        // a large, player-queued burst can turn into an unanswered opening loss.
+        private const float FarmHandPressurePerUnit = 75f;
 
         /// <summary>
         /// Estimates how many farmhands are useful for the planned groups, constrained by the caller's

@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TAD.Defenders.WeaponDefinition
   displayName: Rolling
   description: A heavy melee roller. It keeps its firing direction, starts slowly, then accelerates until its maximum speed.
-  cost: 45
-  range: 2.5
-  attackSpeed: 0.8
-  damage: 15
+  cost: 52
+  range: 2.6
+  attackSpeed: 0.9
+  damage: 17
   projectileDefinition: {fileID: 11400000, guid: 9ab2073a6bbec624eba6d505dd8b9655, type: 2}

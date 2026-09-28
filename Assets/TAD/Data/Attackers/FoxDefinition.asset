@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TAD.Attackers.AttackerDefinition
   attackerId: 005
   displayName: Fox
-  maximumHealth: 8
-  movementSpeed: 5.1
+  maximumHealth: 7
+  movementSpeed: 4.5
   size: 0.82
-  sendCost: 8
-  waveIncome: 3
-  expGiven: 12
-  killGain: 13
-  sendSize: 5
+  sendCost: 15
+  waveIncome: 2
+  expGiven: 2
+  killGain: 3
+  sendSize: 4
   archetype: 1
   challengeTier: 2
   traversalProfile: 0

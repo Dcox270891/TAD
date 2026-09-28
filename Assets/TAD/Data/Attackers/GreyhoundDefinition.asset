@@ -15,13 +15,13 @@ MonoBehaviour:
   attackerId: 006
   displayName: Greyhound
   maximumHealth: 10
-  movementSpeed: 5.8
+  movementSpeed: 5
   size: 0.9
-  sendCost: 10
-  waveIncome: 4
-  expGiven: 16
-  killGain: 18
-  sendSize: 6
+  sendCost: 23
+  waveIncome: 3
+  expGiven: 3
+  killGain: 4
+  sendSize: 5
   archetype: 1
   challengeTier: 3
   traversalProfile: 0

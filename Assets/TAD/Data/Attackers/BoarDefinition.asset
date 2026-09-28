@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TAD.Attackers.AttackerDefinition
   attackerId: 007
   displayName: Boar
-  maximumHealth: 30
-  movementSpeed: 2.65
+  maximumHealth: 18
+  movementSpeed: 1.9
   size: 1.15
-  sendCost: 11
-  waveIncome: 3
-  expGiven: 20
-  killGain: 22
-  sendSize: 5
+  sendCost: 17
+  waveIncome: 1
+  expGiven: 2
+  killGain: 6
+  sendSize: 3
   archetype: 2
   challengeTier: 1
   traversalProfile: 0

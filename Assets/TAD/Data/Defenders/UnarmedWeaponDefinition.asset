@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TAD.Defenders.WeaponDefinition
   displayName: Unarmed
   description: A farmhand's thrown hand. It repeatedly fires compact hand projectiles at attackers in range.
-  cost: 0
-  range: 1
-  attackSpeed: 1
-  damage: 1
+  cost: 25
+  range: 1.25
+  attackSpeed: 1.5
+  damage: 8
   projectileDefinition: {fileID: 11400000, guid: 00841e0146622ae47b48f5b6228a0c5e, type: 2}
