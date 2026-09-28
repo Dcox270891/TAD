@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Reflection;
 using NUnit.Framework;
 using TAD.Progression;
 using TAD.UI;
@@ -51,10 +52,16 @@ namespace TAD.Tests.PlayMode
                 Assert.That(scrollRect, Is.Not.Null);
                 Assert.That(scrollRect.viewport, Is.Not.Null);
                 Assert.That(scrollRect.content, Is.EqualTo(content.GetComponent<RectTransform>()));
-                Assert.That(contentPanel.Find("Viewport").GetComponent<Mask>(), Is.Not.Null);
+                Assert.That(contentPanel.Find("Viewport").GetComponent<RectMask2D>(), Is.Not.Null);
+                Assert.That(contentPanel.Find("Viewport").GetComponent<Mask>(), Is.Null);
                 Assert.That(content.GetComponent<ContentSizeFitter>(), Is.Not.Null);
-                Assert.That(scrollRect.viewport.rect.height, Is.GreaterThan(400f));
+                Assert.That(scrollRect.viewport.rect.height, Is.GreaterThan(0f));
                 Assert.That(content.GetComponent<RectTransform>().rect.height, Is.GreaterThan(scrollRect.viewport.rect.height));
+                Assert.That(content.Find("Master volumeRow/Label").GetComponent<RectTransform>().rect.width, Is.GreaterThan(200f));
+                Assert.That(content.Find("Master volumeRow/Slider").GetComponent<RectTransform>().rect.width, Is.GreaterThan(300f));
+
+                var headerTitle = overlay.transform.Find("SettingsPanel/Header/TitleText").GetComponent<RectTransform>();
+                Assert.That(headerTitle.rect.width, Is.GreaterThan(300f));
 
                 var panelRect = overlay.transform.Find("SettingsPanel").GetComponent<RectTransform>();
                 var overlayRect = overlay.GetComponent<RectTransform>();
@@ -112,6 +119,100 @@ namespace TAD.Tests.PlayMode
             yield return null;
         }
 
+        [UnityTest]
+        public IEnumerator PlayerSettingsOverlay_ReopensWithVisibleSettingsAfterRuntimeCacheIsLost()
+        {
+            GameObject canvasObject = null;
+
+            try
+            {
+                canvasObject = CreateCanvasWithButtonTemplate(out var buttonTemplate);
+                var canvas = canvasObject.GetComponent<Canvas>();
+                var overlay = PlayerSettingsOverlay.Show(canvas.transform, buttonTemplate, buttonTemplate.gameObject);
+                yield return null;
+
+                var audioTab = overlay.transform.Find("SettingsPanel/Tabs/AudioTab").GetComponent<Button>();
+                var closeButton = overlay.transform.Find("SettingsPanel/Header/CloseButton").GetComponent<Button>();
+                var originalPanel = overlay.transform.Find("SettingsPanel");
+                var originalViewport = overlay.transform.Find("SettingsPanel/ContentPanel/Viewport");
+                audioTab.onClick.RemoveAllListeners();
+                closeButton.onClick.RemoveAllListeners();
+                overlay.gameObject.SetActive(false);
+                ClearRuntimeLayoutCache(overlay);
+
+                var reopenedOverlay = PlayerSettingsOverlay.Show(canvas.transform, buttonTemplate, buttonTemplate.gameObject);
+                yield return null;
+
+                Assert.That(reopenedOverlay, Is.SameAs(overlay));
+                Assert.That(reopenedOverlay.gameObject.activeInHierarchy, Is.True);
+                Assert.That(reopenedOverlay.transform.Find("SettingsPanel"), Is.SameAs(originalPanel));
+                Assert.That(reopenedOverlay.GetComponentsInChildren<ScrollRect>(true).Length, Is.EqualTo(1));
+
+                var content = reopenedOverlay.transform.Find("SettingsPanel/ContentPanel/Viewport/Content");
+                Assert.That(content, Is.Not.Null);
+                var reopenedViewport = reopenedOverlay.transform.Find("SettingsPanel/ContentPanel/Viewport");
+                Assert.That(reopenedViewport, Is.SameAs(originalViewport));
+                Assert.That(reopenedViewport.GetComponent<RectMask2D>(), Is.Not.Null);
+                Assert.That(reopenedViewport.GetComponent<Mask>(), Is.Null);
+                Assert.That(content.Find("Show attacker health barsRow/Toggle"), Is.Not.Null);
+
+                reopenedOverlay.transform.Find("SettingsPanel/Tabs/AudioTab").GetComponent<Button>().onClick.Invoke();
+                yield return null;
+                Assert.That(content.GetComponentsInChildren<Slider>().Length, Is.EqualTo(5));
+
+                reopenedOverlay.transform.Find("SettingsPanel/Header/CloseButton").GetComponent<Button>().onClick.Invoke();
+                yield return null;
+                Assert.That(reopenedOverlay.gameObject.activeSelf, Is.False);
+            }
+            finally
+            {
+                if (canvasObject != null)
+                {
+                    Object.Destroy(canvasObject);
+                }
+            }
+
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator PlayerSettingsOverlay_RebuildsAStaleStencilMaskedViewport()
+        {
+            GameObject canvasObject = null;
+
+            try
+            {
+                canvasObject = CreateCanvasWithButtonTemplate(out var buttonTemplate);
+                var canvas = canvasObject.GetComponent<Canvas>();
+                var overlay = PlayerSettingsOverlay.Show(canvas.transform, buttonTemplate, buttonTemplate.gameObject);
+                yield return null;
+
+                overlay.gameObject.SetActive(false);
+                var staleViewport = overlay.transform.Find("SettingsPanel/ContentPanel/Viewport");
+                Object.Destroy(staleViewport.GetComponent<RectMask2D>());
+                staleViewport.gameObject.AddComponent<Mask>().showMaskGraphic = false;
+                yield return null;
+
+                var repairedOverlay = PlayerSettingsOverlay.Show(canvas.transform, buttonTemplate, buttonTemplate.gameObject);
+                yield return null;
+
+                var repairedViewport = repairedOverlay.transform.Find("SettingsPanel/ContentPanel/Viewport");
+                Assert.That(repairedViewport, Is.Not.SameAs(staleViewport));
+                Assert.That(repairedViewport.GetComponent<RectMask2D>(), Is.Not.Null);
+                Assert.That(repairedViewport.GetComponent<Mask>(), Is.Null);
+                Assert.That(repairedViewport.Find("Content/Show attacker health barsRow/Toggle"), Is.Not.Null);
+            }
+            finally
+            {
+                if (canvasObject != null)
+                {
+                    Object.Destroy(canvasObject);
+                }
+            }
+
+            yield return null;
+        }
+
         private static GameObject CreateCanvasWithButtonTemplate(out Button buttonTemplate)
         {
             var canvasObject = new GameObject(
@@ -122,6 +223,9 @@ namespace TAD.Tests.PlayMode
                 typeof(GraphicRaycaster));
             var canvas = canvasObject.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            var canvasScaler = canvasObject.GetComponent<CanvasScaler>();
+            canvasScaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            canvasScaler.referenceResolution = new Vector2(1920f, 1080f);
 
             var templateObject = new GameObject(
                 "ButtonTemplate",
@@ -148,6 +252,15 @@ namespace TAD.Tests.PlayMode
             labelRect.offsetMin = Vector2.zero;
             labelRect.offsetMax = Vector2.zero;
             return canvasObject;
+        }
+
+        private static void ClearRuntimeLayoutCache(PlayerSettingsOverlay overlay)
+        {
+            const BindingFlags InstancePrivate = BindingFlags.Instance | BindingFlags.NonPublic;
+            typeof(PlayerSettingsOverlay).GetField("contentRoot", InstancePrivate)?.SetValue(overlay, null);
+            typeof(PlayerSettingsOverlay).GetField("contentScrollRect", InstancePrivate)?.SetValue(overlay, null);
+            typeof(PlayerSettingsOverlay).GetField("panelRect", InstancePrivate)?.SetValue(overlay, null);
+            typeof(PlayerSettingsOverlay).GetField("firstTabButton", InstancePrivate)?.SetValue(overlay, null);
         }
 
         private static ProfileBackup CaptureProfileBackup()

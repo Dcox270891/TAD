@@ -59,6 +59,7 @@ namespace TAD.UI
             if (existing != null)
             {
                 existing.Configure(template, returnSelectionTarget);
+                existing.EnsureLayout();
                 existing.gameObject.SetActive(true);
                 existing.transform.SetAsLastSibling();
                 existing.ShowPage(SettingsPage.Gameplay, selectFirstControl: true);
@@ -102,6 +103,15 @@ namespace TAD.UI
 
         private void LateUpdate()
         {
+            if (!HasUsableLayout())
+            {
+                EnsureLayout();
+                if (contentRoot != null)
+                {
+                    ShowPage(activePage, selectFirstControl: false);
+                }
+            }
+
             FitPanelToAvailableScreenSpace();
         }
 
@@ -147,6 +157,120 @@ namespace TAD.UI
             FitPanelToAvailableScreenSpace();
         }
 
+        /// <summary>
+        /// Runtime UI objects survive a script/domain reload, while this component's cached references and
+        /// runtime button listeners do not. Rebind the intact hierarchy when possible so reopening Settings
+        /// never results in a panel with no usable page content.
+        /// </summary>
+        private void EnsureLayout()
+        {
+            if (TryRestoreExistingLayout())
+            {
+                return;
+            }
+
+            RemoveStaleLayout();
+            Build();
+        }
+
+        private bool TryRestoreExistingLayout()
+        {
+            var restoredPanel = transform.Find("SettingsPanel") as RectTransform;
+            var restoredContentPanel = restoredPanel != null
+                ? restoredPanel.Find("ContentPanel")
+                : null;
+            var restoredViewport = restoredContentPanel != null
+                ? restoredContentPanel.Find("Viewport") as RectTransform
+                : null;
+            var restoredContent = restoredViewport != null
+                ? restoredViewport.Find("Content") as RectTransform
+                : null;
+            var restoredScrollRect = restoredContentPanel != null
+                ? restoredContentPanel.GetComponent<UnityEngine.UI.ScrollRect>()
+                : null;
+
+            if (restoredPanel == null ||
+                restoredViewport == null ||
+                restoredContent == null ||
+                restoredScrollRect == null ||
+                restoredViewport.GetComponent<UnityEngine.UI.RectMask2D>() == null ||
+                restoredViewport.GetComponent<UnityEngine.UI.Mask>() != null ||
+                restoredContent.GetComponent<UnityEngine.UI.VerticalLayoutGroup>() == null ||
+                restoredContent.GetComponent<UnityEngine.UI.ContentSizeFitter>() == null)
+            {
+                return false;
+            }
+
+            var restoredTabs = restoredPanel.Find("Tabs");
+            var restoredCloseButton = restoredPanel.Find("Header/CloseButton")?.GetComponent<UnityEngine.UI.Button>();
+            if (restoredTabs == null || restoredCloseButton == null)
+            {
+                return false;
+            }
+
+            tabButtons.Clear();
+            firstTabButton = null;
+            foreach (SettingsPage page in Enum.GetValues(typeof(SettingsPage)))
+            {
+                var tab = restoredTabs.Find($"{page}Tab")?.GetComponent<UnityEngine.UI.Button>();
+                if (tab == null)
+                {
+                    return false;
+                }
+
+                var selectedPage = page;
+                tab.onClick.RemoveAllListeners();
+                tab.onClick.AddListener(() => ShowPage(selectedPage, selectFirstControl: true));
+                tabButtons.Add(tab);
+                firstTabButton ??= tab;
+            }
+
+            restoredCloseButton.onClick.RemoveAllListeners();
+            restoredCloseButton.onClick.AddListener(Close);
+
+            panelRect = restoredPanel;
+            contentRoot = restoredContent;
+            contentScrollRect = restoredScrollRect;
+            contentScrollRect.viewport = restoredViewport;
+            contentScrollRect.content = restoredContent;
+            contentScrollRect.horizontal = false;
+            contentScrollRect.vertical = true;
+            contentScrollRect.movementType = UnityEngine.UI.ScrollRect.MovementType.Clamped;
+            return true;
+        }
+
+        private void RemoveStaleLayout()
+        {
+            for (var index = transform.childCount - 1; index >= 0; index--)
+            {
+                var child = transform.GetChild(index);
+                if (child.name != "SettingsPanel")
+                {
+                    continue;
+                }
+
+                child.gameObject.SetActive(false);
+                Destroy(child.gameObject);
+            }
+
+            tabButtons.Clear();
+            firstTabButton = null;
+            panelRect = null;
+            contentRoot = null;
+            contentScrollRect = null;
+        }
+
+        private bool HasUsableLayout()
+        {
+            return panelRect != null &&
+                   contentRoot != null &&
+                   contentScrollRect != null &&
+                   contentScrollRect.viewport != null &&
+                   contentScrollRect.content == contentRoot &&
+                   contentScrollRect.viewport.GetComponent<UnityEngine.UI.RectMask2D>() != null &&
+                   contentScrollRect.viewport.GetComponent<UnityEngine.UI.Mask>() == null;
+        }
+
         private void BuildHeader(Transform parent)
         {
             var header = new GameObject(
@@ -161,7 +285,7 @@ namespace TAD.UI
             var layout = header.GetComponent<UnityEngine.UI.HorizontalLayoutGroup>();
             layout.spacing = 18f;
             layout.childAlignment = TextAnchor.MiddleCenter;
-            layout.childControlWidth = false;
+            layout.childControlWidth = true;
             layout.childControlHeight = true;
             layout.childForceExpandWidth = false;
             layout.childForceExpandHeight = false;
@@ -246,7 +370,7 @@ namespace TAD.UI
                 typeof(RectTransform),
                 typeof(CanvasRenderer),
                 typeof(UnityEngine.UI.Image),
-                typeof(UnityEngine.UI.Mask));
+                typeof(UnityEngine.UI.RectMask2D));
             viewport.layer = gameObject.layer;
             viewport.transform.SetParent(contentPanel.transform, false);
 
@@ -255,8 +379,6 @@ namespace TAD.UI
             var viewportImage = viewport.GetComponent<UnityEngine.UI.Image>();
             viewportImage.color = Color.clear;
             viewportImage.raycastTarget = true;
-            var viewportMask = viewport.GetComponent<UnityEngine.UI.Mask>();
-            viewportMask.showMaskGraphic = false;
 
             var content = new GameObject(
                 "Content",
@@ -332,7 +454,7 @@ namespace TAD.UI
                 _ => null
             };
 
-            Canvas.ForceUpdateCanvases();
+            ForceLayoutUpdate();
             if (contentScrollRect != null)
             {
                 contentScrollRect.verticalNormalizedPosition = 1f;
@@ -624,7 +746,7 @@ namespace TAD.UI
             var layout = row.GetComponent<UnityEngine.UI.HorizontalLayoutGroup>();
             layout.spacing = 16f;
             layout.childAlignment = TextAnchor.MiddleCenter;
-            layout.childControlWidth = false;
+            layout.childControlWidth = true;
             layout.childControlHeight = true;
             layout.childForceExpandWidth = false;
             layout.childForceExpandHeight = false;
@@ -819,6 +941,22 @@ namespace TAD.UI
             }
 
             panelRect.sizeDelta = targetSize;
+        }
+
+        private void ForceLayoutUpdate()
+        {
+            Canvas.ForceUpdateCanvases();
+            if (panelRect != null)
+            {
+                UnityEngine.UI.LayoutRebuilder.ForceRebuildLayoutImmediate(panelRect);
+            }
+
+            if (contentRoot is RectTransform contentRect)
+            {
+                UnityEngine.UI.LayoutRebuilder.ForceRebuildLayoutImmediate(contentRect);
+            }
+
+            Canvas.ForceUpdateCanvases();
         }
 
         private static string BuildVolumeLabel(string title, float value)
