@@ -142,6 +142,7 @@ namespace TAD.Tests.PlayMode
             Assert.That(reusedDefender.CurrentExp, Is.EqualTo(0f));
             Assert.That(reusedDefender.TotalExperience, Is.EqualTo(0f));
             Assert.That(reusedDefender.IsRangeIndicatorVisible, Is.False);
+            Assert.That(reusedDefender.TargetingMode, Is.EqualTo(DefenderTargetingMode.FirstEnemyInRange));
 
             var projectileObject = pool.Spawn(PooledObjectType.Projectile, Vector3.zero, Quaternion.identity);
             var projectile = projectileObject.GetComponent<FarmHandProjectileBase>();
@@ -179,6 +180,7 @@ namespace TAD.Tests.PlayMode
                 Is.EqualTo(farmHand.Visual.bounds.size.x).Within(0.01f));
             Assert.That(farmHand.PlacementCollider.bounds.size.y,
                 Is.EqualTo(farmHand.Visual.bounds.size.y).Within(0.01f));
+            Assert.That(farmHand.TargetingMode, Is.EqualTo(DefenderTargetingMode.FirstEnemyInRange));
             Assert.That(defenderBank.CurrentGold,
                 Is.EqualTo(goldBeforePlacement - farmHand.WeaponDefinition.Cost));
 
@@ -196,6 +198,39 @@ namespace TAD.Tests.PlayMode
             yield return new WaitForSeconds(1.2f);
             Assert.That(farmHand.IsRelocating, Is.False);
             Assert.That(Vector2.Distance(farmHand.transform.position, targetPosition), Is.LessThan(0.02f));
+            Assert.That(farmHand.TargetingMode, Is.EqualTo(DefenderTargetingMode.FirstEnemyInRange));
+        }
+
+        [UnityTest]
+        public IEnumerator DefenderDetails_TargetingControlIsEditableForDefendersAndReadOnlyForAttackers()
+        {
+            var farmHand = GameBasicsTestSupport.CreateFarmHand();
+            var panelObject = new GameObject("TAD Test Defender Details Panel", typeof(RectTransform));
+            panelObject.SetActive(false);
+            var cardObject = new GameObject("Card", typeof(RectTransform));
+            cardObject.transform.SetParent(panelObject.transform, worldPositionStays: false);
+            var panel = panelObject.AddComponent<DefenderDetailsPanel>();
+            panelObject.SetActive(true);
+
+            panel.Show(farmHand);
+            yield return null;
+
+            var dropdown = panelObject.transform.Find("Card/TargetingDropdown")?.GetComponent<Dropdown>();
+            var readOnlyText = panelObject.transform.Find("Card/TargetingReadOnly")?.GetComponent<Text>();
+            Assert.That(dropdown, Is.Not.Null);
+            Assert.That(readOnlyText, Is.Not.Null);
+            Assert.That(dropdown.gameObject.activeSelf, Is.True);
+            Assert.That(readOnlyText.gameObject.activeSelf, Is.False);
+            Assert.That(dropdown.options.Count, Is.EqualTo(1));
+            Assert.That(dropdown.options[0].text, Is.EqualTo("Target Enemy: First enemy in range"));
+
+            MatchRoleSelection.Select(PlayerRole.Attacker);
+            panel.Show(farmHand);
+            yield return null;
+
+            Assert.That(dropdown.gameObject.activeSelf, Is.False);
+            Assert.That(readOnlyText.gameObject.activeSelf, Is.True);
+            Assert.That(readOnlyText.text, Is.EqualTo("Target Enemy: First enemy in range"));
         }
 
         [UnityTest]

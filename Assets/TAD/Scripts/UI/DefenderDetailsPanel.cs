@@ -22,7 +22,9 @@ namespace TAD.UI
         private const float WeaponMinimumHeight = 34f;
         private const float WeaponToStatsSpacing = 7f;
         private const float StatsMinimumHeight = 126f;
-        private const float StatsToBarSpacing = 8f;
+        private const float StatsToTargetingSpacing = 8f;
+        private const float TargetingControlHeight = 34f;
+        private const float TargetingToBarSpacing = 8f;
         private const float ExperienceBarHeight = 12f;
         private const float BarToExperienceSpacing = 4f;
         private const float ExperienceMinimumHeight = 22f;
@@ -41,6 +43,8 @@ namespace TAD.UI
         [SerializeField] private UnityEngine.UI.Button moveButton;
         [SerializeField] private UnityEngine.UI.Text moveButtonText;
 
+        private UnityEngine.UI.Dropdown targetingDropdown;
+        private UnityEngine.UI.Text targetingReadOnlyText;
         private RectTransform cardRect;
         private RectTransform headingRect;
         private RectTransform defenderImageRect;
@@ -49,11 +53,14 @@ namespace TAD.UI
         private RectTransform experienceRect;
         private RectTransform experienceBarRect;
         private RectTransform moveButtonRect;
+        private RectTransform targetingDropdownRect;
+        private RectTransform targetingReadOnlyRect;
         private FarmHand target;
         private FarmHandPlacementController placementController;
         private ResourceBank observedBank;
         private bool isSubscribed;
         private bool isBankSubscribed;
+        private bool isTargetingDropdownSubscribed;
 
         /// <summary>The farmhand currently represented by this card, if any.</summary>
         public FarmHand Target => target;
@@ -88,6 +95,11 @@ namespace TAD.UI
         private void OnDestroy()
         {
             Unsubscribe();
+            if (isTargetingDropdownSubscribed && targetingDropdown != null)
+            {
+                targetingDropdown.onValueChanged.RemoveListener(HandleTargetingModeSelected);
+                isTargetingDropdownSubscribed = false;
+            }
         }
 
         /// <summary>Opens the card and binds it to a selected farmhand.</summary>
@@ -131,6 +143,11 @@ namespace TAD.UI
             experienceFill ??= transform.Find("Card/ExperienceBar/Fill")?.GetComponent<UnityEngine.UI.Image>();
             moveButton ??= transform.Find("Card/MoveButton")?.GetComponent<UnityEngine.UI.Button>();
             moveButtonText ??= FindText("Card/MoveButton/Label");
+            targetingDropdown ??= transform.Find("Card/TargetingDropdown")?.GetComponent<UnityEngine.UI.Dropdown>();
+            targetingReadOnlyText ??= FindText("Card/TargetingReadOnly");
+
+            EnsureMoveButton();
+            EnsureTargetingControls();
 
             headingRect ??= headingText != null ? headingText.rectTransform : null;
             defenderImageRect ??= defenderImage != null ? defenderImage.rectTransform : null;
@@ -141,13 +158,14 @@ namespace TAD.UI
                 ? experienceFill.transform.parent as RectTransform
                 : null;
             moveButtonRect ??= moveButton != null ? moveButton.GetComponent<RectTransform>() : null;
-
-            EnsureMoveButton();
+            targetingDropdownRect ??= targetingDropdown != null ? targetingDropdown.GetComponent<RectTransform>() : null;
+            targetingReadOnlyRect ??= targetingReadOnlyText != null ? targetingReadOnlyText.rectTransform : null;
 
             ConfigureTextWrapping(headingText);
             ConfigureTextWrapping(weaponText);
             ConfigureTextWrapping(statsText);
             ConfigureTextWrapping(experienceText);
+            ConfigureTextWrapping(targetingReadOnlyText);
         }
 
         private void EnsureMoveButton()
@@ -190,6 +208,140 @@ namespace TAD.UI
             labelRect.offsetMax = Vector2.zero;
         }
 
+        /// <summary>
+        /// Creates a complete legacy uGUI dropdown at runtime so older details-panel prefabs remain compatible.
+        /// The attacker view uses a parallel non-interactive label instead of exposing a selectable control.
+        /// </summary>
+        private void EnsureTargetingControls()
+        {
+            if (cardRect == null)
+            {
+                return;
+            }
+
+            if (targetingDropdown == null)
+            {
+                var dropdownObject = UnityEngine.UI.DefaultControls.CreateDropdown(new UnityEngine.UI.DefaultControls.Resources());
+                dropdownObject.name = "TargetingDropdown";
+                dropdownObject.transform.SetParent(cardRect, worldPositionStays: false);
+                SetLayerRecursively(dropdownObject, cardRect.gameObject.layer);
+
+                targetingDropdown = dropdownObject.GetComponent<UnityEngine.UI.Dropdown>();
+                targetingDropdown.options.Clear();
+                targetingDropdown.options.Add(new UnityEngine.UI.Dropdown.OptionData(
+                    $"Target Enemy: {FarmHand.GetTargetingModeDisplayName(DefenderTargetingMode.FirstEnemyInRange)}"));
+                targetingDropdown.SetValueWithoutNotify(0);
+
+                var dropdownBackground = dropdownObject.GetComponent<UnityEngine.UI.Image>();
+                if (dropdownBackground != null)
+                {
+                    dropdownBackground.type = UnityEngine.UI.Image.Type.Simple;
+                    dropdownBackground.color = new Color(0.18f, 0.42f, 0.22f, 0.96f);
+                }
+
+                ConfigureDropdownText(targetingDropdown.captionText, Color.white, TextAnchor.MiddleLeft);
+                ConfigureDropdownText(targetingDropdown.itemText, new Color(0.12f, 0.12f, 0.12f, 1f), TextAnchor.MiddleLeft);
+
+                var arrow = dropdownObject.transform.Find("Arrow");
+                if (arrow != null)
+                {
+                    var arrowLabel = arrow.Find("Label");
+                    if (arrowLabel == null)
+                    {
+                        var arrowLabelObject = new GameObject(
+                            "Label",
+                            typeof(RectTransform),
+                            typeof(CanvasRenderer),
+                            typeof(UnityEngine.UI.Text));
+                        arrowLabelObject.layer = arrow.gameObject.layer;
+                        arrowLabelObject.transform.SetParent(arrow, worldPositionStays: false);
+                        var arrowLabelRect = arrowLabelObject.GetComponent<RectTransform>();
+                        arrowLabelRect.anchorMin = Vector2.zero;
+                        arrowLabelRect.anchorMax = Vector2.one;
+                        arrowLabelRect.offsetMin = Vector2.zero;
+                        arrowLabelRect.offsetMax = Vector2.zero;
+                        arrowLabel = arrowLabelObject.transform;
+                    }
+
+                    var arrowText = arrowLabel.GetComponent<UnityEngine.UI.Text>();
+                    arrowText.text = "▼";
+                    arrowText.font = headingText != null ? headingText.font : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                    arrowText.fontSize = 15;
+                    arrowText.alignment = TextAnchor.MiddleCenter;
+                    arrowText.color = Color.white;
+                    arrowText.raycastTarget = false;
+                }
+
+                if (targetingDropdown.template != null)
+                {
+                    var templateBackground = targetingDropdown.template.GetComponent<UnityEngine.UI.Image>();
+                    if (templateBackground != null)
+                    {
+                        templateBackground.type = UnityEngine.UI.Image.Type.Simple;
+                        templateBackground.color = new Color(0.95f, 0.95f, 0.9f, 1f);
+                    }
+                }
+
+                targetingDropdown.RefreshShownValue();
+            }
+
+            if (!isTargetingDropdownSubscribed && targetingDropdown != null)
+            {
+                targetingDropdown.onValueChanged.AddListener(HandleTargetingModeSelected);
+                isTargetingDropdownSubscribed = true;
+            }
+
+            if (targetingReadOnlyText != null)
+            {
+                return;
+            }
+
+            var readOnlyObject = new GameObject(
+                "TargetingReadOnly",
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(UnityEngine.UI.Text));
+            readOnlyObject.layer = cardRect.gameObject.layer;
+            readOnlyObject.transform.SetParent(cardRect, worldPositionStays: false);
+            targetingReadOnlyText = readOnlyObject.GetComponent<UnityEngine.UI.Text>();
+            targetingReadOnlyText.font = headingText != null ? headingText.font : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            targetingReadOnlyText.fontSize = 14;
+            targetingReadOnlyText.alignment = TextAnchor.MiddleLeft;
+            targetingReadOnlyText.color = Color.white;
+            targetingReadOnlyText.raycastTarget = false;
+            ConfigureTextWrapping(targetingReadOnlyText);
+        }
+
+        private void ConfigureDropdownText(UnityEngine.UI.Text text, Color color, TextAnchor alignment)
+        {
+            if (text == null)
+            {
+                return;
+            }
+
+            text.font = headingText != null ? headingText.font : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            text.fontSize = 14;
+            text.color = color;
+            text.alignment = alignment;
+            text.horizontalOverflow = HorizontalWrapMode.Overflow;
+            text.verticalOverflow = VerticalWrapMode.Truncate;
+            text.raycastTarget = false;
+        }
+
+        private static void SetLayerRecursively(GameObject gameObject, int layer)
+        {
+            if (gameObject == null)
+            {
+                return;
+            }
+
+            gameObject.layer = layer;
+            foreach (Transform child in gameObject.transform)
+            {
+                SetLayerRecursively(child.gameObject, layer);
+            }
+        }
+
         private UnityEngine.UI.Text FindText(string path)
         {
             var child = transform.Find(path);
@@ -215,6 +367,7 @@ namespace TAD.UI
             }
 
             target.ProgressionChanged += Refresh;
+            target.TargetingModeChanged += HandleTargetingModeChanged;
             isSubscribed = true;
             SubscribeToBank();
         }
@@ -229,6 +382,7 @@ namespace TAD.UI
             if (isSubscribed && target != null)
             {
                 target.ProgressionChanged -= Refresh;
+                target.TargetingModeChanged -= HandleTargetingModeChanged;
             }
 
             UnsubscribeFromBank();
@@ -335,8 +489,63 @@ namespace TAD.UI
                     : Mathf.Clamp01(target.CurrentExp / Mathf.Max(1, target.ExpMax));
             }
 
+            RefreshTargetingControls();
             UpdateMoveButton();
             RefreshLayout();
+        }
+
+        private void RefreshTargetingControls()
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            var playerCanChooseTargeting = MatchRoleSelection.IsPlayerDefender;
+            if (targetingDropdown != null)
+            {
+                targetingDropdown.gameObject.SetActive(playerCanChooseTargeting);
+                if (playerCanChooseTargeting)
+                {
+                    targetingDropdown.SetValueWithoutNotify(TargetingModeToDropdownValue(target.TargetingMode));
+                    targetingDropdown.RefreshShownValue();
+                }
+            }
+
+            if (targetingReadOnlyText != null)
+            {
+                targetingReadOnlyText.gameObject.SetActive(!playerCanChooseTargeting);
+                if (!playerCanChooseTargeting)
+                {
+                    targetingReadOnlyText.text = $"Target Enemy: {target.TargetingModeDisplayName}";
+                }
+            }
+        }
+
+        private void HandleTargetingModeSelected(int optionIndex)
+        {
+            if (target == null || !MatchRoleSelection.IsPlayerDefender)
+            {
+                return;
+            }
+
+            target.SetTargetingMode(TargetingModeFromDropdownValue(optionIndex));
+            Refresh();
+        }
+
+        private void HandleTargetingModeChanged(DefenderTargetingMode _)
+        {
+            Refresh();
+        }
+
+        private static int TargetingModeToDropdownValue(DefenderTargetingMode mode)
+        {
+            return mode == DefenderTargetingMode.FirstEnemyInRange ? 0 : 0;
+        }
+
+        private static DefenderTargetingMode TargetingModeFromDropdownValue(int _)
+        {
+            return DefenderTargetingMode.FirstEnemyInRange;
         }
 
         private void UpdateMoveButton()
@@ -408,7 +617,16 @@ namespace TAD.UI
             var statsHeight = GetPreferredHeight(statsText, StatsMinimumHeight);
             SetTopStretch(statsRect, statsTop, statsHeight, SidePadding + 4f);
 
-            var barTop = statsTop + statsHeight + StatsToBarSpacing;
+            var afterStatsTop = statsTop + statsHeight;
+            var targetingRect = GetVisibleTargetingControl();
+            var barTop = afterStatsTop + TargetingToBarSpacing;
+            if (targetingRect != null)
+            {
+                var targetingTop = afterStatsTop + StatsToTargetingSpacing;
+                SetTopStretch(targetingRect, targetingTop, TargetingControlHeight, SidePadding);
+                barTop = targetingTop + TargetingControlHeight + TargetingToBarSpacing;
+            }
+
             SetTopStretch(experienceBarRect, barTop, ExperienceBarHeight, SidePadding + 2f);
 
             var experienceTop = barTop + ExperienceBarHeight + BarToExperienceSpacing;
@@ -428,6 +646,18 @@ namespace TAD.UI
             cardRect.SetSizeWithCurrentAnchors(
                 RectTransform.Axis.Vertical,
                 Mathf.Max(MinimumCardHeight, preferredCardHeight));
+        }
+
+        private RectTransform GetVisibleTargetingControl()
+        {
+            if (targetingDropdownRect != null && targetingDropdownRect.gameObject.activeSelf)
+            {
+                return targetingDropdownRect;
+            }
+
+            return targetingReadOnlyRect != null && targetingReadOnlyRect.gameObject.activeSelf
+                ? targetingReadOnlyRect
+                : null;
         }
 
         private static float GetPreferredHeight(UnityEngine.UI.Text text, float minimumHeight)

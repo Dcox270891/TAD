@@ -8,8 +8,17 @@ using UnityEngine;
 namespace TAD.Defenders
 {
     /// <summary>
+    /// Determines how a farmhand orders the attackers detected by its range sensor.
+    /// More policies can be added without changing the defender UI or stored farmhand state.
+    /// </summary>
+    public enum DefenderTargetingMode
+    {
+        FirstEnemyInRange = 0
+    }
+
+    /// <summary>
     /// Reusable defender token that owns its assigned weapon, range presentation, and attackers currently in attack range.
-    /// Weapon selection and target-priority behaviour can be layered on without changing placement or pooling.
+    /// Weapon selection and target-priority behaviour are retained by the placed farmhand and reset only when it is reused by the pool.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(SpriteRenderer), typeof(CircleCollider2D), typeof(Rigidbody2D))]
@@ -44,6 +53,7 @@ namespace TAD.Defenders
         [System.NonSerialized] private Vector2 relocationDestination;
         [System.NonSerialized] private Sprite placementFootprintSprite;
         [System.NonSerialized] private Vector2 facingDirection = Vector2.right;
+        [System.NonSerialized] private DefenderTargetingMode targetingMode = DefenderTargetingMode.FirstEnemyInRange;
         private PooledInstance pooledInstance;
         private SpawnPool projectilePool;
         private ResourceBank defenderBank;
@@ -127,6 +137,12 @@ namespace TAD.Defenders
             ? weaponDefinition.Damage * Mathf.Pow(LevelDamageMultiplier, currentLevel - 1)
             : 0f;
 
+        /// <summary>Persistent target-order policy for this placed farmhand.</summary>
+        public DefenderTargetingMode TargetingMode => targetingMode;
+
+        /// <summary>Player-facing name of the target-order policy currently used by this farmhand.</summary>
+        public string TargetingModeDisplayName => GetTargetingModeDisplayName(targetingMode);
+
         /// <summary>Raised after this farmhand's experience or level changes.</summary>
         public event System.Action ProgressionChanged;
 
@@ -135,6 +151,9 @@ namespace TAD.Defenders
 
         /// <summary>Raised after this farmhand's permanent gameplay weapon changes.</summary>
         public event System.Action<WeaponDefinition> WeaponChanged;
+
+        /// <summary>Raised when this farmhand's selected target-order policy changes.</summary>
+        public event System.Action<DefenderTargetingMode> TargetingModeChanged;
 
         /// <summary>Raised after a farmhand has configured its non-blocking range sensor.</summary>
         public static event System.Action<FarmHand> FarmHandEnabled;
@@ -153,6 +172,31 @@ namespace TAD.Defenders
 
         /// <summary>True while this defender's translucent range indicator is visible.</summary>
         public bool IsRangeIndicatorVisible => isRangeIndicatorVisible;
+
+        /// <summary>
+        /// Changes the policy used to order nearby target candidates. This remains on the farmhand while it relocates.
+        /// </summary>
+        public void SetTargetingMode(DefenderTargetingMode mode)
+        {
+            var normalizedMode = NormalizeTargetingMode(mode);
+            if (targetingMode == normalizedMode)
+            {
+                return;
+            }
+
+            targetingMode = normalizedMode;
+            TargetingModeChanged?.Invoke(targetingMode);
+        }
+
+        /// <summary>Returns a concise label suitable for both the defender selector and attacker read-only details card.</summary>
+        public static string GetTargetingModeDisplayName(DefenderTargetingMode mode)
+        {
+            return NormalizeTargetingMode(mode) switch
+            {
+                DefenderTargetingMode.FirstEnemyInRange => "First enemy in range",
+                _ => "First enemy in range"
+            };
+        }
 
         /// <summary>
         /// Attackers currently inside this farmhand's range. The collection is pruned before every read
@@ -213,7 +257,7 @@ namespace TAD.Defenders
                 return;
             }
 
-            TryFireAtFirstAttackableAttacker();
+            TryFireAtSelectedAttackableAttacker();
         }
 
         private void FixedUpdate()
@@ -449,10 +493,10 @@ namespace TAD.Defenders
             }
 
             attackersInRange.Add(attacker);
-            TryFireAtFirstAttackableAttacker();
+            TryFireAtSelectedAttackableAttacker();
         }
 
-        private void TryFireAtFirstAttackableAttacker()
+        private void TryFireAtSelectedAttackableAttacker()
         {
             if (isRelocating || isAwaitingLevelThreeUpgrade || Time.time < nextFireTime)
             {
@@ -469,7 +513,7 @@ namespace TAD.Defenders
                 return;
             }
 
-            if (!TryGetFirstAttackableAttacker(projectileDefinition.ProjectileType, out var target))
+            if (!TryGetSelectedAttackableAttacker(projectileDefinition.ProjectileType, out var target))
             {
                 // Avoid repeating line-of-sight physics queries every rendered frame while every nearby target is covered.
                 nextFireTime = Time.time + BlockedTargetRetryInterval;
@@ -569,10 +613,24 @@ namespace TAD.Defenders
             limitedActiveProjectiles.Clear();
         }
 
-        private bool TryGetFirstAttackableAttacker(ProjectileType projectileType, out BasicAttacker attacker)
+        private bool TryGetSelectedAttackableAttacker(ProjectileType projectileType, out BasicAttacker attacker)
         {
             PruneInvalidAttackers();
 
+            switch (targetingMode)
+            {
+                case DefenderTargetingMode.FirstEnemyInRange:
+                default:
+                    return TryGetFirstEnemyInRange(projectileType, out attacker);
+            }
+        }
+
+        /// <summary>
+        /// The sensor appends attackers in entry order and prunes defeated, pooled, reached, and departed animals before every search.
+        /// This automatically advances to the next eligible animal when the current first enemy is no longer valid.
+        /// </summary>
+        private bool TryGetFirstEnemyInRange(ProjectileType projectileType, out BasicAttacker attacker)
+        {
             for (var index = 0; index < attackersInRange.Count; index++)
             {
                 var candidate = attackersInRange[index];
@@ -937,7 +995,21 @@ namespace TAD.Defenders
             var startingWeapon = baseWeaponDefinition ?? weaponDefinition;
             investedGold = startingWeapon != null ? Mathf.Max(0, startingWeapon.Cost) : 0;
             facingDirection = Vector2.right;
+            var modeChanged = targetingMode != DefenderTargetingMode.FirstEnemyInRange;
+            targetingMode = DefenderTargetingMode.FirstEnemyInRange;
+            if (modeChanged)
+            {
+                TargetingModeChanged?.Invoke(targetingMode);
+            }
+
             ProgressionChanged?.Invoke();
+        }
+
+        private static DefenderTargetingMode NormalizeTargetingMode(DefenderTargetingMode mode)
+        {
+            return mode == DefenderTargetingMode.FirstEnemyInRange
+                ? mode
+                : DefenderTargetingMode.FirstEnemyInRange;
         }
 
         private void ClearAttackersInRange()
