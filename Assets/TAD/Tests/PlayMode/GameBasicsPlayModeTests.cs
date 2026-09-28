@@ -10,6 +10,7 @@ using TAD.Pooling;
 using TAD.UI;
 using TAD.Waves;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using UnityEngine.UI;
@@ -78,10 +79,11 @@ namespace TAD.Tests.PlayMode
         [UnityTest]
         public IEnumerator Defenders_UseProgressiveExperienceChooseAtLevelTwoAndStopAtLevelTen()
         {
-            GameBasicsTestSupport.CreateBank(BankSide.Defender);
+            var defenderBank = GameBasicsTestSupport.CreateBank(BankSide.Defender);
             var defender = GameBasicsTestSupport.CreateFarmHand();
             var attackerDefinition = ScriptableObject.CreateInstance<AttackerDefinition>();
-            var upgrade = ScriptableObject.CreateInstance<WeaponDefinition>();
+            var upgrade = Resources.Load<WeaponDefinition>("TADTests/UnarmedWeaponDefinition");
+            Assert.That(upgrade, Is.Not.Null);
             defender.SetWeapon(upgrade);
             var baseScale = defender.transform.localScale;
 
@@ -93,10 +95,14 @@ namespace TAD.Tests.PlayMode
             Assert.That(defender.CurrentExp, Is.EqualTo(0f));
             Assert.That(defender.ExpMax, Is.EqualTo(12));
             Assert.That(defender.IsAwaitingWeaponUpgrade, Is.True);
+            Assert.That(defender.PendingWeaponUpgradeLevel, Is.EqualTo(2));
+            Assert.That(defender.IsFreeWeaponUpgradePending, Is.True);
             Assert.That(defender.Range, Is.EqualTo(upgrade.Range * 1.05f).Within(0.0001f));
             Assert.That(defender.Damage, Is.EqualTo(upgrade.Damage * 1.1f).Within(0.0001f));
             Assert.That(defender.transform.localScale.x, Is.EqualTo(baseScale.x * 1.05f).Within(0.0001f));
+            var goldBeforeFreeUpgrade = defenderBank.CurrentGold;
             Assert.That(defender.TryChooseWeaponUpgrade(upgrade), Is.True);
+            Assert.That(defenderBank.CurrentGold, Is.EqualTo(goldBeforeFreeUpgrade));
             Assert.That(defender.WeaponDefinition, Is.EqualTo(upgrade));
             Assert.That(defender.HasSelectedWeaponUpgrade, Is.True);
 
@@ -110,6 +116,22 @@ namespace TAD.Tests.PlayMode
             Assert.That(defender.CurrentLevel, Is.EqualTo(3));
             Assert.That(defender.CurrentExp, Is.EqualTo(8f));
             Assert.That(defender.ExpMax, Is.EqualTo(15));
+
+            var levelFiveSafetyCounter = 0;
+            while (defender.CurrentLevel < 5 && levelFiveSafetyCounter++ < 20)
+            {
+                var attacker = GameBasicsTestSupport.CreateAttacker(attackerDefinition);
+                Assert.That(defender.TryDamageAttacker(attacker, attacker.RemainingHealth), Is.True);
+            }
+
+            Assert.That(defender.CurrentLevel, Is.EqualTo(5));
+            Assert.That(defender.IsAwaitingWeaponUpgrade, Is.True);
+            Assert.That(defender.PendingWeaponUpgradeLevel, Is.EqualTo(5));
+            Assert.That(defender.IsPaidWeaponUpgradePending, Is.True);
+            var goldBeforeEvolution = defenderBank.CurrentGold;
+            Assert.That(defender.TryChooseWeaponUpgrade(upgrade), Is.True);
+            Assert.That(defenderBank.CurrentGold, Is.EqualTo(goldBeforeEvolution - upgrade.Cost));
+            Assert.That(defender.HasSelectedWeaponEvolution, Is.True);
 
             var safetyCounter = 0;
             while (!defender.IsAtMaxLevel && safetyCounter++ < 30)
@@ -128,7 +150,43 @@ namespace TAD.Tests.PlayMode
                     defender.BaseExperienceRequirement)));
 
             Object.Destroy(attackerDefinition);
-            Object.Destroy(upgrade);
+        }
+
+        [UnityTest]
+        public IEnumerator PendingWeaponUpgrade_FarmhandStillDamagesButDoesNotEarnExperience()
+        {
+            var defenderBank = GameBasicsTestSupport.CreateBank(BankSide.Defender);
+            var defender = GameBasicsTestSupport.CreateFarmHand();
+            var weapon = Resources.Load<WeaponDefinition>("TADTests/UnarmedWeaponDefinition");
+            Assert.That(weapon, Is.Not.Null);
+            defender.SetWeapon(weapon);
+
+            var attackerDefinition = ScriptableObject.CreateInstance<AttackerDefinition>();
+            var levelUpAttacker = GameBasicsTestSupport.CreateAttacker(attackerDefinition);
+            Assert.That(defender.TryDamageAttacker(levelUpAttacker, levelUpAttacker.RemainingHealth), Is.True);
+            yield return null;
+
+            Assert.That(defender.IsAwaitingWeaponUpgrade, Is.True);
+            Assert.That(defender.GetComponent<FarmHandUpgradeIndicator>(), Is.Not.Null);
+            var arrow = defender.transform.Find("Upgrade Available Arrow")?.GetComponent<SpriteRenderer>();
+            Assert.That(arrow, Is.Not.Null);
+            Assert.That(arrow.enabled, Is.True);
+
+            var experienceBefore = defender.TotalExperience;
+            var goldBefore = defenderBank.CurrentGold;
+            var attacker = GameBasicsTestSupport.CreateAttacker(attackerDefinition);
+            Assert.That(defender.TryDamageAttacker(attacker, attacker.RemainingHealth), Is.True);
+            yield return null;
+
+            Assert.That(defender.TotalExperience, Is.EqualTo(experienceBefore));
+            Assert.That(defender.CurrentExp, Is.EqualTo(0f));
+            Assert.That(defenderBank.CurrentGold, Is.EqualTo(goldBefore + attackerDefinition.KillGain));
+            Assert.That(arrow.enabled, Is.True);
+
+            Assert.That(defender.TryChooseWeaponUpgrade(weapon), Is.True);
+            yield return null;
+            Assert.That(arrow.enabled, Is.False);
+            Object.Destroy(attackerDefinition);
         }
 
         [UnityTest]
@@ -230,6 +288,19 @@ namespace TAD.Tests.PlayMode
             Assert.That(farmHand.IsRelocating, Is.False);
             Assert.That(Vector2.Distance(farmHand.transform.position, targetPosition), Is.LessThan(0.02f));
             Assert.That(farmHand.TargetingMode, Is.EqualTo(DefenderTargetingMode.Fastest));
+
+            placementController.SetPlacementInputEnabled(false);
+            var aiRequestedPosition = (Vector2)farmHand.transform.position + Vector2.right;
+            Assert.That(
+                placementController.CanRelocateFarmHandTo(farmHand, aiRequestedPosition, out var aiTargetPosition),
+                Is.True);
+            var goldBeforeAiRelocation = defenderBank.CurrentGold;
+            Assert.That(placementController.TryRelocateFarmHandForAi(farmHand, aiRequestedPosition), Is.True);
+            Assert.That(defenderBank.CurrentGold, Is.EqualTo(goldBeforeAiRelocation - farmHand.RelocationCost));
+
+            yield return new WaitForSeconds(1.2f);
+            Assert.That(farmHand.IsRelocating, Is.False);
+            Assert.That(Vector2.Distance(farmHand.transform.position, aiTargetPosition), Is.LessThan(0.02f));
         }
 
         [UnityTest]
@@ -665,6 +736,78 @@ namespace TAD.Tests.PlayMode
 
             Assert.That(secondWaveIds.SetEquals(firstWaveIds), Is.True);
             yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator DefenderWeaponUpgradeModal_WaitsForThePlayerAndShowsOnlyItsTwoChoices()
+        {
+            GameBasicsTestSupport.CreateBank(BankSide.Defender);
+            var firstOption = Resources.Load<WeaponDefinition>("TADTests/UnarmedWeaponDefinition");
+            var secondOption = Resources.Load<WeaponDefinition>("TADTests/AirRifleWeaponDefinition");
+            Assert.That(firstOption, Is.Not.Null);
+            Assert.That(secondOption, Is.Not.Null);
+
+            var existingEventSystem = EventSystem.current;
+            var overlayObject = new GameObject("TAD Test Defender Upgrade Overlay");
+            overlayObject.SetActive(false);
+            overlayObject.AddComponent<CanvasGroup>();
+            var modal = overlayObject.AddComponent<ModalOverlay>();
+            var overlay = overlayObject.AddComponent<DefenderLevelUpgradeOverlay>();
+            var buttons = new Button[4];
+            var labels = new Text[4];
+            for (var index = 0; index < buttons.Length; index++)
+            {
+                var buttonObject = new GameObject(
+                    $"Option{index}",
+                    typeof(RectTransform),
+                    typeof(CanvasRenderer),
+                    typeof(Image),
+                    typeof(Button));
+                buttonObject.transform.SetParent(overlayObject.transform, worldPositionStays: false);
+                buttons[index] = buttonObject.GetComponent<Button>();
+
+                var labelObject = new GameObject("Label", typeof(RectTransform), typeof(CanvasRenderer), typeof(Text));
+                labelObject.transform.SetParent(buttonObject.transform, worldPositionStays: false);
+                labels[index] = labelObject.GetComponent<Text>();
+            }
+
+            overlay.Configure(modal, null, null, buttons, labels);
+            overlayObject.SetActive(true);
+
+            var bootstrapObject = new GameObject("TAD Test Defender Upgrade Bootstrap");
+            bootstrapObject.SetActive(false);
+            var bootstrap = bootstrapObject.AddComponent<DefenderLevelUpgradeBootstrap>();
+            bootstrap.Configure(
+                overlay,
+                new[] { firstOption, secondOption },
+                new[] { firstOption, firstOption },
+                new[] { secondOption, secondOption });
+            bootstrapObject.SetActive(true);
+
+            var farmHand = GameBasicsTestSupport.CreateFarmHand();
+            farmHand.SetWeapon(firstOption);
+            var attackerDefinition = ScriptableObject.CreateInstance<AttackerDefinition>();
+            var attacker = GameBasicsTestSupport.CreateAttacker(attackerDefinition);
+            Assert.That(farmHand.TryDamageAttacker(attacker, attacker.RemainingHealth), Is.True);
+            yield return null;
+
+            Assert.That(farmHand.IsAwaitingWeaponUpgrade, Is.True);
+            Assert.That(overlay.IsVisible, Is.False, "Reaching an upgrade must not interrupt gameplay automatically.");
+            Assert.That(ModalOverlay.IsGameplayInputBlocked, Is.False);
+            Assert.That(bootstrap.TryShowUpgradeSelection(farmHand), Is.True);
+            Assert.That(overlay.IsVisible, Is.True);
+            Assert.That(ModalOverlay.IsGameplayInputBlocked, Is.True);
+            Assert.That(buttons[0].gameObject.activeSelf, Is.True);
+            Assert.That(buttons[1].gameObject.activeSelf, Is.True);
+            Assert.That(buttons[2].gameObject.activeSelf, Is.False);
+            Assert.That(buttons[3].gameObject.activeSelf, Is.False);
+
+            modal.Hide();
+            Object.Destroy(attackerDefinition);
+            if (existingEventSystem == null && EventSystem.current != null)
+            {
+                Object.Destroy(EventSystem.current.gameObject);
+            }
         }
 
         [UnityTest]

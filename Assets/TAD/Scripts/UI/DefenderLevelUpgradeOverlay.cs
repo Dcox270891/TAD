@@ -9,25 +9,26 @@ using UnityEngine.Events;
 namespace TAD.UI
 {
     /// <summary>
-    /// Displays the four permanent weapon choices offered to one farmhand when it reaches level 2.
-    /// The modal blocks lower input while each option reflects the live Defender resource balance.
+    /// Displays a manually requested defender weapon branch. The reusable prefab owns four control
+    /// slots, while the current tree presents two choices at level two and two at level five.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(ModalOverlay))]
     public sealed class DefenderLevelUpgradeOverlay : MonoBehaviour
     {
-        private const int UpgradeOptionCount = 4;
+        private const int MaximumUpgradeOptionCount = 4;
 
         [SerializeField] private ModalOverlay modalOverlay;
         [SerializeField] private UnityEngine.UI.Text titleText;
         [SerializeField] private UnityEngine.UI.Text subtitleText;
-        [SerializeField] private UnityEngine.UI.Button[] optionButtons = new UnityEngine.UI.Button[UpgradeOptionCount];
-        [SerializeField] private UnityEngine.UI.Text[] optionTexts = new UnityEngine.UI.Text[UpgradeOptionCount];
+        [SerializeField] private UnityEngine.UI.Button[] optionButtons = new UnityEngine.UI.Button[MaximumUpgradeOptionCount];
+        [SerializeField] private UnityEngine.UI.Text[] optionTexts = new UnityEngine.UI.Text[MaximumUpgradeOptionCount];
 
-        private readonly UnityAction[] optionActions = new UnityAction[UpgradeOptionCount];
-        private readonly WeaponDefinition[] options = new WeaponDefinition[UpgradeOptionCount];
+        private readonly UnityAction[] optionActions = new UnityAction[MaximumUpgradeOptionCount];
+        private readonly WeaponDefinition[] options = new WeaponDefinition[MaximumUpgradeOptionCount];
         private FarmHand targetFarmHand;
         private ResourceBank defenderBank;
+        private int displayedOptionCount;
         private bool isSubscribed;
         private bool isDefenderBankSubscribed;
         private string selectionError;
@@ -77,7 +78,7 @@ namespace TAD.UI
             }
         }
 
-        /// <summary>Shows a blocking level-3 weapon choice for the supplied farmhand.</summary>
+        /// <summary>Shows a manually requested blocking weapon choice for the supplied farmhand.</summary>
         public bool Show(FarmHand farmHand, IReadOnlyList<WeaponDefinition> upgradeOptions)
         {
             ResolveReferences();
@@ -125,7 +126,7 @@ namespace TAD.UI
             }
 
             ResolveReferences();
-            for (var index = 0; index < UpgradeOptionCount; index++)
+            for (var index = 0; index < MaximumUpgradeOptionCount; index++)
             {
                 var optionIndex = index;
                 var button = GetOptionButton(index);
@@ -148,7 +149,7 @@ namespace TAD.UI
                 return;
             }
 
-            for (var index = 0; index < UpgradeOptionCount; index++)
+            for (var index = 0; index < MaximumUpgradeOptionCount; index++)
             {
                 var button = GetOptionButton(index);
                 if (button != null && optionActions[index] != null)
@@ -164,7 +165,7 @@ namespace TAD.UI
 
         private void Choose(int optionIndex)
         {
-            if (!IsVisible || optionIndex < 0 || optionIndex >= UpgradeOptionCount ||
+            if (!IsVisible || optionIndex < 0 || optionIndex >= displayedOptionCount ||
                 !IsEligibleTarget(targetFarmHand))
             {
                 return;
@@ -200,12 +201,13 @@ namespace TAD.UI
 
         private bool TryCopyOptions(IReadOnlyList<WeaponDefinition> upgradeOptions)
         {
-            if (upgradeOptions == null || upgradeOptions.Count != UpgradeOptionCount)
+            if (upgradeOptions == null || upgradeOptions.Count == 0 ||
+                upgradeOptions.Count > MaximumUpgradeOptionCount)
             {
                 return false;
             }
 
-            for (var index = 0; index < UpgradeOptionCount; index++)
+            for (var index = 0; index < upgradeOptions.Count; index++)
             {
                 if (upgradeOptions[index] == null)
                 {
@@ -213,7 +215,9 @@ namespace TAD.UI
                 }
             }
 
-            for (var index = 0; index < UpgradeOptionCount; index++)
+            Array.Clear(options, 0, options.Length);
+            displayedOptionCount = upgradeOptions.Count;
+            for (var index = 0; index < displayedOptionCount; index++)
             {
                 options[index] = upgradeOptions[index];
             }
@@ -226,33 +230,41 @@ namespace TAD.UI
             var hasDefenderBank = defenderBank != null;
             var defenderGold = hasDefenderBank ? defenderBank.CurrentGold : 0;
 
+            var isFreeChoice = targetFarmHand != null && targetFarmHand.IsFreeWeaponUpgradePending;
+            var pendingLevel = targetFarmHand != null ? targetFarmHand.PendingWeaponUpgradeLevel : 0;
             if (titleText != null)
             {
-                titleText.text = "DEFENDER LEVEL 2";
+                titleText.text = pendingLevel > 0
+                    ? $"DEFENDER LEVEL {pendingLevel}"
+                    : "DEFENDER UPGRADE";
             }
 
             if (subtitleText != null)
             {
-                subtitleText.text = hasDefenderBank
-                    ? $"Defender Gold: {defenderGold} - Choose one weapon upgrade{FormatSelectionError()}"
-                    : $"Defender Gold unavailable - weapon choice cannot be purchased.{FormatSelectionError()}";
+                subtitleText.text = isFreeChoice
+                    ? $"Choose one free weapon upgrade{FormatSelectionError()}"
+                    : hasDefenderBank
+                        ? $"Defender Gold: {defenderGold} - Choose one weapon evolution{FormatSelectionError()}"
+                        : $"Defender Gold unavailable - weapon evolution cannot be purchased.{FormatSelectionError()}";
             }
 
-            for (var index = 0; index < UpgradeOptionCount; index++)
+            for (var index = 0; index < MaximumUpgradeOptionCount; index++)
             {
+                var isVisibleOption = index < displayedOptionCount;
                 var definition = options[index];
-                var canAfford = definition != null && hasDefenderBank && targetFarmHand != null &&
+                var canAfford = isVisibleOption && definition != null && targetFarmHand != null &&
                                 targetFarmHand.CanAffordWeaponUpgrade(definition);
                 var button = GetOptionButton(index);
                 var label = GetOptionText(index);
                 if (button != null)
                 {
+                    button.gameObject.SetActive(isVisibleOption);
                     button.interactable = canAfford;
                 }
 
-                if (label != null)
+                if (label != null && isVisibleOption)
                 {
-                    label.text = BuildOptionText(definition, defenderGold, hasDefenderBank);
+                    label.text = BuildOptionText(definition, defenderGold, hasDefenderBank, isFreeChoice);
                 }
             }
         }
@@ -262,14 +274,20 @@ namespace TAD.UI
             return string.IsNullOrWhiteSpace(selectionError) ? string.Empty : $"\n{selectionError}";
         }
 
-        private static string BuildOptionText(WeaponDefinition definition, int defenderGold, bool hasDefenderBank)
+        private static string BuildOptionText(
+            WeaponDefinition definition,
+            int defenderGold,
+            bool hasDefenderBank,
+            bool isFreeChoice)
         {
             if (definition == null)
             {
                 return "Unavailable";
             }
 
-            var costText = hasDefenderBank
+            var costText = isFreeChoice
+                ? "Cost: Free"
+                : hasDefenderBank
                 ? definition.Cost <= defenderGold
                     ? $"Cost: {definition.Cost} Gold"
                     : $"Cost: {definition.Cost} Gold\nNeed {definition.Cost - defenderGold} more Gold"
@@ -285,7 +303,7 @@ namespace TAD.UI
                 return;
             }
 
-            for (var index = 0; index < UpgradeOptionCount; index++)
+            for (var index = 0; index < displayedOptionCount; index++)
             {
                 var button = GetOptionButton(index);
                 if (button != null && button.interactable)
@@ -298,11 +316,16 @@ namespace TAD.UI
 
         private bool HasCompleteBindings()
         {
-            for (var index = 0; index < UpgradeOptionCount; index++)
+            if (displayedOptionCount <= 0 || displayedOptionCount > MaximumUpgradeOptionCount)
+            {
+                return false;
+            }
+
+            for (var index = 0; index < displayedOptionCount; index++)
             {
                 if (GetOptionButton(index) == null || GetOptionText(index) == null)
                 {
-                    Debug.LogError("Defender Level Upgrade Overlay needs four buttons and four labels.", this);
+                    Debug.LogError("Defender Level Upgrade Overlay needs a button and label for every configured choice.", this);
                     return false;
                 }
             }
@@ -358,6 +381,7 @@ namespace TAD.UI
         {
             targetFarmHand = null;
             selectionError = null;
+            displayedOptionCount = 0;
             UnbindDefenderBank();
             Array.Clear(options, 0, options.Length);
         }
@@ -383,7 +407,7 @@ namespace TAD.UI
 
         private static T[] CopyReferences<T>(T[] source) where T : UnityEngine.Object
         {
-            var copy = new T[UpgradeOptionCount];
+            var copy = new T[MaximumUpgradeOptionCount];
             if (source != null)
             {
                 Array.Copy(source, copy, Mathf.Min(source.Length, copy.Length));

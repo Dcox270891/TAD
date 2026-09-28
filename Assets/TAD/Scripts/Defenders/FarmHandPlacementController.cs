@@ -229,20 +229,48 @@ namespace TAD.Defenders
         /// </summary>
         public bool TryRelocateFarmHandAt(FarmHand farmHand, Vector2 requestedPosition, bool showMessage = false)
         {
-            if (!isPlacementInputEnabled || spawnPool == null || farmHand == null ||
-                !farmHand.isActiveAndEnabled || !farmHand.gameObject.activeInHierarchy || farmHand.IsRelocating ||
-                ModalOverlay.IsGameplayInputBlocked)
+            if (!isPlacementInputEnabled)
+            {
+                return false;
+            }
+
+            return TryRelocateFarmHandInternal(farmHand, requestedPosition, showMessage);
+        }
+
+        /// <summary>
+        /// Lets the defender AI use the same paid relocation transaction as the player without
+        /// enabling human placement controls for an attacker-controlled match.
+        /// </summary>
+        public bool TryRelocateFarmHandForAi(FarmHand farmHand, Vector2 requestedPosition)
+        {
+            return TryRelocateFarmHandInternal(farmHand, requestedPosition, showMessage: false);
+        }
+
+        /// <summary>
+        /// Checks whether a farmhand can occupy a requested visible-map position without charging gold
+        /// or starting movement. The AI uses this before route-coverage scoring.
+        /// </summary>
+        public bool CanRelocateFarmHandTo(
+            FarmHand farmHand,
+            Vector2 requestedPosition,
+            out Vector2 constrainedPosition)
+        {
+            constrainedPosition = default;
+            if (spawnPool == null || farmHand == null || !farmHand.isActiveAndEnabled ||
+                !farmHand.gameObject.activeInHierarchy || farmHand.IsRelocating)
             {
                 return false;
             }
 
             routeMapper ??= spawnPool.RouteMapper;
-            if (routeMapper == null || !routeMapper.TryClampToVisibleMap(requestedPosition, out var constrainedPosition))
-            {
-                return false;
-            }
+            return routeMapper != null && routeMapper.TryClampToVisibleMap(requestedPosition, out constrainedPosition) &&
+                   IsFarmHandPlacementAvailable(constrainedPosition, farmHand, farmHand);
+        }
 
-            if (!IsFarmHandPlacementAvailable(constrainedPosition, farmHand, farmHand))
+        private bool TryRelocateFarmHandInternal(FarmHand farmHand, Vector2 requestedPosition, bool showMessage)
+        {
+            if (ModalOverlay.IsGameplayInputBlocked ||
+                !CanRelocateFarmHandTo(farmHand, requestedPosition, out var constrainedPosition))
             {
                 if (showMessage)
                 {

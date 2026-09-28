@@ -43,7 +43,8 @@ namespace TAD.Defenders
         private const float LevelDamageMultiplier = 1.1f;
         private const float LevelRangeMultiplier = 1.05f;
         private const float LevelVisualScaleMultiplier = 1.05f;
-        private const int WeaponUpgradeLevel = 2;
+        private const int FirstWeaponUpgradeLevel = 2;
+        private const int WeaponEvolutionUpgradeLevel = 5;
         private const float RelocationArrivalDistance = 0.001f;
         private const float RelocationCostMultiplier = 0.25f;
 
@@ -62,8 +63,9 @@ namespace TAD.Defenders
         [System.NonSerialized] private float totalExperience;
         [System.NonSerialized] private int currentLevel = 1;
         [System.NonSerialized] private WeaponDefinition baseWeaponDefinition;
-        [System.NonSerialized] private bool isAwaitingWeaponUpgrade;
-        [System.NonSerialized] private bool hasSelectedWeaponUpgrade;
+        [System.NonSerialized] private int pendingWeaponUpgradeLevel;
+        [System.NonSerialized] private bool hasSelectedFirstWeaponUpgrade;
+        [System.NonSerialized] private bool hasSelectedWeaponEvolution;
         [System.NonSerialized] private Vector3 baseLocalScale;
         [System.NonSerialized] private bool hasCapturedBaseLocalScale;
         [System.NonSerialized] private int investedGold;
@@ -72,6 +74,8 @@ namespace TAD.Defenders
         [System.NonSerialized] private Sprite placementFootprintSprite;
         [System.NonSerialized] private Vector2 facingDirection = Vector2.right;
         [System.NonSerialized] private DefenderTargetingMode targetingMode = DefenderTargetingMode.FirstEnemyInRange;
+        [System.NonSerialized] private FarmHandUpgradeIndicator upgradeIndicator;
+        [System.NonSerialized] private bool isValidating;
         private PooledInstance pooledInstance;
         private SpawnPool projectilePool;
         private ResourceBank defenderBank;
@@ -113,26 +117,56 @@ namespace TAD.Defenders
         /// <summary>Dedicated trigger used only to prevent overlapping farmhand placement.</summary>
         public BoxCollider2D PlacementCollider => placementCollider;
 
-        /// <summary>Returns whether the Defender bank can pay for the supplied permanent weapon choice.</summary>
+        /// <summary>
+        /// Returns whether the Defender can apply the supplied pending weapon choice. The level-two
+        /// branch is deliberately free; the level-five evolution still charges its weapon cost.
+        /// </summary>
         public bool CanAffordWeaponUpgrade(WeaponDefinition definition)
         {
+            if (definition == null)
+            {
+                return false;
+            }
+
+            if (IsFreeWeaponUpgradePending)
+            {
+                return true;
+            }
+
             var bank = ResolveDefenderBank();
-            return definition != null && bank != null && bank.CanAfford(definition.Cost);
+            return bank != null && bank.CanAfford(definition.Cost);
         }
 
         /// <summary>Legacy API retained for custom scripts; the permanent weapon choice now occurs at level 2.</summary>
         [System.Obsolete("Use CanAffordWeaponUpgrade. The weapon choice now occurs at level 2.")]
         public bool CanAffordLevelThreeUpgrade(WeaponDefinition definition) => CanAffordWeaponUpgrade(definition);
 
-        /// <summary>True while this farmhand has reached level 2 and must choose its permanent weapon upgrade.</summary>
-        public bool IsAwaitingWeaponUpgrade => isAwaitingWeaponUpgrade;
+        /// <summary>True while this farmhand has reached an upgrade level and is waiting for a player or AI choice.</summary>
+        public bool IsAwaitingWeaponUpgrade => pendingWeaponUpgradeLevel > 0;
+
+        /// <summary>The level that owns the current pending weapon selection, or zero when no selection is waiting.</summary>
+        public int PendingWeaponUpgradeLevel => pendingWeaponUpgradeLevel;
+
+        /// <summary>True while the free level-two Stick-or-Stone selection is waiting.</summary>
+        public bool IsFreeWeaponUpgradePending => pendingWeaponUpgradeLevel == FirstWeaponUpgradeLevel;
+
+        /// <summary>True while the paid level-five weapon evolution is waiting.</summary>
+        public bool IsPaidWeaponUpgradePending => pendingWeaponUpgradeLevel == WeaponEvolutionUpgradeLevel;
+
+        /// <summary>
+        /// Pending farmhands remain in combat, but their rewards are paused until their upgrade choice has been made.
+        /// </summary>
+        public bool CanEarnExperience => !IsAwaitingWeaponUpgrade;
 
         /// <summary>Legacy API retained for custom scripts; the permanent weapon choice now occurs at level 2.</summary>
         [System.Obsolete("Use IsAwaitingWeaponUpgrade. The weapon choice now occurs at level 2.")]
         public bool IsAwaitingLevelThreeUpgrade => IsAwaitingWeaponUpgrade;
 
-        /// <summary>True after this farmhand has completed its one permanent weapon choice.</summary>
-        public bool HasSelectedWeaponUpgrade => hasSelectedWeaponUpgrade;
+        /// <summary>True after this farmhand has completed its free level-two Stick-or-Stone weapon choice.</summary>
+        public bool HasSelectedWeaponUpgrade => hasSelectedFirstWeaponUpgrade;
+
+        /// <summary>True after this farmhand has completed its paid level-five weapon evolution.</summary>
+        public bool HasSelectedWeaponEvolution => hasSelectedWeaponEvolution;
 
         /// <summary>Legacy API retained for custom scripts; the permanent weapon choice now occurs at level 2.</summary>
         [System.Obsolete("Use HasSelectedWeaponUpgrade. The weapon choice now occurs at level 2.")]
@@ -219,7 +253,7 @@ namespace TAD.Defenders
         /// <summary>Raised after a farmhand has configured its non-blocking range sensor.</summary>
         public static event System.Action<FarmHand> FarmHandEnabled;
 
-        /// <summary>Raised once when an active farmhand first reaches level 2 and needs a weapon choice.</summary>
+        /// <summary>Raised when an active farmhand reaches a weapon-upgrade level and needs a choice.</summary>
         public static event System.Action<FarmHand> WeaponUpgradeChoiceRequested;
 
         /// <summary>Legacy event retained for custom scripts; the permanent weapon choice now occurs at level 2.</summary>
@@ -366,26 +400,70 @@ namespace TAD.Defenders
             WeaponChanged?.Invoke(weaponDefinition);
         }
 
-        /// <summary>Charges the Defender bank and applies the one permanent weapon choice offered at level 2.</summary>
+        /// <summary>
+        /// Applies the currently pending weapon choice. The Stick-or-Stone branch at level 2 is free;
+        /// a level-five evolution charges the selected weapon's normal Defender-bank cost.
+        /// </summary>
         public bool TryChooseWeaponUpgrade(WeaponDefinition definition)
         {
-            if (definition == null || !isAwaitingWeaponUpgrade || currentLevel < WeaponUpgradeLevel)
+            if (definition == null || !IsAwaitingWeaponUpgrade || !IsWeaponCompatibleWithPendingUpgrade(definition))
             {
                 return false;
             }
 
-            var bank = ResolveDefenderBank();
-            if (bank == null || !bank.TrySpendGold(definition.Cost))
+            var selectedUpgradeLevel = pendingWeaponUpgradeLevel;
+            var isFreeChoice = selectedUpgradeLevel == FirstWeaponUpgradeLevel;
+            if (!isFreeChoice)
             {
-                return false;
+                var bank = ResolveDefenderBank();
+                if (bank == null || !bank.TrySpendGold(definition.Cost))
+                {
+                    return false;
+                }
+
+                investedGold += Mathf.Max(0, definition.Cost);
             }
 
-            isAwaitingWeaponUpgrade = false;
-            hasSelectedWeaponUpgrade = true;
-            investedGold += Mathf.Max(0, definition.Cost);
+            pendingWeaponUpgradeLevel = 0;
+            if (selectedUpgradeLevel == FirstWeaponUpgradeLevel)
+            {
+                hasSelectedFirstWeaponUpgrade = true;
+            }
+            else if (selectedUpgradeLevel == WeaponEvolutionUpgradeLevel)
+            {
+                hasSelectedWeaponEvolution = true;
+            }
+
             SetWeapon(definition);
             ProgressionChanged?.Invoke();
             return true;
+        }
+
+        /// <summary>
+        /// Validates the progression branch without duplicating the UI's configured option lists.
+        /// At level five an evolution must retain the Projectile Type selected at level two.
+        /// </summary>
+        public bool IsWeaponCompatibleWithPendingUpgrade(WeaponDefinition definition)
+        {
+            if (definition == null || !IsAwaitingWeaponUpgrade)
+            {
+                return false;
+            }
+
+            if (pendingWeaponUpgradeLevel == FirstWeaponUpgradeLevel)
+            {
+                return true;
+            }
+
+            if (pendingWeaponUpgradeLevel != WeaponEvolutionUpgradeLevel)
+            {
+                return false;
+            }
+
+            var currentProjectile = weaponDefinition != null ? weaponDefinition.ProjectileDefinition : null;
+            var nextProjectile = definition.ProjectileDefinition;
+            return currentProjectile != null && nextProjectile != null &&
+                   currentProjectile.ProjectileType == nextProjectile.ProjectileType;
         }
 
         /// <summary>Legacy API retained for custom scripts; the permanent weapon choice now occurs at level 2.</summary>
@@ -556,6 +634,12 @@ namespace TAD.Defenders
             placementCollider ??= transform.Find("PlacementHitbox")?.GetComponent<BoxCollider2D>();
             rangeVisual ??= GetComponentInChildren<DefenderRangeVisual>(true);
             pooledInstance ??= GetComponent<PooledInstance>();
+            upgradeIndicator ??= GetComponent<FarmHandUpgradeIndicator>();
+            if (upgradeIndicator == null && Application.isPlaying && !isValidating)
+            {
+                upgradeIndicator = gameObject.AddComponent<FarmHandUpgradeIndicator>();
+            }
+
             ConfigureLineOfSightFilter();
         }
 
@@ -581,7 +665,7 @@ namespace TAD.Defenders
 
         private void TryFireAtSelectedAttackableAttacker()
         {
-            if (isRelocating || isAwaitingWeaponUpgrade || Time.time < nextFireTime)
+            if (isRelocating || Time.time < nextFireTime)
             {
                 return;
             }
@@ -1082,7 +1166,8 @@ namespace TAD.Defenders
             {
                 if (assistingDefender != null &&
                     assistingDefender.isActiveAndEnabled &&
-                    assistingDefender.gameObject.activeInHierarchy)
+                    assistingDefender.gameObject.activeInHierarchy &&
+                    assistingDefender.CanEarnExperience)
                 {
                     eligibleRecipients.Add(assistingDefender);
                 }
@@ -1094,23 +1179,34 @@ namespace TAD.Defenders
         private float AddExperience(float awardedAmount)
         {
             awardedAmount = DefenderRewardCalculator.RoundToNearestTenth(awardedAmount);
-            if (awardedAmount <= 0f)
+            if (awardedAmount <= 0f || !CanEarnExperience)
             {
                 return 0f;
             }
 
-            // Results can credit every earned point even after no further level can be gained.
-            totalExperience = DefenderRewardCalculator.RoundToNearestTenth(totalExperience + awardedAmount);
             var shouldRequestWeaponUpgrade = false;
             var levelChanged = false;
+            var creditedAmount = 0f;
 
-            if (!IsAtMaxLevel)
+            // Results can credit every earned point after the level cap. At an upgrade level, however,
+            // progression intentionally pauses as soon as the choice becomes available. This keeps an
+            // oversized kill award from silently skipping a player decision.
+            if (IsAtMaxLevel)
             {
-                currentExp = DefenderRewardCalculator.RoundToNearestTenth(currentExp + awardedAmount);
-                while (currentLevel < MaxLevel)
+                creditedAmount = awardedAmount;
+            }
+            else
+            {
+                var remainingAmount = awardedAmount;
+                while (remainingAmount > 0f && currentLevel < MaxLevel && !IsAwaitingWeaponUpgrade)
                 {
                     var expThreshold = Mathf.Max(1, ExpMax);
-                    if (currentExp < expThreshold)
+                    var amountNeeded = Mathf.Max(0f, expThreshold - currentExp);
+                    var appliedAmount = Mathf.Min(remainingAmount, amountNeeded);
+                    currentExp = DefenderRewardCalculator.RoundToNearestTenth(currentExp + appliedAmount);
+                    creditedAmount = DefenderRewardCalculator.RoundToNearestTenth(creditedAmount + appliedAmount);
+                    remainingAmount = DefenderRewardCalculator.RoundToNearestTenth(remainingAmount - appliedAmount);
+                    if (currentExp + 0.0001f < expThreshold)
                     {
                         break;
                     }
@@ -1119,11 +1215,10 @@ namespace TAD.Defenders
                     currentLevel++;
                     levelChanged = true;
 
-                    if (!hasSelectedWeaponUpgrade && !isAwaitingWeaponUpgrade &&
-                        currentLevel >= WeaponUpgradeLevel)
+                    if (TryBeginPendingWeaponUpgrade())
                     {
-                        isAwaitingWeaponUpgrade = true;
                         shouldRequestWeaponUpgrade = true;
+                        break;
                     }
                 }
 
@@ -1131,8 +1226,11 @@ namespace TAD.Defenders
                 {
                     // Current XP only represents progress toward an obtainable next level.
                     currentExp = 0f;
+                    creditedAmount = DefenderRewardCalculator.RoundToNearestTenth(creditedAmount + remainingAmount);
                 }
             }
+
+            totalExperience = DefenderRewardCalculator.RoundToNearestTenth(totalExperience + creditedAmount);
 
             if (levelChanged)
             {
@@ -1148,7 +1246,29 @@ namespace TAD.Defenders
                 WeaponUpgradeChoiceRequested?.Invoke(this);
             }
 
-            return awardedAmount;
+            return creditedAmount;
+        }
+
+        private bool TryBeginPendingWeaponUpgrade()
+        {
+            if (IsAwaitingWeaponUpgrade)
+            {
+                return false;
+            }
+
+            if (currentLevel == FirstWeaponUpgradeLevel && !hasSelectedFirstWeaponUpgrade)
+            {
+                pendingWeaponUpgradeLevel = FirstWeaponUpgradeLevel;
+                return true;
+            }
+
+            if (currentLevel == WeaponEvolutionUpgradeLevel && !hasSelectedWeaponEvolution)
+            {
+                pendingWeaponUpgradeLevel = WeaponEvolutionUpgradeLevel;
+                return true;
+            }
+
+            return false;
         }
 
         private void ResetProgression()
@@ -1156,8 +1276,9 @@ namespace TAD.Defenders
             currentExp = 0f;
             totalExperience = 0f;
             currentLevel = 1;
-            isAwaitingWeaponUpgrade = false;
-            hasSelectedWeaponUpgrade = false;
+            pendingWeaponUpgradeLevel = 0;
+            hasSelectedFirstWeaponUpgrade = false;
+            hasSelectedWeaponEvolution = false;
             ApplyLevelPresentation();
             var startingWeapon = baseWeaponDefinition ?? weaponDefinition;
             investedGold = startingWeapon != null ? Mathf.Max(0, startingWeapon.Cost) : 0;
@@ -1242,14 +1363,22 @@ namespace TAD.Defenders
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            expMax = Mathf.Max(1, expMax);
-            maxLevel = Mathf.Max(1, maxLevel);
-            relocationSpeed = Mathf.Max(0.01f, relocationSpeed);
-            ResolveComponents();
-            ConfigurePlacementCollider();
-            ConfigureRangeBody();
-            ConfigureRangeCollider();
-            ConfigureNonBlockingColliders();
+            isValidating = true;
+            try
+            {
+                expMax = Mathf.Max(1, expMax);
+                maxLevel = Mathf.Max(1, maxLevel);
+                relocationSpeed = Mathf.Max(0.01f, relocationSpeed);
+                ResolveComponents();
+                ConfigurePlacementCollider();
+                ConfigureRangeBody();
+                ConfigureRangeCollider();
+                ConfigureNonBlockingColliders();
+            }
+            finally
+            {
+                isValidating = false;
+            }
         }
 
         private void OnDrawGizmosSelected()

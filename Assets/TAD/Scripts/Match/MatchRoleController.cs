@@ -46,6 +46,8 @@ namespace TAD.Match
         private const int RecentAttackerAiSelectionLimit = 4;
         private const int MaximumDefenderAiPlacementCandidates = 128;
         private const float DefenderAiCandidateSpacing = 0.4f;
+        private const float DefenderAiRelocationMinimumImprovement = 1.2f;
+        private const float DefenderAiRelocationMinimumDistance = 0.4f;
 
         private readonly List<AttackerDefinition> attackerDefinitions = new();
         private readonly List<AttackerAiCandidate> attackerAiCandidates = new();
@@ -57,6 +59,7 @@ namespace TAD.Match
         private readonly List<DefenderAiRoutePlan> defenderAiRoutePlans = new();
         private readonly List<Vector3> defenderAiRoutePoints = new();
         private readonly List<Vector2> defenderAiPlacementCandidates = new();
+        private readonly List<Vector2> defenderAiRelocationCandidates = new();
         private readonly List<DefenderAiCoverage> defenderAiExistingCoverage = new();
         private readonly List<WeaponDefinition> defenderAiAffordableUpgradeOptions = new();
 
@@ -69,6 +72,7 @@ namespace TAD.Match
         private PlayerRole playerRole;
         private int lastAttackerAiQueuedDay = int.MinValue;
         private int lastDefenderAiPreparedDay = int.MinValue;
+        private int lastDefenderAiRelocationDay = int.MinValue;
         private bool defenderAiPlanDirty = true;
         private bool isSubscribedToAttackerQueue;
         private int roleUiStabilizationFrames = 3;
@@ -299,7 +303,7 @@ namespace TAD.Match
             attackerAiDefenderThreats.Clear();
             foreach (var farmHand in Object.FindObjectsByType<FarmHand>(FindObjectsInactive.Exclude))
             {
-                if (farmHand == null || !farmHand.isActiveAndEnabled || farmHand.IsAwaitingWeaponUpgrade)
+                if (farmHand == null || !farmHand.isActiveAndEnabled)
                 {
                     continue;
                 }
@@ -338,8 +342,8 @@ namespace TAD.Match
         }
 
         /// <summary>
-        /// Chooses and purchases a legal level-two weapon for an AI farmhand. The UI bootstrap
-        /// keeps ownership of the upgrade request while this controller owns defender-side policy.
+        /// Chooses a legal pending weapon for an AI farmhand. Level two is free; level-five
+        /// projectile-type evolutions use the same Defender-bank cost as a human selection.
         /// </summary>
         public bool TryChooseDefenderAiUpgrade(
             FarmHand farmHand,
@@ -437,6 +441,11 @@ namespace TAD.Match
                 activeFarmHandCount++;
             }
 
+            if (lastDefenderAiRelocationDay != dayCycle.CurrentDay)
+            {
+                TryRelocateAiFarmHand(defenderAiRoutePlans);
+            }
+
             lastDefenderAiPreparedDay = dayCycle.CurrentDay;
         }
 
@@ -522,6 +531,98 @@ namespace TAD.Match
             return TryPlaceFallbackFarmHand(farmHandIndex);
         }
 
+        /// <summary>
+        /// Moves at most one defender per preparation day when the queued attacker routes make a
+        /// materially better coverage position worthwhile. The same placement controller charges
+        /// the normal relocation fee and rejects overlapping PlacementHitboxes.
+        /// </summary>
+        private bool TryRelocateAiFarmHand(IReadOnlyList<DefenderAiRoutePlan> plannedRoutes)
+        {
+            var routeMapper = spawnPool != null ? spawnPool.RouteMapper : null;
+            if (routeMapper == null || plannedRoutes == null || plannedRoutes.Count == 0 ||
+                farmHandPlacement == null)
+            {
+                return false;
+            }
+
+            BuildDefenderAiPlacementCandidates(routeMapper, plannedRoutes);
+            if (defenderAiPlacementCandidates.Count == 0)
+            {
+                return false;
+            }
+
+            FarmHand bestFarmHand = null;
+            var bestDecision = default(DefenderAiRelocationDecision);
+            var bestValuePerGold = 0f;
+            foreach (var farmHand in Object.FindObjectsByType<FarmHand>(FindObjectsInactive.Exclude))
+            {
+                if (farmHand == null || !farmHand.isActiveAndEnabled || farmHand.IsRelocating ||
+                    farmHand.Range <= 0f)
+                {
+                    continue;
+                }
+
+                var bank = farmHand.DefenderBank;
+                var relocationCost = farmHand.RelocationCost;
+                if (bank == null || !bank.CanAfford(relocationCost))
+                {
+                    continue;
+                }
+
+                BuildDefenderAiExistingCoverage(farmHand);
+                defenderAiRelocationCandidates.Clear();
+                for (var candidateIndex = 0;
+                     candidateIndex < defenderAiPlacementCandidates.Count;
+                     candidateIndex++)
+                {
+                    if (farmHandPlacement.CanRelocateFarmHandTo(
+                            farmHand,
+                            defenderAiPlacementCandidates[candidateIndex],
+                            out var constrainedCandidate))
+                    {
+                        defenderAiRelocationCandidates.Add(constrainedCandidate);
+                    }
+                }
+
+                if (!DefenderAiPlanner.TryChooseRelocation(
+                        plannedRoutes,
+                        defenderAiRelocationCandidates,
+                        defenderAiExistingCoverage,
+                        farmHand.transform.position,
+                        farmHand.Range,
+                        DefenderAiRelocationMinimumImprovement,
+                        DefenderAiRelocationMinimumDistance,
+                        out var decision) ||
+                    !decision.IsValid)
+                {
+                    continue;
+                }
+
+                var valuePerGold = decision.ScoreGain / Mathf.Max(1, relocationCost);
+                if (bestFarmHand == null || valuePerGold > bestValuePerGold + 0.0001f ||
+                    (Mathf.Abs(valuePerGold - bestValuePerGold) <= 0.0001f &&
+                     farmHand.InstanceId < bestFarmHand.InstanceId))
+                {
+                    bestFarmHand = farmHand;
+                    bestDecision = decision;
+                    bestValuePerGold = valuePerGold;
+                }
+            }
+
+            if (bestFarmHand == null ||
+                !farmHandPlacement.TryRelocateFarmHandForAi(bestFarmHand, bestDecision.Position))
+            {
+                return false;
+            }
+
+            lastDefenderAiRelocationDay = dayCycle.CurrentDay;
+            Debug.Log(
+                $"Defender AI moved farmhand {bestFarmHand.InstanceId} for {bestFarmHand.RelocationCost} gold " +
+                $"(route coverage {bestDecision.CurrentScore:0.0} → {bestDecision.Score:0.0}).",
+                this);
+            return true;
+        }
+
         private void BuildDefenderAiPlacementCandidates(
             FarmRouteMapper routeMapper,
             IReadOnlyList<DefenderAiRoutePlan> plannedRoutes)
@@ -602,12 +703,13 @@ namespace TAD.Match
             defenderAiPlacementCandidates.Add(candidate);
         }
 
-        private void BuildDefenderAiExistingCoverage()
+        private void BuildDefenderAiExistingCoverage(FarmHand excludedFarmHand = null)
         {
             defenderAiExistingCoverage.Clear();
             foreach (var farmHand in Object.FindObjectsByType<FarmHand>(FindObjectsInactive.Exclude))
             {
-                if (farmHand != null && farmHand.isActiveAndEnabled && farmHand.Range > 0f)
+                if (farmHand != null && farmHand != excludedFarmHand && farmHand.isActiveAndEnabled &&
+                    farmHand.Range > 0f)
                 {
                     defenderAiExistingCoverage.Add(
                         new DefenderAiCoverage(farmHand.transform.position, farmHand.Range));

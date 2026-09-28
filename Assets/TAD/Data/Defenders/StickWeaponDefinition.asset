@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 79697559321644b468d8daf28721571f, type: 3}
+  m_Name: StickWeaponDefinition
+  m_EditorClassIdentifier: TAD.Runtime::TAD.Defenders.WeaponDefinition
+  displayName: Stick
+  description: Found on the farm floor. A quick, stronger melee poke that can evolve into Pole or Rolling.
+  cost: 0
+  range: 1.6
+  attackSpeed: 1.65
+  damage: 11
+  projectileDefinition: {fileID: 11400000, guid: 27fdb1ab87b62c946a420735073cd2d8, type: 2}

@@ -221,7 +221,7 @@ namespace TAD.Attackers
             if (currentHealth > 0f)
             {
                 // A tower receives one assist share for this attacker activation, regardless of how many times it hits.
-                if (defender != null)
+                if (defender != null && defender.CanEarnExperience)
                 {
                     helpedToKillDefenders.Add(defender);
                 }

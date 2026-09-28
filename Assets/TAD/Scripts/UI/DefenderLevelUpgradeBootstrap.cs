@@ -10,17 +10,21 @@ using UnityEngine.Serialization;
 namespace TAD.UI
 {
     /// <summary>
-    /// Owns level-2 defender weapon-upgrade requests for one level. Human Defenders choose through a
-    /// single modal; AI-controlled Defenders choose the best affordable upgrade for the queued attacker routes.
+    /// Owns the defender's two-stage weapon tree. Human defenders open the modal from a farmhand's
+    /// details card after its green world indicator appears; AI defenders resolve their own choice
+    /// from the same route-aware option data.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class DefenderLevelUpgradeBootstrap : MonoBehaviour
     {
-        private const int UpgradeOptionCount = 4;
+        private const int UpgradeOptionCount = 2;
 
         [SerializeField] private DefenderLevelUpgradeOverlay overlayPrefab;
+        [FormerlySerializedAs("weaponUpgradeOptions")]
         [FormerlySerializedAs("levelThreeUpgradeOptions")]
-        [SerializeField] private WeaponDefinition[] weaponUpgradeOptions = new WeaponDefinition[UpgradeOptionCount];
+        [SerializeField] private WeaponDefinition[] levelTwoUpgradeOptions = new WeaponDefinition[UpgradeOptionCount];
+        [SerializeField] private WeaponDefinition[] meleeLevelFiveUpgradeOptions = new WeaponDefinition[UpgradeOptionCount];
+        [SerializeField] private WeaponDefinition[] rangedLevelFiveUpgradeOptions = new WeaponDefinition[UpgradeOptionCount];
 
         private readonly Queue<FarmHand> pendingFarmHands = new();
         private readonly HashSet<FarmHand> pendingFarmHandSet = new();
@@ -45,8 +49,11 @@ namespace TAD.UI
                 EnsureOverlay();
             }
 
-            QueueExistingPendingFarmHands();
-            TryPresentNext();
+            if (!MatchRoleSelection.IsPlayerDefender)
+            {
+                QueueExistingPendingFarmHands();
+                TryPresentNext();
+            }
         }
 
         private void Update()
@@ -57,10 +64,8 @@ namespace TAD.UI
                 return;
             }
 
-            if (presentedFarmHand == null && pendingFarmHands.Count > 0 && !ModalOverlay.IsGameplayInputBlocked)
-            {
-                TryPresentNext();
-            }
+            // Human choices deliberately stay non-blocking. The selected farmhand's details card
+            // calls TryShowUpgradeSelection when the player is ready to choose.
         }
 
         private void OnDisable()
@@ -77,20 +82,38 @@ namespace TAD.UI
             }
         }
 
-        /// <summary>Assigns the overlay prefab and exactly four level-3 upgrade definitions.</summary>
-        public void Configure(DefenderLevelUpgradeOverlay prefab, WeaponDefinition[] upgradeOptions)
+        /// <summary>Assigns the overlay and the two options for each branch of the weapon tree.</summary>
+        public void Configure(
+            DefenderLevelUpgradeOverlay prefab,
+            WeaponDefinition[] levelTwoOptions,
+            WeaponDefinition[] meleeLevelFiveOptions,
+            WeaponDefinition[] rangedLevelFiveOptions)
         {
             UnsubscribeOverlay();
             overlayPrefab = prefab;
-            weaponUpgradeOptions = CopyOptions(upgradeOptions);
+            levelTwoUpgradeOptions = CopyOptions(levelTwoOptions);
+            meleeLevelFiveUpgradeOptions = CopyOptions(meleeLevelFiveOptions);
+            rangedLevelFiveUpgradeOptions = CopyOptions(rangedLevelFiveOptions);
             hasReportedConfigurationError = false;
 
             if (Application.isPlaying && MatchRoleSelection.IsPlayerDefender)
             {
                 EnsureOverlay();
             }
+            if (!MatchRoleSelection.IsPlayerDefender)
+            {
+                TryPresentNext();
+            }
+        }
 
-            TryPresentNext();
+        /// <summary>
+        /// Compatibility helper for older test fixtures that only supplied one option list. The first
+        /// two entries become the free level-two branch; level-five entries still need explicit setup.
+        /// </summary>
+        [Obsolete("Configure the level-two, melee level-five, and ranged level-five branches explicitly.")]
+        public void Configure(DefenderLevelUpgradeOverlay prefab, WeaponDefinition[] upgradeOptions)
+        {
+            Configure(prefab, upgradeOptions, meleeLevelFiveUpgradeOptions, rangedLevelFiveUpgradeOptions);
         }
 
         private void Subscribe()
@@ -118,8 +141,42 @@ namespace TAD.UI
 
         private void HandleWeaponUpgradeRequested(FarmHand farmHand)
         {
-            QueueFarmHand(farmHand);
-            TryPresentNext();
+            if (!MatchRoleSelection.IsPlayerDefender)
+            {
+                QueueFarmHand(farmHand);
+                TryPresentNext();
+            }
+        }
+
+        /// <summary>
+        /// Opens the configured choice modal only after the defender player explicitly asks for it.
+        /// This is normally called by the selected farmhand's details card, so upgrade availability
+        /// never interrupts active combat or placement input on its own.
+        /// </summary>
+        public bool TryShowUpgradeSelection(FarmHand farmHand)
+        {
+            if (!MatchRoleSelection.IsPlayerDefender || presentedFarmHand != null ||
+                ModalOverlay.IsGameplayInputBlocked || !IsPendingFarmHand(farmHand) ||
+                !TryGetUpgradeOptions(farmHand, out var options))
+            {
+                return false;
+            }
+
+            EnsureEventSystem();
+            EnsureOverlay();
+            if (spawnedOverlay == null || spawnedOverlay.IsVisible ||
+                !HasCompleteConfiguration(farmHand, options))
+            {
+                return false;
+            }
+
+            if (!spawnedOverlay.Show(farmHand, options))
+            {
+                return false;
+            }
+
+            presentedFarmHand = farmHand;
+            return true;
         }
 
         private void QueueExistingPendingFarmHands()
@@ -146,39 +203,6 @@ namespace TAD.UI
             if (!MatchRoleSelection.IsPlayerDefender)
             {
                 TryResolveAiUpgrades();
-                return;
-            }
-
-            if (presentedFarmHand != null || ModalOverlay.IsGameplayInputBlocked ||
-                !HasCompleteConfiguration())
-            {
-                return;
-            }
-
-            EnsureOverlay();
-            if (spawnedOverlay == null || spawnedOverlay.IsVisible)
-            {
-                return;
-            }
-
-            while (pendingFarmHands.Count > 0)
-            {
-                var candidate = pendingFarmHands.Dequeue();
-                pendingFarmHandSet.Remove(candidate);
-                if (!IsPendingFarmHand(candidate))
-                {
-                    continue;
-                }
-
-                if (spawnedOverlay.Show(candidate, weaponUpgradeOptions))
-                {
-                    presentedFarmHand = candidate;
-                    return;
-                }
-
-                // Another modal can claim input between the check above and Show. Preserve this request for retry.
-                QueueFarmHand(candidate);
-                return;
             }
         }
 
@@ -212,7 +236,7 @@ namespace TAD.UI
 
         private bool TryChooseAffordableAiUpgrade(FarmHand farmHand)
         {
-            if (farmHand == null || weaponUpgradeOptions == null)
+            if (farmHand == null || !TryGetUpgradeOptions(farmHand, out var options))
             {
                 return false;
             }
@@ -223,12 +247,12 @@ namespace TAD.UI
                 // Route-aware policy owns the choice and calls FarmHand's paid upgrade API itself.
                 // Returning false deliberately leaves the request queued until the attacker commits
                 // a future group or the defender bank can afford a useful counter.
-                return matchRoleController.TryChooseDefenderAiUpgrade(farmHand, weaponUpgradeOptions);
+                return matchRoleController.TryChooseDefenderAiUpgrade(farmHand, options);
             }
 
             // Retain the original safe fallback for lightweight test scenes that do not use a
             // MatchRoleController at all.
-            foreach (var option in weaponUpgradeOptions)
+            foreach (var option in options)
             {
                 if (option != null &&
                     farmHand.CanAffordWeaponUpgrade(option) &&
@@ -244,7 +268,10 @@ namespace TAD.UI
         private void HandleChoiceResolved()
         {
             presentedFarmHand = null;
-            TryPresentNext();
+            if (!MatchRoleSelection.IsPlayerDefender)
+            {
+                TryPresentNext();
+            }
         }
 
         private void EnsureOverlay()
@@ -278,20 +305,56 @@ namespace TAD.UI
             isOverlaySubscribed = false;
         }
 
-        private bool HasCompleteConfiguration()
+        private bool TryGetUpgradeOptions(FarmHand farmHand, out WeaponDefinition[] options)
         {
-            if (overlayPrefab == null || weaponUpgradeOptions == null ||
-                weaponUpgradeOptions.Length != UpgradeOptionCount)
+            options = null;
+            if (farmHand == null)
+            {
+                return false;
+            }
+
+            options = farmHand.PendingWeaponUpgradeLevel switch
+            {
+                2 => levelTwoUpgradeOptions,
+                5 => GetLevelFiveOptions(farmHand),
+                _ => null
+            };
+
+            return HasCompleteOptions(options);
+        }
+
+        private WeaponDefinition[] GetLevelFiveOptions(FarmHand farmHand)
+        {
+            var projectile = farmHand != null && farmHand.WeaponDefinition != null
+                ? farmHand.WeaponDefinition.ProjectileDefinition
+                : null;
+            return projectile != null && projectile.ProjectileType == ProjectileType.Ranged
+                ? rangedLevelFiveUpgradeOptions
+                : meleeLevelFiveUpgradeOptions;
+        }
+
+        private bool HasCompleteConfiguration(FarmHand farmHand, IReadOnlyList<WeaponDefinition> options)
+        {
+            if (overlayPrefab == null || farmHand == null || !HasCompleteOptions(options))
             {
                 ReportConfigurationError();
                 return false;
             }
 
+            return true;
+        }
+
+        private static bool HasCompleteOptions(IReadOnlyList<WeaponDefinition> options)
+        {
+            if (options == null || options.Count != UpgradeOptionCount)
+            {
+                return false;
+            }
+
             for (var index = 0; index < UpgradeOptionCount; index++)
             {
-                if (weaponUpgradeOptions[index] == null)
+                if (options[index] == null)
                 {
-                    ReportConfigurationError();
                     return false;
                 }
             }
@@ -307,7 +370,9 @@ namespace TAD.UI
             }
 
             hasReportedConfigurationError = true;
-            Debug.LogError("Defender Level Upgrade needs an overlay prefab and exactly four weapon definitions.", this);
+            Debug.LogError(
+                "Defender Level Upgrade needs an overlay prefab plus two configured options for level 2, level-5 melee, and level-5 ranged branches.",
+                this);
         }
 
         private static bool IsPendingFarmHand(FarmHand farmHand)

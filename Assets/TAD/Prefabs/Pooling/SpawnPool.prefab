@@ -129,9 +129,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TAD.UI.DefenderLevelUpgradeBootstrap
   overlayPrefab: {fileID: 29308662564694487, guid: 2b385fa21b392714b95328e7fd47959d, type: 3}
-  levelThreeUpgradeOptions:
+  levelTwoUpgradeOptions:
+  - {fileID: 11400000, guid: e4a740b02e8d4fa42a2f7e66643f60b0, type: 2}
+  - {fileID: 11400000, guid: d8fdec6296f6c364eb3254fbb84127fd, type: 2}
+  meleeLevelFiveUpgradeOptions:
   - {fileID: 11400000, guid: 80c7bf7be7647c041b69c346c86af0a5, type: 2}
   - {fileID: 11400000, guid: 27eab7ad44021804c9e61d79fd7c8b52, type: 2}
+  rangedLevelFiveUpgradeOptions:
   - {fileID: 11400000, guid: f10c2b2ff3579d140ac2b7b19ae8d4cf, type: 2}
   - {fileID: 11400000, guid: 9b8b2dcaac92681458c4e0eb0a8ba9a5, type: 2}
 --- !u!114 &1991510340437602593

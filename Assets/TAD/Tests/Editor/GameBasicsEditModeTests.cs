@@ -150,6 +150,45 @@ namespace TAD.Tests.Editor
             Assert.That(weapon.Reason, Does.Contain("ranged"));
         }
 
+        [Test]
+        public void DefenderAiPlanner_RelocatesOnlyForMeaningfullyBetterRouteCoverage()
+        {
+            var chicken = Load<AttackerDefinition>("ChickenDefinition");
+            var route = new[] { new Vector3(-5f, 0f), new Vector3(0f, 0f), new Vector3(5f, 0f) };
+            var plans = new List<DefenderAiRoutePlan>
+            {
+                new(chicken, attackerCount: 5, route)
+            };
+
+            Assert.That(
+                DefenderAiPlanner.TryChooseRelocation(
+                    plans,
+                    new List<Vector2> { new(-4f, 3f), Vector2.zero, new(4f, 3f) },
+                    new List<DefenderAiCoverage>(),
+                    currentPosition: new Vector2(-4f, 3f),
+                    farmHandRange: 1.5f,
+                    minimumImprovementMultiplier: 1.2f,
+                    minimumMoveDistance: 0.4f,
+                    out var relocation),
+                Is.True);
+            Assert.That(relocation.IsValid, Is.True);
+            Assert.That(relocation.Position, Is.EqualTo(Vector2.zero));
+            Assert.That(relocation.Score, Is.GreaterThan(relocation.CurrentScore * 1.2f));
+
+            Assert.That(
+                DefenderAiPlanner.TryChooseRelocation(
+                    plans,
+                    new List<Vector2> { new(0.1f, 0f), new(-0.1f, 0f) },
+                    new List<DefenderAiCoverage>(),
+                    currentPosition: Vector2.zero,
+                    farmHandRange: 1.5f,
+                    minimumImprovementMultiplier: 1.2f,
+                    minimumMoveDistance: 0.4f,
+                    out _),
+                Is.False,
+                "Near-identical positions should not make the AI shuffle a farmhand.");
+        }
+
         private static T Load<T>(string assetName) where T : Object
         {
             var asset = Resources.Load<T>("TADTests/" + assetName);

@@ -28,6 +28,10 @@ namespace TAD.UI
         private const float ExperienceBarHeight = 12f;
         private const float BarToExperienceSpacing = 4f;
         private const float ExperienceMinimumHeight = 22f;
+        private const float ExperienceToUpgradeSpacing = 8f;
+        private const float UpgradeButtonWidth = 220f;
+        private const float UpgradeButtonHeight = 36f;
+        private const float UpgradeToMoveSpacing = 7f;
         private const float ExperienceToMoveSpacing = 8f;
         private const float MoveButtonWidth = 220f;
         private const float MoveButtonHeight = 36f;
@@ -40,6 +44,8 @@ namespace TAD.UI
         [SerializeField] private UnityEngine.UI.Text statsText;
         [SerializeField] private UnityEngine.UI.Text experienceText;
         [SerializeField] private UnityEngine.UI.Image experienceFill;
+        [SerializeField] private UnityEngine.UI.Button upgradeButton;
+        [SerializeField] private UnityEngine.UI.Text upgradeButtonText;
         [SerializeField] private UnityEngine.UI.Button moveButton;
         [SerializeField] private UnityEngine.UI.Text moveButtonText;
 
@@ -52,15 +58,18 @@ namespace TAD.UI
         private RectTransform statsRect;
         private RectTransform experienceRect;
         private RectTransform experienceBarRect;
+        private RectTransform upgradeButtonRect;
         private RectTransform moveButtonRect;
         private RectTransform targetingDropdownRect;
         private RectTransform targetingReadOnlyRect;
         private FarmHand target;
         private FarmHandPlacementController placementController;
         private ResourceBank observedBank;
+        private DefenderLevelUpgradeBootstrap upgradeBootstrap;
         private bool isSubscribed;
         private bool isBankSubscribed;
         private bool isTargetingDropdownSubscribed;
+        private bool isUpgradeButtonSubscribed;
 
         /// <summary>The farmhand currently represented by this card, if any.</summary>
         public FarmHand Target => target;
@@ -99,6 +108,12 @@ namespace TAD.UI
             {
                 targetingDropdown.onValueChanged.RemoveListener(HandleTargetingModeSelected);
                 isTargetingDropdownSubscribed = false;
+            }
+
+            if (isUpgradeButtonSubscribed && upgradeButton != null)
+            {
+                upgradeButton.onClick.RemoveListener(HandleUpgradePressed);
+                isUpgradeButtonSubscribed = false;
             }
         }
 
@@ -141,11 +156,14 @@ namespace TAD.UI
             statsText ??= FindText("Card/Stats");
             experienceText ??= FindText("Card/Experience");
             experienceFill ??= transform.Find("Card/ExperienceBar/Fill")?.GetComponent<UnityEngine.UI.Image>();
+            upgradeButton ??= transform.Find("Card/UpgradeButton")?.GetComponent<UnityEngine.UI.Button>();
+            upgradeButtonText ??= FindText("Card/UpgradeButton/Label");
             moveButton ??= transform.Find("Card/MoveButton")?.GetComponent<UnityEngine.UI.Button>();
             moveButtonText ??= FindText("Card/MoveButton/Label");
             targetingDropdown ??= transform.Find("Card/TargetingDropdown")?.GetComponent<UnityEngine.UI.Dropdown>();
             targetingReadOnlyText ??= FindText("Card/TargetingReadOnly");
 
+            EnsureUpgradeButton();
             EnsureMoveButton();
             EnsureTargetingControls();
 
@@ -157,6 +175,7 @@ namespace TAD.UI
             experienceBarRect ??= experienceFill != null && experienceFill.transform.parent != null
                 ? experienceFill.transform.parent as RectTransform
                 : null;
+            upgradeButtonRect ??= upgradeButton != null ? upgradeButton.GetComponent<RectTransform>() : null;
             moveButtonRect ??= moveButton != null ? moveButton.GetComponent<RectTransform>() : null;
             targetingDropdownRect ??= targetingDropdown != null ? targetingDropdown.GetComponent<RectTransform>() : null;
             targetingReadOnlyRect ??= targetingReadOnlyText != null ? targetingReadOnlyText.rectTransform : null;
@@ -166,6 +185,49 @@ namespace TAD.UI
             ConfigureTextWrapping(statsText);
             ConfigureTextWrapping(experienceText);
             ConfigureTextWrapping(targetingReadOnlyText);
+        }
+
+        private void EnsureUpgradeButton()
+        {
+            if (upgradeButton == null && cardRect != null)
+            {
+                var buttonObject = new GameObject(
+                    "UpgradeButton",
+                    typeof(RectTransform),
+                    typeof(CanvasRenderer),
+                    typeof(UnityEngine.UI.Image),
+                    typeof(UnityEngine.UI.Button));
+                buttonObject.layer = cardRect.gameObject.layer;
+                buttonObject.transform.SetParent(cardRect, worldPositionStays: false);
+
+                var buttonImage = buttonObject.GetComponent<UnityEngine.UI.Image>();
+                buttonImage.color = new Color(0.12f, 0.55f, 0.20f, 0.98f);
+                upgradeButton = buttonObject.GetComponent<UnityEngine.UI.Button>();
+                upgradeButton.targetGraphic = buttonImage;
+                upgradeButtonRect = buttonObject.GetComponent<RectTransform>();
+
+                var labelObject = new GameObject("Label", typeof(RectTransform), typeof(CanvasRenderer), typeof(UnityEngine.UI.Text));
+                labelObject.layer = buttonObject.layer;
+                labelObject.transform.SetParent(buttonObject.transform, worldPositionStays: false);
+                upgradeButtonText = labelObject.GetComponent<UnityEngine.UI.Text>();
+                upgradeButtonText.font = headingText != null ? headingText.font : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                upgradeButtonText.fontSize = 15;
+                upgradeButtonText.alignment = TextAnchor.MiddleCenter;
+                upgradeButtonText.color = Color.white;
+                upgradeButtonText.horizontalOverflow = HorizontalWrapMode.Overflow;
+                upgradeButtonText.verticalOverflow = VerticalWrapMode.Truncate;
+                var labelRect = upgradeButtonText.rectTransform;
+                labelRect.anchorMin = Vector2.zero;
+                labelRect.anchorMax = Vector2.one;
+                labelRect.offsetMin = Vector2.zero;
+                labelRect.offsetMax = Vector2.zero;
+            }
+
+            if (upgradeButton != null && !isUpgradeButtonSubscribed)
+            {
+                upgradeButton.onClick.AddListener(HandleUpgradePressed);
+                isUpgradeButtonSubscribed = true;
+            }
         }
 
         private void EnsureMoveButton()
@@ -506,8 +568,12 @@ namespace TAD.UI
             if (experienceText != null)
             {
                 var levelStatus = target.IsAtMaxLevel ? "MAX LEVEL" : "EXP";
+                var pendingUpgradeText = target.IsAwaitingWeaponUpgrade
+                    ? $"\nUpgrade ready — choose it to resume EXP rewards."
+                    : string.Empty;
                 experienceText.text =
-                    $"{levelStatus}: {target.CurrentExp:0.#}/{target.ExpMax}   Total: {target.TotalExperience:0.#}";
+                    $"{levelStatus}: {target.CurrentExp:0.#}/{target.ExpMax}   Total: {target.TotalExperience:0.#}" +
+                    pendingUpgradeText;
             }
 
             if (experienceFill != null)
@@ -518,6 +584,7 @@ namespace TAD.UI
             }
 
             RefreshTargetingControls();
+            UpdateUpgradeButton();
             UpdateMoveButton();
             RefreshLayout();
         }
@@ -613,6 +680,49 @@ namespace TAD.UI
             moveButton.interactable = bank != null && bank.CanAfford(target.RelocationCost);
         }
 
+        private void UpdateUpgradeButton()
+        {
+            if (upgradeButton == null)
+            {
+                return;
+            }
+
+            var canShowUpgrade = MatchRoleSelection.IsPlayerDefender && target != null &&
+                                 target.isActiveAndEnabled && target.gameObject.activeInHierarchy &&
+                                 target.IsAwaitingWeaponUpgrade && !ModalOverlay.IsGameplayInputBlocked;
+            upgradeButton.gameObject.SetActive(canShowUpgrade);
+            if (!canShowUpgrade)
+            {
+                return;
+            }
+
+            if (upgradeButtonText != null)
+            {
+                upgradeButtonText.text = target.IsFreeWeaponUpgradePending
+                    ? "CHOOSE FREE WEAPON"
+                    : "CHOOSE WEAPON EVOLUTION";
+            }
+
+            upgradeBootstrap ??= UnityEngine.Object.FindAnyObjectByType<DefenderLevelUpgradeBootstrap>();
+            upgradeButton.interactable = upgradeBootstrap != null;
+        }
+
+        private void HandleUpgradePressed()
+        {
+            if (target == null || !MatchRoleSelection.IsPlayerDefender || !target.IsAwaitingWeaponUpgrade)
+            {
+                return;
+            }
+
+            upgradeBootstrap ??= UnityEngine.Object.FindAnyObjectByType<DefenderLevelUpgradeBootstrap>();
+            if (upgradeBootstrap != null)
+            {
+                upgradeBootstrap.TryShowUpgradeSelection(target);
+            }
+
+            Refresh();
+        }
+
         private void HandleMovePressed()
         {
             if (target == null || placementController == null || !MatchRoleSelection.IsPlayerDefender ||
@@ -675,10 +785,22 @@ namespace TAD.UI
             var experienceHeight = GetPreferredHeight(experienceText, ExperienceMinimumHeight);
             SetTopStretch(experienceRect, experienceTop, experienceHeight, SidePadding);
 
-            var preferredCardHeight = experienceTop + experienceHeight + BottomPadding;
+            var nextActionTop = experienceTop + experienceHeight;
+            var preferredCardHeight = nextActionTop + BottomPadding;
+            if (upgradeButtonRect != null && upgradeButton != null && upgradeButton.gameObject.activeSelf)
+            {
+                var upgradeTop = nextActionTop + ExperienceToUpgradeSpacing;
+                SetTopCentered(upgradeButtonRect, upgradeTop, UpgradeButtonWidth, UpgradeButtonHeight);
+                nextActionTop = upgradeTop + UpgradeButtonHeight;
+                preferredCardHeight = nextActionTop + BottomPadding;
+            }
+
             if (moveButtonRect != null && moveButton != null && moveButton.gameObject.activeSelf)
             {
-                var moveTop = experienceTop + experienceHeight + ExperienceToMoveSpacing;
+                var moveSpacing = upgradeButtonRect != null && upgradeButton != null && upgradeButton.gameObject.activeSelf
+                    ? UpgradeToMoveSpacing
+                    : ExperienceToMoveSpacing;
+                var moveTop = nextActionTop + moveSpacing;
                 SetTopCentered(moveButtonRect, moveTop, MoveButtonWidth, MoveButtonHeight);
                 preferredCardHeight = moveTop + MoveButtonHeight + BottomPadding;
             }

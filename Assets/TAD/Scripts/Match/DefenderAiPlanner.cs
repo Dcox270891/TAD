@@ -82,6 +82,24 @@ namespace TAD.Match
         public bool IsValid { get; }
     }
 
+    /// <summary>Route-coverage improvement selected for one paid AI farmhand relocation.</summary>
+    public readonly struct DefenderAiRelocationDecision
+    {
+        public DefenderAiRelocationDecision(Vector2 position, float currentScore, float score)
+        {
+            Position = position;
+            CurrentScore = currentScore;
+            Score = score;
+            IsValid = true;
+        }
+
+        public Vector2 Position { get; }
+        public float CurrentScore { get; }
+        public float Score { get; }
+        public float ScoreGain => Mathf.Max(0f, Score - CurrentScore);
+        public bool IsValid { get; }
+    }
+
     /// <summary>The legal weapon selected for a farmhand's permanent level-two upgrade.</summary>
     public readonly struct DefenderAiWeaponDecision
     {
@@ -187,6 +205,76 @@ namespace TAD.Match
             }
 
             decision = new DefenderAiPlacementDecision(candidates[bestIndex], bestScore);
+            return true;
+        }
+
+        /// <summary>
+        /// Selects a new location only when it materially improves this farmhand's own route coverage.
+        /// The supplied coverage must exclude the farmhand being evaluated, otherwise it would be
+        /// incorrectly penalized for occupying its own current range.
+        /// </summary>
+        public static bool TryChooseRelocation(
+            IReadOnlyList<DefenderAiRoutePlan> plannedRoutes,
+            IReadOnlyList<Vector2> candidates,
+            IReadOnlyList<DefenderAiCoverage> existingCoverage,
+            Vector2 currentPosition,
+            float farmHandRange,
+            float minimumImprovementMultiplier,
+            float minimumMoveDistance,
+            out DefenderAiRelocationDecision decision)
+        {
+            decision = default;
+            if (plannedRoutes == null || plannedRoutes.Count == 0 || candidates == null ||
+                candidates.Count == 0 || farmHandRange <= 0f)
+            {
+                return false;
+            }
+
+            var currentScore = ScorePlacementCandidate(
+                currentPosition,
+                plannedRoutes,
+                existingCoverage,
+                farmHandRange);
+            var minimumMoveDistanceSquared = Mathf.Max(0f, minimumMoveDistance) *
+                                             Mathf.Max(0f, minimumMoveDistance);
+            var bestIndex = -1;
+            var bestScore = currentScore;
+            for (var index = 0; index < candidates.Count; index++)
+            {
+                var candidate = candidates[index];
+                if ((candidate - currentPosition).sqrMagnitude < minimumMoveDistanceSquared)
+                {
+                    continue;
+                }
+
+                var score = ScorePlacementCandidate(
+                    candidate,
+                    plannedRoutes,
+                    existingCoverage,
+                    farmHandRange);
+                if (score > bestScore + PlacementTieTolerance ||
+                    (Mathf.Abs(score - bestScore) <= PlacementTieTolerance &&
+                     IsPlacementTieBreakWinner(candidate, bestIndex >= 0 ? candidates[bestIndex] : currentPosition)))
+                {
+                    bestIndex = index;
+                    bestScore = score;
+                }
+            }
+
+            if (bestIndex < 0 || bestScore <= 0f)
+            {
+                return false;
+            }
+
+            var requiredScore = currentScore <= PlacementTieTolerance
+                ? PlacementTieTolerance
+                : currentScore * Mathf.Max(1f, minimumImprovementMultiplier);
+            if (bestScore + PlacementTieTolerance < requiredScore)
+            {
+                return false;
+            }
+
+            decision = new DefenderAiRelocationDecision(candidates[bestIndex], currentScore, bestScore);
             return true;
         }
 
