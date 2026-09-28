@@ -43,6 +43,28 @@ namespace TAD.Tests.Editor
         }
 
         [Test]
+        public void AttackerCombatRating_CombinesAuthoredValuesPerSentAttacker()
+        {
+            var rating = AttackerCombatRating.Calculate(
+                maximumHealth: 20f,
+                movementSpeed: 3f,
+                sendCost: 10,
+                waveIncome: 2,
+                sendSize: 5);
+
+            Assert.That(rating, Is.EqualTo(7f));
+            Assert.That(
+                AttackerCombatRating.Calculate(
+                    maximumHealth: 20f,
+                    movementSpeed: 3f,
+                    sendCost: 10,
+                    waveIncome: 2,
+                    sendSize: 0),
+                Is.EqualTo(35f),
+                "An invalid zero send size must not cause a divide-by-zero rating.");
+        }
+
+        [Test]
         public void AttackerAiPlanner_AvoidsImmediateRepeatsWhenDifferentRouteReadyAttackersExist()
         {
             var basic = Load<AttackerDefinition>("ChickenDefinition");

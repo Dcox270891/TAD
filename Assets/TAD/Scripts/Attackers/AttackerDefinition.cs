@@ -35,6 +35,8 @@ namespace TAD.Attackers
         public int ExpGiven => expGiven;
         public int KillGain => killGain;
         public int SendSize => sendSize;
+        /// <summary>Player-facing per-animal combat rating derived from this definition's authored values.</summary>
+        public float CombatRating => AttackerCombatRating.Calculate(this);
         public AttackerArchetype Archetype => archetype;
         public int ChallengeTier => challengeTier;
         public AttackerTraversalProfile TraversalProfile => traversalProfile;

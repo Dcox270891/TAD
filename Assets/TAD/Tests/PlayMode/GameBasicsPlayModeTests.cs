@@ -332,6 +332,61 @@ namespace TAD.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator AttackerCombatRating_AppearsOnSelectionQueueAndDetailsImages()
+        {
+            var definition = Resources.Load<AttackerDefinition>("TADTests/ChickenDefinition");
+            Assert.That(definition, Is.Not.Null);
+
+            var selectionObject = new GameObject(
+                "TAD Test Combat Rating Selection",
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(Image),
+                typeof(Button));
+            var selectionImage = CreateCombatRatingTestImage(selectionObject.transform, new Vector2(100f, 90f));
+            var selectionButton = selectionObject.AddComponent<AttackerSelectionButton>();
+            selectionButton.Bind(definition, null, null, null);
+
+            var queueObject = new GameObject(
+                "TAD Test Combat Rating Queue",
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(Image),
+                typeof(Button));
+            var queueImage = CreateCombatRatingTestImage(queueObject.transform, new Vector2(64f, 64f));
+            var queueButton = queueObject.AddComponent<AttackerQueueGroupButton>();
+            var displayGroup = new AttackerQueuedGroupInfo(
+                id: 1,
+                definition,
+                definition.SendSize,
+                definition.SendSize,
+                isDispatching: false,
+                isCurrentGroup: false);
+            queueButton.Bind(displayGroup, null, null, false);
+
+            var fixture = GameBasicsTestSupport.CreateQueueFixture();
+            yield return null;
+            Assert.That(fixture.SpawnPool.RouteMapper.RebuildRoutes(), Is.True);
+            Assert.That(fixture.WaveQueue.TryQueueAttackers(definition), Is.True);
+            var groups = new List<AttackerQueuedGroupInfo>();
+            fixture.WaveQueue.CopyDisplayGroups(groups);
+            var panel = GameBasicsTestSupport.CreateAttackerDetailsPanel(
+                out _,
+                out _,
+                out _,
+                out _);
+            panel.Show(fixture.WaveQueue, groups[0], null);
+
+            yield return null;
+
+            AssertCombatRatingBadge(selectionImage, definition);
+            AssertCombatRatingBadge(queueImage, definition);
+            var detailsImage = panel.transform.Find("Card/AttackerImage")?.GetComponent<Image>();
+            Assert.That(detailsImage, Is.Not.Null);
+            AssertCombatRatingBadge(detailsImage, definition);
+        }
+
+        [UnityTest]
         public IEnumerator TransientPlacementWarning_IsOpaqueClickThroughAndExpires()
         {
             var warningObject = new GameObject("TAD Test Transient Placement Warning");
@@ -353,6 +408,27 @@ namespace TAD.Tests.PlayMode
 
             Assert.That(canvasGroup.alpha, Is.EqualTo(0f));
             Assert.That(ModalOverlay.IsGameplayInputBlocked, Is.False);
+        }
+
+        private static Image CreateCombatRatingTestImage(Transform parent, Vector2 size)
+        {
+            var imageObject = new GameObject(
+                "AttackerImage",
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(Image));
+            imageObject.transform.SetParent(parent, worldPositionStays: false);
+            imageObject.GetComponent<RectTransform>().sizeDelta = size;
+            return imageObject.GetComponent<Image>();
+        }
+
+        private static void AssertCombatRatingBadge(Image attackerImage, AttackerDefinition definition)
+        {
+            var badge = attackerImage.transform.Find("CombatRatingBadge")
+                ?.GetComponent<AttackerCombatRatingBadge>();
+            Assert.That(badge, Is.Not.Null);
+            Assert.That(badge.RatingLabel, Is.EqualTo("CR:" + definition.CombatRating.ToString("0.#")));
+            Assert.That(badge.SendSizeLabel, Is.EqualTo("x" + definition.SendSize));
         }
 
         [UnityTest]

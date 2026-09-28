@@ -91,6 +91,7 @@ namespace TAD.UI
             {
                 attackerImage.sprite = rightFacingSprite;
                 attackerImage.enabled = rightFacingSprite != null;
+                AttackerCombatRatingBadge.ShowFor(attackerImage, definition);
             }
 
             if (costText != null)
