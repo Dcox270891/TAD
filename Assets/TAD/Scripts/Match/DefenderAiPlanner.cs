@@ -82,7 +82,7 @@ namespace TAD.Match
         public bool IsValid { get; }
     }
 
-    /// <summary>The legal weapon selected for a farmhand's permanent level-three upgrade.</summary>
+    /// <summary>The legal weapon selected for a farmhand's permanent level-two upgrade.</summary>
     public readonly struct DefenderAiWeaponDecision
     {
         public DefenderAiWeaponDecision(WeaponDefinition weapon, float score, string reason)
@@ -101,7 +101,7 @@ namespace TAD.Match
     /// <summary>
     /// Deterministic, data-driven defender policy. It measures coverage against the routes that are
     /// already queued for the next wave, so future AI profiles can alter only this policy while the
-    /// existing pool, bank, placement, and level-three purchase APIs remain authoritative.
+    /// existing pool, bank, placement, and level-two purchase APIs remain authoritative.
     /// </summary>
     public static class DefenderAiPlanner
     {
@@ -202,6 +202,26 @@ namespace TAD.Match
             IReadOnlyList<DefenderAiRoutePlan> plannedRoutes,
             out DefenderAiWeaponDecision decision)
         {
+            return TryChooseWeapon(
+                farmHandPosition,
+                progressionDamageMultiplier,
+                progressionRangeMultiplier: 1f,
+                affordableOptions,
+                plannedRoutes,
+                out decision);
+        }
+
+        /// <summary>
+        /// Chooses a weapon while accounting for the farmhand's current level-based damage and range gains.
+        /// </summary>
+        public static bool TryChooseWeapon(
+            Vector2 farmHandPosition,
+            float progressionDamageMultiplier,
+            float progressionRangeMultiplier,
+            IReadOnlyList<WeaponDefinition> affordableOptions,
+            IReadOnlyList<DefenderAiRoutePlan> plannedRoutes,
+            out DefenderAiWeaponDecision decision)
+        {
             decision = default;
             if (affordableOptions == null || affordableOptions.Count == 0 ||
                 plannedRoutes == null || plannedRoutes.Count == 0)
@@ -223,6 +243,7 @@ namespace TAD.Match
                     weapon,
                     farmHandPosition,
                     Mathf.Max(0.01f, progressionDamageMultiplier),
+                    Mathf.Max(0.01f, progressionRangeMultiplier),
                     plannedRoutes);
                 if (score > bestScore + PlacementTieTolerance ||
                     (Mathf.Abs(score - bestScore) <= PlacementTieTolerance &&
@@ -276,6 +297,7 @@ namespace TAD.Match
             WeaponDefinition weapon,
             Vector2 farmHandPosition,
             float progressionDamageMultiplier,
+            float progressionRangeMultiplier,
             IReadOnlyList<DefenderAiRoutePlan> plannedRoutes)
         {
             var projectile = weapon.ProjectileDefinition;
@@ -296,7 +318,7 @@ namespace TAD.Match
                 var distanceInRange = GetRouteDistanceInsideRange(
                     route.RoutePoints,
                     farmHandPosition,
-                    weapon.Range);
+                    weapon.Range * progressionRangeMultiplier);
                 if (distanceInRange <= 0f)
                 {
                     continue;

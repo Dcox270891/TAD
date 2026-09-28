@@ -9,7 +9,7 @@ using UnityEngine.Events;
 namespace TAD.UI
 {
     /// <summary>
-    /// Displays the four permanent weapon choices offered to one farmhand when it reaches level 3.
+    /// Displays the four permanent weapon choices offered to one farmhand when it reaches level 2.
     /// The modal blocks lower input while each option reflects the live Defender resource balance.
     /// </summary>
     [DisallowMultipleComponent]
@@ -176,9 +176,9 @@ namespace TAD.UI
                 return;
             }
 
-            if (!targetFarmHand.TryChooseLevelThreeUpgrade(selectedWeapon))
+            if (!targetFarmHand.TryChooseWeaponUpgrade(selectedWeapon))
             {
-                selectionError = targetFarmHand.CanAffordLevelThreeUpgrade(selectedWeapon)
+                selectionError = targetFarmHand.CanAffordWeaponUpgrade(selectedWeapon)
                     ? $"Unable to purchase {selectedWeapon.DisplayName}."
                     : $"Not enough Defender Gold for {selectedWeapon.DisplayName}.";
                 RefreshVisuals();
@@ -228,7 +228,7 @@ namespace TAD.UI
 
             if (titleText != null)
             {
-                titleText.text = "DEFENDER LEVEL 3";
+                titleText.text = "DEFENDER LEVEL 2";
             }
 
             if (subtitleText != null)
@@ -242,7 +242,7 @@ namespace TAD.UI
             {
                 var definition = options[index];
                 var canAfford = definition != null && hasDefenderBank && targetFarmHand != null &&
-                                targetFarmHand.CanAffordLevelThreeUpgrade(definition);
+                                targetFarmHand.CanAffordWeaponUpgrade(definition);
                 var button = GetOptionButton(index);
                 var label = GetOptionText(index);
                 if (button != null)
@@ -351,7 +351,7 @@ namespace TAD.UI
             return farmHand != null &&
                    farmHand.isActiveAndEnabled &&
                    farmHand.gameObject.activeInHierarchy &&
-                   farmHand.IsAwaitingLevelThreeUpgrade;
+                   farmHand.IsAwaitingWeaponUpgrade;
         }
 
         private void ClearPresentation()

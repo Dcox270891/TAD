@@ -5,11 +5,12 @@ using TAD.Match;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem.UI;
+using UnityEngine.Serialization;
 
 namespace TAD.UI
 {
     /// <summary>
-    /// Owns level-3 defender upgrade requests for one level. Human Defenders choose through a
+    /// Owns level-2 defender weapon-upgrade requests for one level. Human Defenders choose through a
     /// single modal; AI-controlled Defenders choose the best affordable upgrade for the queued attacker routes.
     /// </summary>
     [DisallowMultipleComponent]
@@ -18,7 +19,8 @@ namespace TAD.UI
         private const int UpgradeOptionCount = 4;
 
         [SerializeField] private DefenderLevelUpgradeOverlay overlayPrefab;
-        [SerializeField] private WeaponDefinition[] levelThreeUpgradeOptions = new WeaponDefinition[UpgradeOptionCount];
+        [FormerlySerializedAs("levelThreeUpgradeOptions")]
+        [SerializeField] private WeaponDefinition[] weaponUpgradeOptions = new WeaponDefinition[UpgradeOptionCount];
 
         private readonly Queue<FarmHand> pendingFarmHands = new();
         private readonly HashSet<FarmHand> pendingFarmHandSet = new();
@@ -80,7 +82,7 @@ namespace TAD.UI
         {
             UnsubscribeOverlay();
             overlayPrefab = prefab;
-            levelThreeUpgradeOptions = CopyOptions(upgradeOptions);
+            weaponUpgradeOptions = CopyOptions(upgradeOptions);
             hasReportedConfigurationError = false;
 
             if (Application.isPlaying && MatchRoleSelection.IsPlayerDefender)
@@ -98,7 +100,7 @@ namespace TAD.UI
                 return;
             }
 
-            FarmHand.LevelThreeUpgradeChoiceRequested += HandleLevelThreeUpgradeRequested;
+            FarmHand.WeaponUpgradeChoiceRequested += HandleWeaponUpgradeRequested;
             isSubscribed = true;
         }
 
@@ -109,12 +111,12 @@ namespace TAD.UI
                 return;
             }
 
-            FarmHand.LevelThreeUpgradeChoiceRequested -= HandleLevelThreeUpgradeRequested;
+            FarmHand.WeaponUpgradeChoiceRequested -= HandleWeaponUpgradeRequested;
             UnsubscribeOverlay();
             isSubscribed = false;
         }
 
-        private void HandleLevelThreeUpgradeRequested(FarmHand farmHand)
+        private void HandleWeaponUpgradeRequested(FarmHand farmHand)
         {
             QueueFarmHand(farmHand);
             TryPresentNext();
@@ -168,7 +170,7 @@ namespace TAD.UI
                     continue;
                 }
 
-                if (spawnedOverlay.Show(candidate, levelThreeUpgradeOptions))
+                if (spawnedOverlay.Show(candidate, weaponUpgradeOptions))
                 {
                     presentedFarmHand = candidate;
                     return;
@@ -210,7 +212,7 @@ namespace TAD.UI
 
         private bool TryChooseAffordableAiUpgrade(FarmHand farmHand)
         {
-            if (farmHand == null || levelThreeUpgradeOptions == null)
+            if (farmHand == null || weaponUpgradeOptions == null)
             {
                 return false;
             }
@@ -221,16 +223,16 @@ namespace TAD.UI
                 // Route-aware policy owns the choice and calls FarmHand's paid upgrade API itself.
                 // Returning false deliberately leaves the request queued until the attacker commits
                 // a future group or the defender bank can afford a useful counter.
-                return matchRoleController.TryChooseDefenderAiUpgrade(farmHand, levelThreeUpgradeOptions);
+                return matchRoleController.TryChooseDefenderAiUpgrade(farmHand, weaponUpgradeOptions);
             }
 
             // Retain the original safe fallback for lightweight test scenes that do not use a
             // MatchRoleController at all.
-            foreach (var option in levelThreeUpgradeOptions)
+            foreach (var option in weaponUpgradeOptions)
             {
                 if (option != null &&
-                    farmHand.CanAffordLevelThreeUpgrade(option) &&
-                    farmHand.TryChooseLevelThreeUpgrade(option))
+                    farmHand.CanAffordWeaponUpgrade(option) &&
+                    farmHand.TryChooseWeaponUpgrade(option))
                 {
                     return true;
                 }
@@ -278,8 +280,8 @@ namespace TAD.UI
 
         private bool HasCompleteConfiguration()
         {
-            if (overlayPrefab == null || levelThreeUpgradeOptions == null ||
-                levelThreeUpgradeOptions.Length != UpgradeOptionCount)
+            if (overlayPrefab == null || weaponUpgradeOptions == null ||
+                weaponUpgradeOptions.Length != UpgradeOptionCount)
             {
                 ReportConfigurationError();
                 return false;
@@ -287,7 +289,7 @@ namespace TAD.UI
 
             for (var index = 0; index < UpgradeOptionCount; index++)
             {
-                if (levelThreeUpgradeOptions[index] == null)
+                if (weaponUpgradeOptions[index] == null)
                 {
                     ReportConfigurationError();
                     return false;
@@ -313,7 +315,7 @@ namespace TAD.UI
             return farmHand != null &&
                    farmHand.isActiveAndEnabled &&
                    farmHand.gameObject.activeInHierarchy &&
-                   farmHand.IsAwaitingLevelThreeUpgrade;
+                   farmHand.IsAwaitingWeaponUpgrade;
         }
 
         private static WeaponDefinition[] CopyOptions(WeaponDefinition[] source)

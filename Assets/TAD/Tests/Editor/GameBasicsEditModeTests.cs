@@ -65,6 +65,26 @@ namespace TAD.Tests.Editor
         }
 
         [Test]
+        public void DefenderLevelProgression_UsesOpeningMilestonesAndGentleLaterGrowth()
+        {
+            var requiredExperience = new int[9];
+            for (var level = 1; level <= 9; level++)
+            {
+                requiredExperience[level - 1] = DefenderLevelProgression.GetExperienceRequiredForNextLevel(
+                    level,
+                    DefenderLevelProgression.DefaultLevelOneToTwoExperience);
+            }
+
+            CollectionAssert.AreEqual(new[] { 10, 12, 15, 17, 19, 22, 24, 27, 30 }, requiredExperience);
+            Assert.That(
+                DefenderLevelProgression.GetTotalExperienceRequired(
+                    startingLevel: 1,
+                    targetLevel: 10,
+                    DefenderLevelProgression.DefaultLevelOneToTwoExperience),
+                Is.EqualTo(176));
+        }
+
+        [Test]
         public void AttackerAiPlanner_AvoidsImmediateRepeatsWhenDifferentRouteReadyAttackersExist()
         {
             var basic = Load<AttackerDefinition>("ChickenDefinition");

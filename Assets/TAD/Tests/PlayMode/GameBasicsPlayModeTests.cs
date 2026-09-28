@@ -76,27 +76,43 @@ namespace TAD.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator Defenders_LevelAtTheCorrectThresholdChooseAtLevelThreeAndStopAtLevelTen()
+        public IEnumerator Defenders_UseProgressiveExperienceChooseAtLevelTwoAndStopAtLevelTen()
         {
             GameBasicsTestSupport.CreateBank(BankSide.Defender);
             var defender = GameBasicsTestSupport.CreateFarmHand();
             var attackerDefinition = ScriptableObject.CreateInstance<AttackerDefinition>();
             var upgrade = ScriptableObject.CreateInstance<WeaponDefinition>();
+            defender.SetWeapon(upgrade);
+            var baseScale = defender.transform.localScale;
 
-            for (var index = 0; index < 2; index++)
-            {
-                var attacker = GameBasicsTestSupport.CreateAttacker(attackerDefinition);
-                Assert.That(defender.TryDamageAttacker(attacker, attacker.RemainingHealth), Is.True);
-            }
+            var firstAttacker = GameBasicsTestSupport.CreateAttacker(attackerDefinition);
+            Assert.That(defender.TryDamageAttacker(firstAttacker, firstAttacker.RemainingHealth), Is.True);
 
             yield return null;
-            Assert.That(defender.CurrentLevel, Is.EqualTo(3));
-            Assert.That(defender.IsAwaitingLevelThreeUpgrade, Is.True);
-            Assert.That(defender.TryChooseLevelThreeUpgrade(upgrade), Is.True);
+            Assert.That(defender.CurrentLevel, Is.EqualTo(2));
+            Assert.That(defender.CurrentExp, Is.EqualTo(0f));
+            Assert.That(defender.ExpMax, Is.EqualTo(12));
+            Assert.That(defender.IsAwaitingWeaponUpgrade, Is.True);
+            Assert.That(defender.Range, Is.EqualTo(upgrade.Range * 1.05f).Within(0.0001f));
+            Assert.That(defender.Damage, Is.EqualTo(upgrade.Damage * 1.1f).Within(0.0001f));
+            Assert.That(defender.transform.localScale.x, Is.EqualTo(baseScale.x * 1.05f).Within(0.0001f));
+            Assert.That(defender.TryChooseWeaponUpgrade(upgrade), Is.True);
             Assert.That(defender.WeaponDefinition, Is.EqualTo(upgrade));
-            Assert.That(defender.HasSelectedLevelThreeUpgrade, Is.True);
+            Assert.That(defender.HasSelectedWeaponUpgrade, Is.True);
 
-            for (var index = defender.CurrentLevel; index < defender.MaxLevel + 5; index++)
+            var secondAttacker = GameBasicsTestSupport.CreateAttacker(attackerDefinition);
+            Assert.That(defender.TryDamageAttacker(secondAttacker, secondAttacker.RemainingHealth), Is.True);
+            Assert.That(defender.CurrentLevel, Is.EqualTo(2));
+            Assert.That(defender.CurrentExp, Is.EqualTo(10f));
+
+            var thirdAttacker = GameBasicsTestSupport.CreateAttacker(attackerDefinition);
+            Assert.That(defender.TryDamageAttacker(thirdAttacker, thirdAttacker.RemainingHealth), Is.True);
+            Assert.That(defender.CurrentLevel, Is.EqualTo(3));
+            Assert.That(defender.CurrentExp, Is.EqualTo(8f));
+            Assert.That(defender.ExpMax, Is.EqualTo(15));
+
+            var safetyCounter = 0;
+            while (!defender.IsAtMaxLevel && safetyCounter++ < 30)
             {
                 var attacker = GameBasicsTestSupport.CreateAttacker(attackerDefinition);
                 Assert.That(defender.TryDamageAttacker(attacker, attacker.RemainingHealth), Is.True);
@@ -105,7 +121,11 @@ namespace TAD.Tests.PlayMode
             Assert.That(defender.CurrentLevel, Is.EqualTo(defender.MaxLevel));
             Assert.That(defender.IsAtMaxLevel, Is.True);
             Assert.That(defender.CurrentExp, Is.EqualTo(0f));
-            Assert.That(defender.TotalExperience, Is.GreaterThanOrEqualTo(defender.ExpMax * (defender.MaxLevel - 1)));
+            Assert.That(defender.TotalExperience, Is.GreaterThanOrEqualTo(
+                DefenderLevelProgression.GetTotalExperienceRequired(
+                    startingLevel: 1,
+                    targetLevel: defender.MaxLevel,
+                    defender.BaseExperienceRequirement)));
 
             Object.Destroy(attackerDefinition);
             Object.Destroy(upgrade);
@@ -135,6 +155,13 @@ namespace TAD.Tests.PlayMode
 
             var defenderObject = pool.Spawn(PooledObjectType.Defender, Vector3.zero, Quaternion.identity);
             var defender = defenderObject.GetComponent<FarmHand>();
+            var defenderBaseScale = defender.transform.localScale;
+            var progressionDefinition = ScriptableObject.CreateInstance<AttackerDefinition>();
+            var progressionAttacker = GameBasicsTestSupport.CreateAttacker(progressionDefinition);
+            Assert.That(defender.TryDamageAttacker(progressionAttacker, progressionAttacker.RemainingHealth), Is.True);
+            yield return null;
+            Assert.That(defender.CurrentLevel, Is.EqualTo(2));
+            Assert.That(defender.transform.localScale.x, Is.GreaterThan(defenderBaseScale.x));
             defender.SetRangeIndicatorVisible(true);
             defender.SetTargetingMode(DefenderTargetingMode.HighestHealth);
             defenderObject.GetComponent<PooledInstance>().ReturnToPool();
@@ -144,6 +171,8 @@ namespace TAD.Tests.PlayMode
             Assert.That(reusedDefender.TotalExperience, Is.EqualTo(0f));
             Assert.That(reusedDefender.IsRangeIndicatorVisible, Is.False);
             Assert.That(reusedDefender.TargetingMode, Is.EqualTo(DefenderTargetingMode.FirstEnemyInRange));
+            Assert.That(reusedDefender.transform.localScale.x, Is.EqualTo(defenderBaseScale.x).Within(0.0001f));
+            Object.Destroy(progressionDefinition);
 
             var projectileObject = pool.Spawn(PooledObjectType.Projectile, Vector3.zero, Quaternion.identity);
             var projectile = projectileObject.GetComponent<FarmHandProjectileBase>();

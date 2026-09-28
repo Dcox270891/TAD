@@ -70,6 +70,20 @@ namespace TAD.Tests.Editor
                 "The defender should be able to establish a real opening line.");
             Assert.That(unarmedWeapon.Damage * unarmedWeapon.AttackSpeed, Is.GreaterThanOrEqualTo(12f));
 
+            AssertAttackerEconomyAndExperience(attackers);
+
+            var levelTenExperience = DefenderLevelProgression.GetTotalExperienceRequired(
+                startingLevel: 1,
+                targetLevel: 10,
+                DefenderLevelProgression.DefaultLevelOneToTwoExperience);
+            var chicken = FindTier(attackers, AttackerArchetype.Basic, 1);
+            var soloFarmHandExperiencePerChickenGroup = DefenderRewardCalculator.Calculate(
+                chicken.ExpGiven,
+                chicken.SendSize,
+                eligibleAssistCount: 0).TotalExperience * chicken.SendSize;
+            Assert.That(soloFarmHandExperiencePerChickenGroup * 9, Is.GreaterThanOrEqualTo(levelTenExperience),
+                "A farmhand that carries the defending line against one entry-level group per day must be able to reach level 10 by day 10.");
+
             // Even if every animal reached the food untouched, spending the whole opening attacker
             // budget on the most food-efficient card cannot immediately deplete the store.
             var maximumOpeningFoodPressure = attackerBank.StartingGold * attackers.Max(
@@ -107,6 +121,35 @@ namespace TAD.Tests.Editor
                 Assert.That(tiers[index].WaveIncome, Is.GreaterThan(tiers[index - 1].WaveIncome));
                 Assert.That(tiers[index].ExpGiven, Is.GreaterThan(tiers[index - 1].ExpGiven));
                 Assert.That(tiers[index].KillGain, Is.GreaterThan(tiers[index - 1].KillGain));
+            }
+        }
+
+        private static void AssertAttackerEconomyAndExperience(IReadOnlyCollection<AttackerDefinition> attackers)
+        {
+            var expectedValues = new Dictionary<string, (int Cost, int Income, int Experience)>
+            {
+                ["Chicken"] = (10, 2, 4),
+                ["Duck"] = (18, 4, 6),
+                ["Ram"] = (30, 6, 9),
+                ["Hare"] = (11, 2, 4),
+                ["Fox"] = (20, 4, 6),
+                ["Greyhound"] = (32, 6, 9),
+                ["Boar"] = (20, 3, 5),
+                ["Bull"] = (34, 5, 8),
+                ["Bison"] = (50, 8, 12),
+                ["Crow"] = (13, 2, 4),
+                ["Hawk"] = (23, 4, 7),
+                ["Eagle"] = (37, 7, 10)
+            };
+
+            Assert.That(attackers.Select(definition => definition.DisplayName),
+                Is.EquivalentTo(expectedValues.Keys));
+            foreach (var definition in attackers)
+            {
+                var expected = expectedValues[definition.DisplayName];
+                Assert.That(definition.SendCost, Is.EqualTo(expected.Cost), definition.DisplayName + " send cost");
+                Assert.That(definition.WaveIncome, Is.EqualTo(expected.Income), definition.DisplayName + " wave income");
+                Assert.That(definition.ExpGiven, Is.EqualTo(expected.Experience), definition.DisplayName + " experience reward");
             }
         }
 

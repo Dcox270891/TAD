@@ -41,7 +41,9 @@ namespace TAD.Defenders
         private const float BlockedTargetRetryInterval = 0.1f;
         private const int LineOfSightHitCapacity = 16;
         private const float LevelDamageMultiplier = 1.1f;
-        private const int LevelThreeUpgradeLevel = 3;
+        private const float LevelRangeMultiplier = 1.05f;
+        private const float LevelVisualScaleMultiplier = 1.05f;
+        private const int WeaponUpgradeLevel = 2;
         private const float RelocationArrivalDistance = 0.001f;
         private const float RelocationCostMultiplier = 0.25f;
 
@@ -60,8 +62,10 @@ namespace TAD.Defenders
         [System.NonSerialized] private float totalExperience;
         [System.NonSerialized] private int currentLevel = 1;
         [System.NonSerialized] private WeaponDefinition baseWeaponDefinition;
-        [System.NonSerialized] private bool isAwaitingLevelThreeUpgrade;
-        [System.NonSerialized] private bool hasSelectedLevelThreeUpgrade;
+        [System.NonSerialized] private bool isAwaitingWeaponUpgrade;
+        [System.NonSerialized] private bool hasSelectedWeaponUpgrade;
+        [System.NonSerialized] private Vector3 baseLocalScale;
+        [System.NonSerialized] private bool hasCapturedBaseLocalScale;
         [System.NonSerialized] private int investedGold;
         [System.NonSerialized] private bool isRelocating;
         [System.NonSerialized] private Vector2 relocationDestination;
@@ -109,18 +113,30 @@ namespace TAD.Defenders
         /// <summary>Dedicated trigger used only to prevent overlapping farmhand placement.</summary>
         public BoxCollider2D PlacementCollider => placementCollider;
 
-        /// <summary>Returns whether the Defender bank can pay for the supplied level-3 weapon choice.</summary>
-        public bool CanAffordLevelThreeUpgrade(WeaponDefinition definition)
+        /// <summary>Returns whether the Defender bank can pay for the supplied permanent weapon choice.</summary>
+        public bool CanAffordWeaponUpgrade(WeaponDefinition definition)
         {
             var bank = ResolveDefenderBank();
             return definition != null && bank != null && bank.CanAfford(definition.Cost);
         }
 
-        /// <summary>True while this farmhand has reached level 3 and must choose its permanent weapon upgrade.</summary>
-        public bool IsAwaitingLevelThreeUpgrade => isAwaitingLevelThreeUpgrade;
+        /// <summary>Legacy API retained for custom scripts; the permanent weapon choice now occurs at level 2.</summary>
+        [System.Obsolete("Use CanAffordWeaponUpgrade. The weapon choice now occurs at level 2.")]
+        public bool CanAffordLevelThreeUpgrade(WeaponDefinition definition) => CanAffordWeaponUpgrade(definition);
 
-        /// <summary>True after this farmhand has completed its one level-3 weapon choice.</summary>
-        public bool HasSelectedLevelThreeUpgrade => hasSelectedLevelThreeUpgrade;
+        /// <summary>True while this farmhand has reached level 2 and must choose its permanent weapon upgrade.</summary>
+        public bool IsAwaitingWeaponUpgrade => isAwaitingWeaponUpgrade;
+
+        /// <summary>Legacy API retained for custom scripts; the permanent weapon choice now occurs at level 2.</summary>
+        [System.Obsolete("Use IsAwaitingWeaponUpgrade. The weapon choice now occurs at level 2.")]
+        public bool IsAwaitingLevelThreeUpgrade => IsAwaitingWeaponUpgrade;
+
+        /// <summary>True after this farmhand has completed its one permanent weapon choice.</summary>
+        public bool HasSelectedWeaponUpgrade => hasSelectedWeaponUpgrade;
+
+        /// <summary>Legacy API retained for custom scripts; the permanent weapon choice now occurs at level 2.</summary>
+        [System.Obsolete("Use HasSelectedWeaponUpgrade. The weapon choice now occurs at level 2.")]
+        public bool HasSelectedLevelThreeUpgrade => HasSelectedWeaponUpgrade;
 
         /// <summary>
         /// Session-unique identity assigned by the pool when this defender is created.
@@ -128,8 +144,13 @@ namespace TAD.Defenders
         /// </summary>
         public long InstanceId => pooledInstance != null ? pooledInstance.RuntimeInstanceId : 0L;
 
-        /// <summary>Configured experience threshold for this farmhand.</summary>
-        public int ExpMax => expMax;
+        /// <summary>Configured level-one experience threshold for this farmhand.</summary>
+        public int BaseExperienceRequirement => expMax;
+
+        /// <summary>Experience required to reach this farmhand's next available level.</summary>
+        public int ExpMax => DefenderLevelProgression.GetExperienceRequiredForNextLevel(
+            IsAtMaxLevel ? Mathf.Max(1, MaxLevel - 1) : currentLevel,
+            expMax);
 
         /// <summary>Current runtime experience toward this farmhand's next level.</summary>
         public float CurrentExp => currentExp;
@@ -146,9 +167,16 @@ namespace TAD.Defenders
         /// <summary>Total experience earned by this placed farmhand, including awards received at the level cap.</summary>
         public float TotalExperience => totalExperience;
 
+        /// <summary>Current visual scale relative to the authored farmhand size.</summary>
+        public float VisualScaleMultiplier => DefenderLevelProgression.GetLevelMultiplier(
+            currentLevel,
+            LevelVisualScaleMultiplier);
+
         /// <summary>Per-farmhand damage after this farmhand's level multiplier is applied.</summary>
         public float Damage => weaponDefinition != null
-            ? weaponDefinition.Damage * Mathf.Pow(LevelDamageMultiplier, currentLevel - 1)
+            ? weaponDefinition.Damage * DefenderLevelProgression.GetLevelMultiplier(
+                currentLevel,
+                LevelDamageMultiplier)
             : 0f;
 
         /// <summary>Persistent target-order policy for this placed farmhand.</summary>
@@ -191,11 +219,23 @@ namespace TAD.Defenders
         /// <summary>Raised after a farmhand has configured its non-blocking range sensor.</summary>
         public static event System.Action<FarmHand> FarmHandEnabled;
 
-        /// <summary>Raised once when an active farmhand first reaches level 3 and needs a weapon choice.</summary>
-        public static event System.Action<FarmHand> LevelThreeUpgradeChoiceRequested;
+        /// <summary>Raised once when an active farmhand first reaches level 2 and needs a weapon choice.</summary>
+        public static event System.Action<FarmHand> WeaponUpgradeChoiceRequested;
+
+        /// <summary>Legacy event retained for custom scripts; the permanent weapon choice now occurs at level 2.</summary>
+        [System.Obsolete("Use WeaponUpgradeChoiceRequested. The weapon choice now occurs at level 2.")]
+        public static event System.Action<FarmHand> LevelThreeUpgradeChoiceRequested
+        {
+            add => WeaponUpgradeChoiceRequested += value;
+            remove => WeaponUpgradeChoiceRequested -= value;
+        }
 
         /// <summary>World-space attack range supplied by the currently assigned weapon.</summary>
-        public float Range => weaponDefinition != null ? weaponDefinition.Range : 0f;
+        public float Range => weaponDefinition != null
+            ? weaponDefinition.Range * DefenderLevelProgression.GetLevelMultiplier(
+                currentLevel,
+                LevelRangeMultiplier)
+            : 0f;
 
         /// <summary>Last valid aiming direction, used only by directional farmhand presentation.</summary>
         public Vector2 FacingDirection => facingDirection.sqrMagnitude > 0.0001f ? facingDirection : Vector2.right;
@@ -261,6 +301,7 @@ namespace TAD.Defenders
         private void Awake()
         {
             baseWeaponDefinition ??= weaponDefinition;
+            CaptureBaseLocalScale();
             ResetProgression();
             ResolveComponents();
             EnsurePlacementCollider();
@@ -325,10 +366,10 @@ namespace TAD.Defenders
             WeaponChanged?.Invoke(weaponDefinition);
         }
 
-        /// <summary>Charges the Defender bank and applies the one permanent weapon choice offered at level 3.</summary>
-        public bool TryChooseLevelThreeUpgrade(WeaponDefinition definition)
+        /// <summary>Charges the Defender bank and applies the one permanent weapon choice offered at level 2.</summary>
+        public bool TryChooseWeaponUpgrade(WeaponDefinition definition)
         {
-            if (definition == null || !isAwaitingLevelThreeUpgrade || currentLevel < LevelThreeUpgradeLevel)
+            if (definition == null || !isAwaitingWeaponUpgrade || currentLevel < WeaponUpgradeLevel)
             {
                 return false;
             }
@@ -339,13 +380,17 @@ namespace TAD.Defenders
                 return false;
             }
 
-            isAwaitingLevelThreeUpgrade = false;
-            hasSelectedLevelThreeUpgrade = true;
+            isAwaitingWeaponUpgrade = false;
+            hasSelectedWeaponUpgrade = true;
             investedGold += Mathf.Max(0, definition.Cost);
             SetWeapon(definition);
             ProgressionChanged?.Invoke();
             return true;
         }
+
+        /// <summary>Legacy API retained for custom scripts; the permanent weapon choice now occurs at level 2.</summary>
+        [System.Obsolete("Use TryChooseWeaponUpgrade. The weapon choice now occurs at level 2.")]
+        public bool TryChooseLevelThreeUpgrade(WeaponDefinition definition) => TryChooseWeaponUpgrade(definition);
 
         /// <summary>
         /// Starts an already-authorised relocation. Placement validation and the relocation fee belong to
@@ -470,6 +515,7 @@ namespace TAD.Defenders
         void IPoolLifecycle.OnTakenFromPool()
         {
             baseWeaponDefinition ??= weaponDefinition;
+            CaptureBaseLocalScale();
             weaponDefinition = baseWeaponDefinition;
             CancelLimitedProjectiles();
             ResetProgression();
@@ -535,7 +581,7 @@ namespace TAD.Defenders
 
         private void TryFireAtSelectedAttackableAttacker()
         {
-            if (isRelocating || isAwaitingLevelThreeUpgrade || Time.time < nextFireTime)
+            if (isRelocating || isAwaitingWeaponUpgrade || Time.time < nextFireTime)
             {
                 return;
             }
@@ -582,7 +628,7 @@ namespace TAD.Defenders
                     origin,
                     target,
                     projectileDefinition,
-                    weapon.Range,
+                    Range,
                     damage))
             {
                 ReturnProjectileToPool(projectileObject);
@@ -1055,22 +1101,29 @@ namespace TAD.Defenders
 
             // Results can credit every earned point even after no further level can be gained.
             totalExperience = DefenderRewardCalculator.RoundToNearestTenth(totalExperience + awardedAmount);
-            var shouldRequestLevelThreeUpgrade = false;
+            var shouldRequestWeaponUpgrade = false;
+            var levelChanged = false;
 
             if (!IsAtMaxLevel)
             {
-                var expThreshold = Mathf.Max(1, ExpMax);
                 currentExp = DefenderRewardCalculator.RoundToNearestTenth(currentExp + awardedAmount);
-                while (currentLevel < MaxLevel && currentExp >= expThreshold)
+                while (currentLevel < MaxLevel)
                 {
+                    var expThreshold = Mathf.Max(1, ExpMax);
+                    if (currentExp < expThreshold)
+                    {
+                        break;
+                    }
+
                     currentExp = DefenderRewardCalculator.RoundToNearestTenth(currentExp - expThreshold);
                     currentLevel++;
+                    levelChanged = true;
 
-                    if (!hasSelectedLevelThreeUpgrade && !isAwaitingLevelThreeUpgrade &&
-                        currentLevel >= LevelThreeUpgradeLevel)
+                    if (!hasSelectedWeaponUpgrade && !isAwaitingWeaponUpgrade &&
+                        currentLevel >= WeaponUpgradeLevel)
                     {
-                        isAwaitingLevelThreeUpgrade = true;
-                        shouldRequestLevelThreeUpgrade = true;
+                        isAwaitingWeaponUpgrade = true;
+                        shouldRequestWeaponUpgrade = true;
                     }
                 }
 
@@ -1081,10 +1134,18 @@ namespace TAD.Defenders
                 }
             }
 
-            ProgressionChanged?.Invoke();
-            if (shouldRequestLevelThreeUpgrade)
+            if (levelChanged)
             {
-                LevelThreeUpgradeChoiceRequested?.Invoke(this);
+                ApplyLevelPresentation();
+                ConfigurePlacementCollider();
+                ConfigureRangeCollider();
+                ConfigureRangeVisual();
+            }
+
+            ProgressionChanged?.Invoke();
+            if (shouldRequestWeaponUpgrade)
+            {
+                WeaponUpgradeChoiceRequested?.Invoke(this);
             }
 
             return awardedAmount;
@@ -1095,8 +1156,9 @@ namespace TAD.Defenders
             currentExp = 0f;
             totalExperience = 0f;
             currentLevel = 1;
-            isAwaitingLevelThreeUpgrade = false;
-            hasSelectedLevelThreeUpgrade = false;
+            isAwaitingWeaponUpgrade = false;
+            hasSelectedWeaponUpgrade = false;
+            ApplyLevelPresentation();
             var startingWeapon = baseWeaponDefinition ?? weaponDefinition;
             investedGold = startingWeapon != null ? Mathf.Max(0, startingWeapon.Cost) : 0;
             facingDirection = Vector2.right;
@@ -1108,6 +1170,25 @@ namespace TAD.Defenders
             }
 
             ProgressionChanged?.Invoke();
+        }
+
+        private void CaptureBaseLocalScale()
+        {
+            if (hasCapturedBaseLocalScale)
+            {
+                return;
+            }
+
+            baseLocalScale = transform.localScale;
+            hasCapturedBaseLocalScale = true;
+        }
+
+        private void ApplyLevelPresentation()
+        {
+            CaptureBaseLocalScale();
+            transform.localScale = Vector3.Scale(
+                baseLocalScale,
+                Vector3.one * VisualScaleMultiplier);
         }
 
         private static DefenderTargetingMode NormalizeTargetingMode(DefenderTargetingMode mode)

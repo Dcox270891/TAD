@@ -299,7 +299,7 @@ namespace TAD.Match
             attackerAiDefenderThreats.Clear();
             foreach (var farmHand in Object.FindObjectsByType<FarmHand>(FindObjectsInactive.Exclude))
             {
-                if (farmHand == null || !farmHand.isActiveAndEnabled || farmHand.IsAwaitingLevelThreeUpgrade)
+                if (farmHand == null || !farmHand.isActiveAndEnabled || farmHand.IsAwaitingWeaponUpgrade)
                 {
                     continue;
                 }
@@ -338,7 +338,7 @@ namespace TAD.Match
         }
 
         /// <summary>
-        /// Chooses and purchases a legal level-three weapon for an AI farmhand. The UI bootstrap
+        /// Chooses and purchases a legal level-two weapon for an AI farmhand. The UI bootstrap
         /// keeps ownership of the upgrade request while this controller owns defender-side policy.
         /// </summary>
         public bool TryChooseDefenderAiUpgrade(
@@ -347,7 +347,7 @@ namespace TAD.Match
         {
             if (!IsPlayerAttacker ||
                 farmHand == null ||
-                !farmHand.IsAwaitingLevelThreeUpgrade ||
+                !farmHand.IsAwaitingWeaponUpgrade ||
                 upgradeOptions == null)
             {
                 return false;
@@ -364,7 +364,7 @@ namespace TAD.Match
             for (var index = 0; index < upgradeOptions.Count; index++)
             {
                 var option = upgradeOptions[index];
-                if (option != null && farmHand.CanAffordLevelThreeUpgrade(option))
+                if (option != null && farmHand.CanAffordWeaponUpgrade(option))
                 {
                     defenderAiAffordableUpgradeOptions.Add(option);
                 }
@@ -379,14 +379,18 @@ namespace TAD.Match
             var progressionDamageMultiplier = currentWeapon != null && currentWeapon.Damage > 0.001f
                 ? farmHand.Damage / currentWeapon.Damage
                 : 1f;
+            var progressionRangeMultiplier = currentWeapon != null && currentWeapon.Range > 0.001f
+                ? farmHand.Range / currentWeapon.Range
+                : 1f;
             if (!DefenderAiPlanner.TryChooseWeapon(
                     farmHand.transform.position,
                     progressionDamageMultiplier,
+                    progressionRangeMultiplier,
                     defenderAiAffordableUpgradeOptions,
                     defenderAiRoutePlans,
                     out var decision) ||
                 !decision.IsValid ||
-                !farmHand.TryChooseLevelThreeUpgrade(decision.Weapon))
+                !farmHand.TryChooseWeaponUpgrade(decision.Weapon))
             {
                 return false;
             }

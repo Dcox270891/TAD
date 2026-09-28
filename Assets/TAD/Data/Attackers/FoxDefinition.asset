@@ -17,9 +17,9 @@ MonoBehaviour:
   maximumHealth: 7
   movementSpeed: 4.5
   size: 0.82
-  sendCost: 15
-  waveIncome: 2
-  expGiven: 2
+  sendCost: 20
+  waveIncome: 4
+  expGiven: 6
   killGain: 3
   sendSize: 4
   archetype: 1
