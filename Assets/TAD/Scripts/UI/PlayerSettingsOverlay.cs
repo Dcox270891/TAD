@@ -17,13 +17,17 @@ namespace TAD.UI
         private const string OverlayName = "PlayerSettingsOverlay";
         private const float PanelWidth = 940f;
         private const float PanelHeight = 700f;
+        private const float PanelScreenMargin = 36f;
         private const float RowHeight = 58f;
+        private const float DescriptiveRowHeight = 72f;
 
         private readonly List<UnityEngine.UI.Button> tabButtons = new();
 
         private Transform contentRoot;
         private UnityEngine.UI.Button buttonTemplate;
         private UnityEngine.UI.Button firstTabButton;
+        private RectTransform panelRect;
+        private UnityEngine.UI.ScrollRect contentScrollRect;
         private GameObject selectionAfterClose;
         private Font font;
         private SettingsPage activePage;
@@ -96,6 +100,11 @@ namespace TAD.UI
             }
         }
 
+        private void LateUpdate()
+        {
+            FitPanelToAvailableScreenSpace();
+        }
+
         private void Configure(UnityEngine.UI.Button template, GameObject returnSelectionTarget)
         {
             buttonTemplate = template;
@@ -114,7 +123,7 @@ namespace TAD.UI
             panel.layer = gameObject.layer;
             panel.transform.SetParent(transform, false);
 
-            var panelRect = panel.GetComponent<RectTransform>();
+            panelRect = panel.GetComponent<RectTransform>();
             panelRect.anchorMin = new Vector2(0.5f, 0.5f);
             panelRect.anchorMax = new Vector2(0.5f, 0.5f);
             panelRect.pivot = new Vector2(0.5f, 0.5f);
@@ -128,13 +137,14 @@ namespace TAD.UI
             panelLayout.spacing = 14f;
             panelLayout.childAlignment = TextAnchor.UpperCenter;
             panelLayout.childControlWidth = true;
-            panelLayout.childControlHeight = false;
+            panelLayout.childControlHeight = true;
             panelLayout.childForceExpandWidth = true;
             panelLayout.childForceExpandHeight = false;
 
             BuildHeader(panel.transform);
             BuildTabs(panel.transform);
             BuildContent(panel.transform);
+            FitPanelToAvailableScreenSpace();
         }
 
         private void BuildHeader(Transform parent)
@@ -154,12 +164,12 @@ namespace TAD.UI
             layout.childControlWidth = false;
             layout.childControlHeight = true;
             layout.childForceExpandWidth = false;
-            layout.childForceExpandHeight = true;
+            layout.childForceExpandHeight = false;
 
-            var backButton = CreateButton(header.transform, "BackButton", "BACK", 150f, 62f);
-            if (backButton != null)
+            var closeButton = CreateButton(header.transform, "CloseButton", "SAVE & CLOSE", 190f, 62f);
+            if (closeButton != null)
             {
-                backButton.onClick.AddListener(Close);
+                closeButton.onClick.AddListener(Close);
             }
 
             var title = CreateText(
@@ -176,7 +186,7 @@ namespace TAD.UI
             CreateText(
                 header.transform,
                 "SavedLabel",
-                "SAVES AUTOMATICALLY",
+                "SAVES YOUR CHANGES",
                 15,
                 FontStyle.Bold,
                 TextAnchor.MiddleRight,
@@ -202,7 +212,7 @@ namespace TAD.UI
             layout.childControlWidth = true;
             layout.childControlHeight = true;
             layout.childForceExpandWidth = true;
-            layout.childForceExpandHeight = true;
+            layout.childForceExpandHeight = false;
 
             AddTab(tabs.transform, SettingsPage.Gameplay, "GAMEPLAY");
             AddTab(tabs.transform, SettingsPage.Audio, "AUDIO");
@@ -218,6 +228,7 @@ namespace TAD.UI
                 typeof(RectTransform),
                 typeof(CanvasRenderer),
                 typeof(UnityEngine.UI.Image),
+                typeof(UnityEngine.UI.ScrollRect),
                 typeof(UnityEngine.UI.LayoutElement));
             contentPanel.layer = gameObject.layer;
             contentPanel.transform.SetParent(parent, false);
@@ -228,28 +239,60 @@ namespace TAD.UI
 
             var element = contentPanel.GetComponent<UnityEngine.UI.LayoutElement>();
             element.flexibleHeight = 1f;
-            element.minHeight = 440f;
+            element.minHeight = 0f;
+
+            var viewport = new GameObject(
+                "Viewport",
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(UnityEngine.UI.Image),
+                typeof(UnityEngine.UI.Mask));
+            viewport.layer = gameObject.layer;
+            viewport.transform.SetParent(contentPanel.transform, false);
+
+            var viewportRect = viewport.GetComponent<RectTransform>();
+            SetStretch(viewportRect, new Vector2(30f, 26f), new Vector2(-30f, -26f));
+            var viewportImage = viewport.GetComponent<UnityEngine.UI.Image>();
+            viewportImage.color = Color.clear;
+            viewportImage.raycastTarget = true;
+            var viewportMask = viewport.GetComponent<UnityEngine.UI.Mask>();
+            viewportMask.showMaskGraphic = false;
 
             var content = new GameObject(
                 "Content",
                 typeof(RectTransform),
-                typeof(UnityEngine.UI.VerticalLayoutGroup));
+                typeof(UnityEngine.UI.VerticalLayoutGroup),
+                typeof(UnityEngine.UI.ContentSizeFitter));
             content.layer = gameObject.layer;
-            content.transform.SetParent(contentPanel.transform, false);
+            content.transform.SetParent(viewport.transform, false);
 
             var contentRect = content.GetComponent<RectTransform>();
-            contentRect.anchorMin = Vector2.zero;
-            contentRect.anchorMax = Vector2.one;
-            contentRect.offsetMin = new Vector2(30f, 26f);
-            contentRect.offsetMax = new Vector2(-30f, -26f);
+            contentRect.anchorMin = new Vector2(0f, 1f);
+            contentRect.anchorMax = new Vector2(1f, 1f);
+            contentRect.pivot = new Vector2(0.5f, 1f);
+            contentRect.offsetMin = Vector2.zero;
+            contentRect.offsetMax = Vector2.zero;
 
             var layout = content.GetComponent<UnityEngine.UI.VerticalLayoutGroup>();
             layout.spacing = 14f;
             layout.childAlignment = TextAnchor.UpperCenter;
             layout.childControlWidth = true;
-            layout.childControlHeight = false;
+            layout.childControlHeight = true;
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = false;
+
+            var sizeFitter = content.GetComponent<UnityEngine.UI.ContentSizeFitter>();
+            sizeFitter.horizontalFit = UnityEngine.UI.ContentSizeFitter.FitMode.Unconstrained;
+            sizeFitter.verticalFit = UnityEngine.UI.ContentSizeFitter.FitMode.PreferredSize;
+
+            contentScrollRect = contentPanel.GetComponent<UnityEngine.UI.ScrollRect>();
+            contentScrollRect.viewport = viewportRect;
+            contentScrollRect.content = contentRect;
+            contentScrollRect.horizontal = false;
+            contentScrollRect.vertical = true;
+            contentScrollRect.movementType = UnityEngine.UI.ScrollRect.MovementType.Clamped;
+            contentScrollRect.inertia = true;
+            contentScrollRect.scrollSensitivity = 28f;
 
             contentRoot = content.transform;
         }
@@ -288,6 +331,12 @@ namespace TAD.UI
                 SettingsPage.Controls => BuildControlsPage(),
                 _ => null
             };
+
+            Canvas.ForceUpdateCanvases();
+            if (contentScrollRect != null)
+            {
+                contentScrollRect.verticalNormalizedPosition = 1f;
+            }
 
             if (selectFirstControl)
             {
@@ -419,7 +468,7 @@ namespace TAD.UI
             bool initialValue,
             Action<bool> onValueChanged)
         {
-            var row = CreateRow(title);
+            var row = CreateRow(title, DescriptiveRowHeight);
             var label = CreateText(
                 row.transform,
                 "Label",
@@ -428,7 +477,7 @@ namespace TAD.UI
                 FontStyle.Normal,
                 TextAnchor.MiddleLeft,
                 Color.white,
-                preferredHeight: RowHeight);
+                preferredHeight: DescriptiveRowHeight);
             label.GetComponent<UnityEngine.UI.LayoutElement>().flexibleWidth = 1f;
 
             var toggleObject = new GameObject(
@@ -561,7 +610,7 @@ namespace TAD.UI
             return previousButton ?? nextButton;
         }
 
-        private GameObject CreateRow(string name)
+        private GameObject CreateRow(string name, float preferredHeight = RowHeight)
         {
             var row = new GameObject(
                 name + "Row",
@@ -570,7 +619,7 @@ namespace TAD.UI
                 typeof(UnityEngine.UI.LayoutElement));
             row.layer = gameObject.layer;
             row.transform.SetParent(contentRoot, false);
-            row.GetComponent<UnityEngine.UI.LayoutElement>().preferredHeight = RowHeight;
+            row.GetComponent<UnityEngine.UI.LayoutElement>().preferredHeight = preferredHeight;
 
             var layout = row.GetComponent<UnityEngine.UI.HorizontalLayoutGroup>();
             layout.spacing = 16f;
@@ -745,6 +794,31 @@ namespace TAD.UI
             var returnTarget = selectionAfterClose;
             gameObject.SetActive(false);
             Select(returnTarget);
+        }
+
+        private void FitPanelToAvailableScreenSpace()
+        {
+            if (panelRect == null || transform is not RectTransform overlayRect)
+            {
+                return;
+            }
+
+            var availableSize = overlayRect.rect.size - new Vector2(PanelScreenMargin * 2f, PanelScreenMargin * 2f);
+            if (availableSize.x <= 0f || availableSize.y <= 0f)
+            {
+                return;
+            }
+
+            var targetSize = new Vector2(
+                Mathf.Min(PanelWidth, availableSize.x),
+                Mathf.Min(PanelHeight, availableSize.y));
+            if (Mathf.Approximately(panelRect.sizeDelta.x, targetSize.x) &&
+                Mathf.Approximately(panelRect.sizeDelta.y, targetSize.y))
+            {
+                return;
+            }
+
+            panelRect.sizeDelta = targetSize;
         }
 
         private static string BuildVolumeLabel(string title, float value)

@@ -29,7 +29,7 @@ namespace TAD.Tests.PlayMode
                 var overlay = PlayerSettingsOverlay.Show(canvas.transform, buttonTemplate, buttonTemplate.gameObject);
                 yield return null;
 
-                var content = overlay.transform.Find("SettingsPanel/ContentPanel/Content");
+                var content = overlay.transform.Find("SettingsPanel/ContentPanel/Viewport/Content");
                 Assert.That(content, Is.Not.Null);
                 Assert.That(content.Find("Show attacker health barsRow/Toggle"), Is.Not.Null);
                 Assert.That(content.Find("Show defender experienceRow/Toggle"), Is.Not.Null);
@@ -44,8 +44,22 @@ namespace TAD.Tests.PlayMode
 
                 overlay.transform.Find("SettingsPanel/Tabs/AudioTab").GetComponent<Button>().onClick.Invoke();
                 yield return null;
-                content = overlay.transform.Find("SettingsPanel/ContentPanel/Content");
+                content = overlay.transform.Find("SettingsPanel/ContentPanel/Viewport/Content");
                 Assert.That(content.GetComponentsInChildren<Slider>().Length, Is.EqualTo(5));
+                var contentPanel = overlay.transform.Find("SettingsPanel/ContentPanel");
+                var scrollRect = contentPanel.GetComponent<ScrollRect>();
+                Assert.That(scrollRect, Is.Not.Null);
+                Assert.That(scrollRect.viewport, Is.Not.Null);
+                Assert.That(scrollRect.content, Is.EqualTo(content.GetComponent<RectTransform>()));
+                Assert.That(contentPanel.Find("Viewport").GetComponent<Mask>(), Is.Not.Null);
+                Assert.That(content.GetComponent<ContentSizeFitter>(), Is.Not.Null);
+                Assert.That(scrollRect.viewport.rect.height, Is.GreaterThan(400f));
+                Assert.That(content.GetComponent<RectTransform>().rect.height, Is.GreaterThan(scrollRect.viewport.rect.height));
+
+                var panelRect = overlay.transform.Find("SettingsPanel").GetComponent<RectTransform>();
+                var overlayRect = overlay.GetComponent<RectTransform>();
+                Assert.That(panelRect.rect.width, Is.LessThanOrEqualTo(overlayRect.rect.width - 72f));
+                Assert.That(panelRect.rect.height, Is.LessThanOrEqualTo(overlayRect.rect.height - 72f));
 
                 audioObject = new GameObject("TAD Test Attacker Audio", typeof(AudioSource));
                 var audioSource = audioObject.GetComponent<AudioSource>();
@@ -58,19 +72,25 @@ namespace TAD.Tests.PlayMode
 
                 overlay.transform.Find("SettingsPanel/Tabs/NotificationsTab").GetComponent<Button>().onClick.Invoke();
                 yield return null;
-                content = overlay.transform.Find("SettingsPanel/ContentPanel/Content");
+                content = overlay.transform.Find("SettingsPanel/ContentPanel/Viewport/Content");
                 Assert.That(content.Find("Enable in-game notificationsRow/Toggle"), Is.Not.Null);
 
                 overlay.transform.Find("SettingsPanel/Tabs/VideoTab").GetComponent<Button>().onClick.Invoke();
                 yield return null;
-                content = overlay.transform.Find("SettingsPanel/ContentPanel/Content");
+                content = overlay.transform.Find("SettingsPanel/ContentPanel/Viewport/Content");
                 Assert.That(content.Find("Video qualityRow"), Is.Not.Null);
 
                 overlay.transform.Find("SettingsPanel/Tabs/ControlsTab").GetComponent<Button>().onClick.Invoke();
                 yield return null;
-                content = overlay.transform.Find("SettingsPanel/ContentPanel/Content");
+                content = overlay.transform.Find("SettingsPanel/ContentPanel/Viewport/Content");
                 Assert.That(content.Find("ControlGuide"), Is.Not.Null);
                 Assert.That(content.Find("Show control hintsRow/Toggle"), Is.Not.Null);
+
+                var closeButton = overlay.transform.Find("SettingsPanel/Header/CloseButton").GetComponent<Button>();
+                Assert.That(closeButton, Is.Not.Null);
+                closeButton.onClick.Invoke();
+                yield return null;
+                Assert.That(overlay.gameObject.activeSelf, Is.False);
             }
             finally
             {
