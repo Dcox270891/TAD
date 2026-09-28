@@ -227,10 +227,6 @@ namespace TAD.UI
                 SetLayerRecursively(dropdownObject, cardRect.gameObject.layer);
 
                 targetingDropdown = dropdownObject.GetComponent<UnityEngine.UI.Dropdown>();
-                targetingDropdown.options.Clear();
-                targetingDropdown.options.Add(new UnityEngine.UI.Dropdown.OptionData(
-                    $"Target Enemy: {FarmHand.GetTargetingModeDisplayName(DefenderTargetingMode.FirstEnemyInRange)}"));
-                targetingDropdown.SetValueWithoutNotify(0);
 
                 var dropdownBackground = dropdownObject.GetComponent<UnityEngine.UI.Image>();
                 if (dropdownBackground != null)
@@ -282,8 +278,9 @@ namespace TAD.UI
                     }
                 }
 
-                targetingDropdown.RefreshShownValue();
             }
+
+            ConfigureTargetingDropdownOptions();
 
             if (!isTargetingDropdownSubscribed && targetingDropdown != null)
             {
@@ -326,6 +323,37 @@ namespace TAD.UI
             text.horizontalOverflow = HorizontalWrapMode.Overflow;
             text.verticalOverflow = VerticalWrapMode.Truncate;
             text.raycastTarget = false;
+        }
+
+        private void ConfigureTargetingDropdownOptions()
+        {
+            if (targetingDropdown == null)
+            {
+                return;
+            }
+
+            var modes = FarmHand.AvailableTargetingModes;
+            var isCurrent = targetingDropdown.options.Count == modes.Count;
+            for (var index = 0; isCurrent && index < modes.Count; index++)
+            {
+                var expectedLabel = $"Target Enemy: {FarmHand.GetTargetingModeDisplayName(modes[index])}";
+                isCurrent = targetingDropdown.options[index].text == expectedLabel;
+            }
+
+            if (isCurrent)
+            {
+                return;
+            }
+
+            targetingDropdown.options.Clear();
+            for (var index = 0; index < modes.Count; index++)
+            {
+                targetingDropdown.options.Add(new UnityEngine.UI.Dropdown.OptionData(
+                    $"Target Enemy: {FarmHand.GetTargetingModeDisplayName(modes[index])}"));
+            }
+
+            targetingDropdown.SetValueWithoutNotify(0);
+            targetingDropdown.RefreshShownValue();
         }
 
         private static void SetLayerRecursively(GameObject gameObject, int layer)
@@ -540,12 +568,24 @@ namespace TAD.UI
 
         private static int TargetingModeToDropdownValue(DefenderTargetingMode mode)
         {
-            return mode == DefenderTargetingMode.FirstEnemyInRange ? 0 : 0;
+            var modes = FarmHand.AvailableTargetingModes;
+            for (var index = 0; index < modes.Count; index++)
+            {
+                if (modes[index] == mode)
+                {
+                    return index;
+                }
+            }
+
+            return 0;
         }
 
-        private static DefenderTargetingMode TargetingModeFromDropdownValue(int _)
+        private static DefenderTargetingMode TargetingModeFromDropdownValue(int optionIndex)
         {
-            return DefenderTargetingMode.FirstEnemyInRange;
+            var modes = FarmHand.AvailableTargetingModes;
+            return optionIndex >= 0 && optionIndex < modes.Count
+                ? modes[optionIndex]
+                : DefenderTargetingMode.FirstEnemyInRange;
         }
 
         private void UpdateMoveButton()

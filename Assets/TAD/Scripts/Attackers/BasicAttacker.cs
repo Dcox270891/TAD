@@ -51,6 +51,7 @@ namespace TAD.Attackers
 
         public float RemainingHealth => currentHealth;
         public float MaximumHealth => definition != null ? definition.MaximumHealth : 0f;
+        public float MovementSpeed => definition != null ? definition.MovementSpeed : 0f;
         public bool HasReachedFoodStore => hasReachedFoodStore;
 
         /// <summary>Raised whenever this pooled attacker's health is reset or changed.</summary>

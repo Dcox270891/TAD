@@ -13,7 +13,11 @@ namespace TAD.Defenders
     /// </summary>
     public enum DefenderTargetingMode
     {
-        FirstEnemyInRange = 0
+        FirstEnemyInRange = 0,
+        HighestHealth = 1,
+        Fastest = 2,
+        LastEnemyInRange = 3,
+        HighestKillGain = 4
     }
 
     /// <summary>
@@ -24,6 +28,16 @@ namespace TAD.Defenders
     [RequireComponent(typeof(SpriteRenderer), typeof(CircleCollider2D), typeof(Rigidbody2D))]
     public sealed class FarmHand : MonoBehaviour, IPoolLifecycle
     {
+        private static readonly IReadOnlyList<DefenderTargetingMode> AvailableTargetingModesInternal =
+            System.Array.AsReadOnly(new[]
+            {
+                DefenderTargetingMode.FirstEnemyInRange,
+                DefenderTargetingMode.HighestHealth,
+                DefenderTargetingMode.Fastest,
+                DefenderTargetingMode.LastEnemyInRange,
+                DefenderTargetingMode.HighestKillGain
+            });
+
         private const float BlockedTargetRetryInterval = 0.1f;
         private const int LineOfSightHitCapacity = 16;
         private const float LevelDamageMultiplier = 1.1f;
@@ -143,6 +157,25 @@ namespace TAD.Defenders
         /// <summary>Player-facing name of the target-order policy currently used by this farmhand.</summary>
         public string TargetingModeDisplayName => GetTargetingModeDisplayName(targetingMode);
 
+        /// <summary>All target-order policies currently supported by the farmhand and its selector UI.</summary>
+        public static IReadOnlyList<DefenderTargetingMode> AvailableTargetingModes => AvailableTargetingModesInternal;
+
+        /// <summary>
+        /// The live highest-priority animal that this farmhand can legally attack with its current weapon, if any.
+        /// It is resolved on demand so entries, exits, defeats, health changes, and target-mode changes take effect immediately.
+        /// </summary>
+        public BasicAttacker CurrentTarget
+        {
+            get
+            {
+                var projectileDefinition = weaponDefinition != null ? weaponDefinition.ProjectileDefinition : null;
+                var projectileType = projectileDefinition != null
+                    ? projectileDefinition.ProjectileType
+                    : ProjectileType.Melee;
+                return TryGetSelectedAttackableAttacker(projectileType, out var attacker) ? attacker : null;
+            }
+        }
+
         /// <summary>Raised after this farmhand's experience or level changes.</summary>
         public event System.Action ProgressionChanged;
 
@@ -194,6 +227,10 @@ namespace TAD.Defenders
             return NormalizeTargetingMode(mode) switch
             {
                 DefenderTargetingMode.FirstEnemyInRange => "First enemy in range",
+                DefenderTargetingMode.HighestHealth => "Highest health",
+                DefenderTargetingMode.Fastest => "Fastest",
+                DefenderTargetingMode.LastEnemyInRange => "Last enemy in range",
+                DefenderTargetingMode.HighestKillGain => "Highest resources",
                 _ => "First enemy in range"
             };
         }
@@ -619,6 +656,12 @@ namespace TAD.Defenders
 
             switch (targetingMode)
             {
+                case DefenderTargetingMode.HighestHealth:
+                case DefenderTargetingMode.Fastest:
+                case DefenderTargetingMode.HighestKillGain:
+                    return TryGetHighestValueAttackableAttacker(projectileType, targetingMode, out attacker);
+                case DefenderTargetingMode.LastEnemyInRange:
+                    return TryGetLastEnemyInRange(projectileType, out attacker);
                 case DefenderTargetingMode.FirstEnemyInRange:
                 default:
                     return TryGetFirstEnemyInRange(projectileType, out attacker);
@@ -643,6 +686,68 @@ namespace TAD.Defenders
 
             attacker = null;
             return false;
+        }
+
+        /// <summary>
+        /// Selects the newest eligible attacker. The range list is appended in entry order, so scanning it backwards
+        /// naturally selects the latest animal to enter while still respecting wall and cover rules.
+        /// </summary>
+        private bool TryGetLastEnemyInRange(ProjectileType projectileType, out BasicAttacker attacker)
+        {
+            for (var index = attackersInRange.Count - 1; index >= 0; index--)
+            {
+                var candidate = attackersInRange[index];
+                if (!IsCandidateBlockedByWall(candidate, projectileType))
+                {
+                    attacker = candidate;
+                    return true;
+                }
+            }
+
+            attacker = null;
+            return false;
+        }
+
+        /// <summary>
+        /// Selects the highest live value amongst targets this weapon can attack. Strict comparison deliberately
+        /// leaves equal values with the first animal that entered range.
+        /// </summary>
+        private bool TryGetHighestValueAttackableAttacker(
+            ProjectileType projectileType,
+            DefenderTargetingMode mode,
+            out BasicAttacker attacker)
+        {
+            attacker = null;
+            var highestValue = float.NegativeInfinity;
+
+            for (var index = 0; index < attackersInRange.Count; index++)
+            {
+                var candidate = attackersInRange[index];
+                if (IsCandidateBlockedByWall(candidate, projectileType))
+                {
+                    continue;
+                }
+
+                var candidateValue = GetTargetingValue(candidate, mode);
+                if (attacker == null || candidateValue > highestValue)
+                {
+                    attacker = candidate;
+                    highestValue = candidateValue;
+                }
+            }
+
+            return attacker != null;
+        }
+
+        private static float GetTargetingValue(BasicAttacker attacker, DefenderTargetingMode mode)
+        {
+            return mode switch
+            {
+                DefenderTargetingMode.HighestHealth => attacker.RemainingHealth,
+                DefenderTargetingMode.Fastest => attacker.MovementSpeed,
+                DefenderTargetingMode.HighestKillGain => attacker.KillGain,
+                _ => 0f
+            };
         }
 
         private bool IsCandidateBlockedByWall(BasicAttacker candidate, ProjectileType projectileType)
@@ -1007,9 +1112,15 @@ namespace TAD.Defenders
 
         private static DefenderTargetingMode NormalizeTargetingMode(DefenderTargetingMode mode)
         {
-            return mode == DefenderTargetingMode.FirstEnemyInRange
-                ? mode
-                : DefenderTargetingMode.FirstEnemyInRange;
+            return mode switch
+            {
+                DefenderTargetingMode.FirstEnemyInRange => mode,
+                DefenderTargetingMode.HighestHealth => mode,
+                DefenderTargetingMode.Fastest => mode,
+                DefenderTargetingMode.LastEnemyInRange => mode,
+                DefenderTargetingMode.HighestKillGain => mode,
+                _ => DefenderTargetingMode.FirstEnemyInRange
+            };
         }
 
         private void ClearAttackersInRange()

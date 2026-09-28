@@ -136,6 +136,7 @@ namespace TAD.Tests.PlayMode
             var defenderObject = pool.Spawn(PooledObjectType.Defender, Vector3.zero, Quaternion.identity);
             var defender = defenderObject.GetComponent<FarmHand>();
             defender.SetRangeIndicatorVisible(true);
+            defender.SetTargetingMode(DefenderTargetingMode.HighestHealth);
             defenderObject.GetComponent<PooledInstance>().ReturnToPool();
             var reusedDefender = pool.Spawn(PooledObjectType.Defender, Vector3.zero, Quaternion.identity).GetComponent<FarmHand>();
             Assert.That(reusedDefender.CurrentLevel, Is.EqualTo(1));
@@ -181,6 +182,7 @@ namespace TAD.Tests.PlayMode
             Assert.That(farmHand.PlacementCollider.bounds.size.y,
                 Is.EqualTo(farmHand.Visual.bounds.size.y).Within(0.01f));
             Assert.That(farmHand.TargetingMode, Is.EqualTo(DefenderTargetingMode.FirstEnemyInRange));
+            farmHand.SetTargetingMode(DefenderTargetingMode.Fastest);
             Assert.That(defenderBank.CurrentGold,
                 Is.EqualTo(goldBeforePlacement - farmHand.WeaponDefinition.Cost));
 
@@ -198,7 +200,7 @@ namespace TAD.Tests.PlayMode
             yield return new WaitForSeconds(1.2f);
             Assert.That(farmHand.IsRelocating, Is.False);
             Assert.That(Vector2.Distance(farmHand.transform.position, targetPosition), Is.LessThan(0.02f));
-            Assert.That(farmHand.TargetingMode, Is.EqualTo(DefenderTargetingMode.FirstEnemyInRange));
+            Assert.That(farmHand.TargetingMode, Is.EqualTo(DefenderTargetingMode.Fastest));
         }
 
         [UnityTest]
@@ -221,8 +223,23 @@ namespace TAD.Tests.PlayMode
             Assert.That(readOnlyText, Is.Not.Null);
             Assert.That(dropdown.gameObject.activeSelf, Is.True);
             Assert.That(readOnlyText.gameObject.activeSelf, Is.False);
-            Assert.That(dropdown.options.Count, Is.EqualTo(1));
-            Assert.That(dropdown.options[0].text, Is.EqualTo("Target Enemy: First enemy in range"));
+            var expectedModes = new[]
+            {
+                DefenderTargetingMode.FirstEnemyInRange,
+                DefenderTargetingMode.HighestHealth,
+                DefenderTargetingMode.Fastest,
+                DefenderTargetingMode.LastEnemyInRange,
+                DefenderTargetingMode.HighestKillGain
+            };
+            Assert.That(FarmHand.AvailableTargetingModes.Count, Is.EqualTo(expectedModes.Length));
+            Assert.That(dropdown.options.Count, Is.EqualTo(expectedModes.Length));
+            for (var index = 0; index < expectedModes.Length; index++)
+            {
+                Assert.That(dropdown.options[index].text,
+                    Is.EqualTo($"Target Enemy: {FarmHand.GetTargetingModeDisplayName(expectedModes[index])}"));
+                dropdown.value = index;
+                Assert.That(farmHand.TargetingMode, Is.EqualTo(expectedModes[index]));
+            }
 
             MatchRoleSelection.Select(PlayerRole.Attacker);
             panel.Show(farmHand);
@@ -230,7 +247,88 @@ namespace TAD.Tests.PlayMode
 
             Assert.That(dropdown.gameObject.activeSelf, Is.False);
             Assert.That(readOnlyText.gameObject.activeSelf, Is.True);
-            Assert.That(readOnlyText.text, Is.EqualTo("Target Enemy: First enemy in range"));
+            Assert.That(readOnlyText.text, Is.EqualTo("Target Enemy: Highest resources"));
+        }
+
+        [UnityTest]
+        public IEnumerator DefenderTargeting_PrioritizesLiveValuesAndEntryOrder()
+        {
+            var bull = Resources.Load<AttackerDefinition>("TADTests/BullDefinition");
+            var greyhound = Resources.Load<AttackerDefinition>("TADTests/GreyhoundDefinition");
+            var eagle = Resources.Load<AttackerDefinition>("TADTests/EagleDefinition");
+            Assert.That(bull, Is.Not.Null);
+            Assert.That(greyhound, Is.Not.Null);
+            Assert.That(eagle, Is.Not.Null);
+
+            var sensorWeapon = ScriptableObject.CreateInstance<WeaponDefinition>();
+            var farmHand = GameBasicsTestSupport.CreateFarmHand();
+            farmHand.SetWeapon(sensorWeapon);
+
+            var firstBull = GameBasicsTestSupport.CreateAttacker(bull);
+            var secondBull = GameBasicsTestSupport.CreateAttacker(bull);
+            var firstGreyhound = GameBasicsTestSupport.CreateAttacker(greyhound);
+            var secondGreyhound = GameBasicsTestSupport.CreateAttacker(greyhound);
+            var firstEagle = GameBasicsTestSupport.CreateAttacker(eagle);
+            var secondEagle = GameBasicsTestSupport.CreateAttacker(eagle);
+            var attackers = new[]
+            {
+                firstBull,
+                secondBull,
+                firstGreyhound,
+                secondGreyhound,
+                firstEagle,
+                secondEagle
+            };
+
+            for (var index = 0; index < attackers.Length; index++)
+            {
+                attackers[index].transform.position = new Vector2(2f + index, 0f);
+                attackers[index].GetComponent<Rigidbody2D>().gravityScale = 0f;
+            }
+
+            Physics2D.SyncTransforms();
+            yield return new WaitForFixedUpdate();
+
+            var entryPositions = new[]
+            {
+                new Vector2(-0.6f, 0f),
+                new Vector2(-0.4f, 0f),
+                new Vector2(-0.2f, 0f),
+                Vector2.zero,
+                new Vector2(0.2f, 0f),
+                new Vector2(0.4f, 0f)
+            };
+            for (var index = 0; index < attackers.Length; index++)
+            {
+                attackers[index].transform.position = entryPositions[index];
+                Physics2D.SyncTransforms();
+                yield return new WaitForFixedUpdate();
+            }
+
+            Assert.That(farmHand.AttackersInRangeCount, Is.EqualTo(attackers.Length));
+
+            farmHand.SetTargetingMode(DefenderTargetingMode.HighestHealth);
+            Assert.That(farmHand.CurrentTarget, Is.EqualTo(firstBull));
+            firstBull.TakeDamage(1f);
+            Assert.That(farmHand.CurrentTarget, Is.EqualTo(secondBull));
+
+            farmHand.SetTargetingMode(DefenderTargetingMode.Fastest);
+            Assert.That(farmHand.CurrentTarget, Is.EqualTo(firstGreyhound));
+
+            farmHand.SetTargetingMode(DefenderTargetingMode.HighestKillGain);
+            Assert.That(farmHand.CurrentTarget, Is.EqualTo(firstEagle));
+
+            farmHand.SetTargetingMode(DefenderTargetingMode.LastEnemyInRange);
+            Assert.That(farmHand.CurrentTarget, Is.EqualTo(secondEagle));
+            secondEagle.transform.position = new Vector2(3f, 0f);
+            Physics2D.SyncTransforms();
+            yield return new WaitForFixedUpdate();
+            Assert.That(farmHand.CurrentTarget, Is.EqualTo(firstEagle));
+
+            firstEagle.TakeDamage(firstEagle.RemainingHealth);
+            Assert.That(farmHand.CurrentTarget, Is.EqualTo(secondGreyhound));
+
+            Object.Destroy(sensorWeapon);
         }
 
         [UnityTest]
