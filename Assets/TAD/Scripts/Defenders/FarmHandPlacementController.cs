@@ -21,6 +21,7 @@ namespace TAD.Defenders
         private const string InsufficientFundsMessage = "you do not you have the required amount to place this";
         private const string OccupiedPlacementMessage = "Another farmhand is already stationed there.";
         private const string RelocationFundsMessage = "You do not have the required amount to move this farmhand.";
+        private const float PlacementWarningDurationSeconds = 3f;
         private const int PlacementOverlapCapacity = 16;
 
         private enum PlacementMode
@@ -245,7 +246,7 @@ namespace TAD.Defenders
             {
                 if (showMessage)
                 {
-                    ShowPlacementMessage(OccupiedPlacementMessage);
+                    ShowTransientPlacementMessage(OccupiedPlacementMessage);
                 }
 
                 return false;
@@ -504,17 +505,26 @@ namespace TAD.Defenders
                 return;
             }
 
-            if (isMousePlacementLocked || IsPointerOverUserInterface())
+            if (IsPointerOverUserInterface())
             {
                 return;
             }
 
-            var didMovePreview = TrySetPreviewFromScreenPosition(mouse.position.ReadValue());
-            if (didMovePreview && mouse.leftButton.wasPressedThisFrame)
+            if (mouse.leftButton.wasPressedThisFrame)
             {
-                // The first world click chooses the final candidate position. The player can then
-                // move the cursor to the tick or cross without the preview following it.
-                isMousePlacementLocked = true;
+                // A world click chooses a candidate position without confirming it. Subsequent world
+                // clicks can revise that candidate while the cursor remains free to reach the tick/cross.
+                if (TrySetPreviewFromScreenPosition(mouse.position.ReadValue()))
+                {
+                    isMousePlacementLocked = true;
+                }
+
+                return;
+            }
+
+            if (!isMousePlacementLocked)
+            {
+                TrySetPreviewFromScreenPosition(mouse.position.ReadValue());
             }
         }
 
@@ -753,13 +763,25 @@ namespace TAD.Defenders
             Debug.LogWarning(message, this);
         }
 
+        private void ShowTransientPlacementMessage(string message)
+        {
+            EnsureInsufficientFundsOverlay();
+            if (spawnedInsufficientFundsOverlay != null)
+            {
+                spawnedInsufficientFundsOverlay.ShowTransientMessage(message, PlacementWarningDurationSeconds);
+                return;
+            }
+
+            Debug.LogWarning(message, this);
+        }
+
         private bool TrySpawnPaidFarmHand(Vector2 position, bool showInsufficientFundsMessage)
         {
             if (!IsFarmHandPlacementAvailable(position, farmHandPrefab))
             {
                 if (showInsufficientFundsMessage)
                 {
-                    ShowPlacementMessage(OccupiedPlacementMessage);
+                    ShowTransientPlacementMessage(OccupiedPlacementMessage);
                 }
 
                 return false;

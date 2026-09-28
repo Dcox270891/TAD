@@ -72,10 +72,10 @@ namespace TAD.Defenders
         /// <summary>World-space destination of the active relocation, if any.</summary>
         public Vector2 RelocationDestination => relocationDestination;
 
-        /// <summary>World-space size of this farmhand's doubled-sprite placement footprint.</summary>
+        /// <summary>World-space size of this farmhand's sprite-sized placement footprint.</summary>
         public Vector2 PlacementFootprintSize => placementCollider != null && placementCollider.enabled
             ? placementCollider.bounds.size
-            : GetDoubledSpriteFootprintSize();
+            : GetSpriteFootprintSize();
 
         /// <summary>World-space offset from the farmhand origin to its footprint centre.</summary>
         public Vector2 PlacementFootprintCenterOffset => placementCollider != null && placementCollider.enabled
@@ -754,10 +754,10 @@ namespace TAD.Defenders
             }
 
             var rootScale = transform.lossyScale;
-            var worldSize = visual.bounds.size * 2f;
+            var worldSize = visual.bounds.size;
             var localSize = new Vector2(
-                Mathf.Abs(rootScale.x) > Mathf.Epsilon ? worldSize.x / Mathf.Abs(rootScale.x) : visual.sprite.bounds.size.x * 2f,
-                Mathf.Abs(rootScale.y) > Mathf.Epsilon ? worldSize.y / Mathf.Abs(rootScale.y) : visual.sprite.bounds.size.y * 2f);
+                Mathf.Abs(rootScale.x) > Mathf.Epsilon ? worldSize.x / Mathf.Abs(rootScale.x) : visual.sprite.bounds.size.x,
+                Mathf.Abs(rootScale.y) > Mathf.Epsilon ? worldSize.y / Mathf.Abs(rootScale.y) : visual.sprite.bounds.size.y);
 
             placementCollider.transform.localPosition = transform.InverseTransformPoint(visual.bounds.center);
             placementCollider.transform.localRotation = Quaternion.identity;
@@ -776,7 +776,7 @@ namespace TAD.Defenders
             }
         }
 
-        private Vector2 GetDoubledSpriteFootprintSize()
+        private Vector2 GetSpriteFootprintSize()
         {
             if (visual == null || visual.sprite == null)
             {
@@ -786,8 +786,8 @@ namespace TAD.Defenders
             var spriteSize = visual.sprite.bounds.size;
             var worldScale = visual.transform.lossyScale;
             return new Vector2(
-                Mathf.Abs(spriteSize.x * worldScale.x) * 2f,
-                Mathf.Abs(spriteSize.y * worldScale.y) * 2f);
+                Mathf.Abs(spriteSize.x * worldScale.x),
+                Mathf.Abs(spriteSize.y * worldScale.y));
         }
 
         private Vector2 GetSpriteFootprintCenterOffset()

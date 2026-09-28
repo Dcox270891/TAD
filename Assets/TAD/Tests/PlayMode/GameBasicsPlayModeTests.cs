@@ -155,7 +155,7 @@ namespace TAD.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator DefenderPlacement_UsesDoubledSpriteFootprintAndPaidRelocation()
+        public IEnumerator DefenderPlacement_UsesSpriteSizedFootprintAndPaidRelocation()
         {
             var fixture = GameBasicsTestSupport.CreateQueueFixture();
             var defenderBank = GameBasicsTestSupport.CreateBank(BankSide.Defender);
@@ -176,9 +176,9 @@ namespace TAD.Tests.PlayMode
             Assert.That(farmHand.PlacementCollider, Is.Not.Null);
             Assert.That(farmHand.PlacementCollider.isTrigger, Is.True);
             Assert.That(farmHand.PlacementCollider.bounds.size.x,
-                Is.EqualTo(farmHand.Visual.bounds.size.x * 2f).Within(0.01f));
+                Is.EqualTo(farmHand.Visual.bounds.size.x).Within(0.01f));
             Assert.That(farmHand.PlacementCollider.bounds.size.y,
-                Is.EqualTo(farmHand.Visual.bounds.size.y * 2f).Within(0.01f));
+                Is.EqualTo(farmHand.Visual.bounds.size.y).Within(0.01f));
             Assert.That(defenderBank.CurrentGold,
                 Is.EqualTo(goldBeforePlacement - farmHand.WeaponDefinition.Cost));
 
@@ -196,6 +196,30 @@ namespace TAD.Tests.PlayMode
             yield return new WaitForSeconds(1.2f);
             Assert.That(farmHand.IsRelocating, Is.False);
             Assert.That(Vector2.Distance(farmHand.transform.position, targetPosition), Is.LessThan(0.02f));
+        }
+
+        [UnityTest]
+        public IEnumerator TransientPlacementWarning_IsOpaqueClickThroughAndExpires()
+        {
+            var warningObject = new GameObject("TAD Test Transient Placement Warning");
+            warningObject.SetActive(false);
+            var canvasGroup = warningObject.AddComponent<CanvasGroup>();
+            warningObject.AddComponent<ModalOverlay>();
+            var message = warningObject.AddComponent<ModalOverlayMessage>();
+            warningObject.SetActive(true);
+            yield return null;
+
+            message.ShowTransientMessage("Another farmhand is already stationed there.", 0.05f);
+
+            Assert.That(canvasGroup.alpha, Is.EqualTo(1f));
+            Assert.That(canvasGroup.interactable, Is.False);
+            Assert.That(canvasGroup.blocksRaycasts, Is.False);
+            Assert.That(ModalOverlay.IsGameplayInputBlocked, Is.False);
+
+            yield return new WaitForSecondsRealtime(0.1f);
+
+            Assert.That(canvasGroup.alpha, Is.EqualTo(0f));
+            Assert.That(ModalOverlay.IsGameplayInputBlocked, Is.False);
         }
 
         [UnityTest]

@@ -1,10 +1,11 @@
+using System.Collections;
 using UnityEngine;
 
 namespace TAD.UI
 {
     /// <summary>
-    /// Adds a message and acknowledgement action to a reusable <see cref="ModalOverlay"/>.
-    /// The overlay remains responsible for blocking input and pausing gameplay.
+    /// Adds blocking acknowledgements and short, non-blocking messages to a reusable
+    /// <see cref="ModalOverlay"/>.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(ModalOverlay))]
@@ -14,7 +15,11 @@ namespace TAD.UI
         [SerializeField] private UnityEngine.UI.Text messageText;
         [SerializeField] private UnityEngine.UI.Button acknowledgeButton;
 
+        private CanvasGroup canvasGroup;
         private bool isSubscribed;
+        private bool isTransientMessageVisible;
+        private bool acknowledgeButtonWasActive;
+        private Coroutine transientMessageCoroutine;
 
         private void Awake()
         {
@@ -28,6 +33,7 @@ namespace TAD.UI
 
         private void OnDisable()
         {
+            StopTransientMessage();
             Unsubscribe();
         }
 
@@ -35,17 +41,50 @@ namespace TAD.UI
         public void ShowMessage(string message)
         {
             ResolveReferences();
-            if (messageText != null)
+            StopTransientMessage();
+            SetMessageText(message);
+            modalOverlay?.Show();
+        }
+
+        /// <summary>
+        /// Displays a fully opaque message for a fixed real-time duration without pausing gameplay or
+        /// intercepting pointer input. Repeated calls restart the duration with the newest message.
+        /// </summary>
+        public void ShowTransientMessage(string message, float durationSeconds)
+        {
+            ResolveReferences();
+            StopTransientMessage();
+            SetMessageText(message);
+
+            // Ensure a previous acknowledgement message cannot keep the global modal state active.
+            modalOverlay?.Hide();
+            if (canvasGroup == null)
             {
-                messageText.text = message;
+                return;
             }
 
-            modalOverlay?.Show();
+            acknowledgeButtonWasActive = acknowledgeButton != null && acknowledgeButton.gameObject.activeSelf;
+            if (acknowledgeButton != null)
+            {
+                acknowledgeButton.gameObject.SetActive(false);
+            }
+
+            canvasGroup.alpha = 1f;
+            canvasGroup.interactable = false;
+            canvasGroup.blocksRaycasts = false;
+            isTransientMessageVisible = true;
+            transientMessageCoroutine = StartCoroutine(HideTransientMessageAfterDelay(Mathf.Max(0f, durationSeconds)));
         }
 
         /// <summary>Completes the current modal choice and restores gameplay input.</summary>
         public void CompleteChoice()
         {
+            if (isTransientMessageVisible)
+            {
+                StopTransientMessage();
+                return;
+            }
+
             modalOverlay?.CompleteChoice();
         }
 
@@ -83,6 +122,7 @@ namespace TAD.UI
         private void ResolveReferences()
         {
             modalOverlay ??= GetComponent<ModalOverlay>();
+            canvasGroup ??= GetComponent<CanvasGroup>();
 
             if (messageText == null)
             {
@@ -107,6 +147,43 @@ namespace TAD.UI
                     }
                 }
             }
+        }
+
+        private void SetMessageText(string message)
+        {
+            if (messageText != null)
+            {
+                messageText.text = message;
+            }
+        }
+
+        private IEnumerator HideTransientMessageAfterDelay(float durationSeconds)
+        {
+            yield return new WaitForSecondsRealtime(durationSeconds);
+            transientMessageCoroutine = null;
+            StopTransientMessage();
+        }
+
+        private void StopTransientMessage()
+        {
+            if (transientMessageCoroutine != null)
+            {
+                StopCoroutine(transientMessageCoroutine);
+                transientMessageCoroutine = null;
+            }
+
+            if (!isTransientMessageVisible)
+            {
+                return;
+            }
+
+            isTransientMessageVisible = false;
+            if (acknowledgeButton != null)
+            {
+                acknowledgeButton.gameObject.SetActive(acknowledgeButtonWasActive);
+            }
+
+            modalOverlay?.Hide();
         }
     }
 }
