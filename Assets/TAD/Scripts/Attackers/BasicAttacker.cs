@@ -133,7 +133,12 @@ namespace TAD.Attackers
                 return;
             }
 
-            var nextPosition = body.position + (moveDirection * definition.MovementSpeed * Time.fixedDeltaTime);
+            // Clamp this physics step to the cached waypoint. Faster animals can otherwise move from one
+            // side of a narrow arrival radius to the other without ever entering it, causing a permanent
+            // oscillation at the waypoint.
+            var waypoint = (Vector2)routePoints[nextRoutePointIndex];
+            var maximumMoveDistance = Mathf.Max(0f, definition.MovementSpeed) * Time.fixedDeltaTime;
+            var nextPosition = Vector2.MoveTowards(body.position, waypoint, maximumMoveDistance);
             if (routeMapper.TryClampToVisibleMap(nextPosition, out var constrainedNextPosition))
             {
                 body.MovePosition(constrainedNextPosition);
