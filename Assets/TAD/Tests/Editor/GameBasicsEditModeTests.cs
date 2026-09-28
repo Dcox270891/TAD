@@ -3,6 +3,7 @@ using NUnit.Framework;
 using TAD.Attackers;
 using TAD.Defenders;
 using TAD.Match;
+using TAD.Progression;
 using UnityEngine;
 
 namespace TAD.Tests.Editor
@@ -11,6 +12,8 @@ namespace TAD.Tests.Editor
     [Category("GameBasics")]
     public sealed class GameBasicsEditModeTests
     {
+        private const string PlayerProfileKey = "TAD.PlayerProfile";
+
         [Test]
         public void DefenderRewardCalculator_SharesAssistExperienceAndKeepsTheKillReward()
         {
@@ -187,6 +190,109 @@ namespace TAD.Tests.Editor
                     out _),
                 Is.False,
                 "Near-identical positions should not make the AI shuffle a farmhand.");
+        }
+
+        [Test]
+        public void PlayerProfileStore_MigratesLegacyAudioAndDisplaySettingsWithoutLosingPreferences()
+        {
+            var backup = CaptureProfileBackup();
+            try
+            {
+                PlayerPrefs.SetString(
+                    PlayerProfileKey,
+                    "{\"version\":1,\"musicEnabled\":true,\"musicVolume\":0.35,\"videoQuality\":999,\"notificationsEnabled\":false,\"controlHintsEnabled\":false}");
+                PlayerPrefs.Save();
+
+                var profile = PlayerProfileStore.Load();
+
+                Assert.That(profile.version, Is.EqualTo(PlayerProfileStore.CurrentVersion));
+                Assert.That(profile.masterVolume, Is.EqualTo(0.35f).Within(0.001f));
+                Assert.That(profile.attackerVolume, Is.EqualTo(1f));
+                Assert.That(profile.defenderVolume, Is.EqualTo(1f));
+                Assert.That(profile.projectileVolume, Is.EqualTo(1f));
+                Assert.That(profile.ambientGameVolume, Is.EqualTo(1f));
+                Assert.That(profile.showAttackerHealthBars, Is.True);
+                Assert.That(profile.showDefenderExperience, Is.True);
+                Assert.That(profile.notificationsEnabled, Is.False);
+                Assert.That(profile.controlHintsEnabled, Is.False);
+                Assert.That(profile.videoQuality, Is.InRange(0, Mathf.Max(0, QualitySettings.names.Length - 1)));
+            }
+            finally
+            {
+                RestoreProfileBackup(backup);
+            }
+        }
+
+        [Test]
+        public void PlayerProfileStore_PersistsAndSanitizesTheExpandedSettings()
+        {
+            var backup = CaptureProfileBackup();
+            try
+            {
+                PlayerProfileStore.Save(new PlayerProfileData
+                {
+                    masterVolume = 2f,
+                    attackerVolume = -1f,
+                    defenderVolume = 0.25f,
+                    projectileVolume = 1.5f,
+                    ambientGameVolume = 0.6f,
+                    showAttackerHealthBars = false,
+                    showDefenderExperience = false,
+                    notificationsEnabled = false,
+                    controlHintsEnabled = false,
+                    videoQuality = -20
+                });
+
+                var profile = PlayerProfileStore.Load();
+
+                Assert.That(profile.masterVolume, Is.EqualTo(1f));
+                Assert.That(profile.attackerVolume, Is.EqualTo(0f));
+                Assert.That(profile.defenderVolume, Is.EqualTo(0.25f));
+                Assert.That(profile.projectileVolume, Is.EqualTo(1f));
+                Assert.That(profile.ambientGameVolume, Is.EqualTo(0.6f));
+                Assert.That(profile.showAttackerHealthBars, Is.False);
+                Assert.That(profile.showDefenderExperience, Is.False);
+                Assert.That(profile.notificationsEnabled, Is.False);
+                Assert.That(profile.controlHintsEnabled, Is.False);
+                Assert.That(profile.videoQuality, Is.EqualTo(0));
+            }
+            finally
+            {
+                RestoreProfileBackup(backup);
+            }
+        }
+
+        private static ProfileBackup CaptureProfileBackup()
+        {
+            return PlayerPrefs.HasKey(PlayerProfileKey)
+                ? new ProfileBackup(true, PlayerPrefs.GetString(PlayerProfileKey))
+                : new ProfileBackup(false, string.Empty);
+        }
+
+        private static void RestoreProfileBackup(ProfileBackup backup)
+        {
+            if (backup.Exists)
+            {
+                PlayerPrefs.SetString(PlayerProfileKey, backup.Value);
+            }
+            else
+            {
+                PlayerPrefs.DeleteKey(PlayerProfileKey);
+            }
+
+            PlayerPrefs.Save();
+        }
+
+        private readonly struct ProfileBackup
+        {
+            public ProfileBackup(bool exists, string value)
+            {
+                Exists = exists;
+                Value = value;
+            }
+
+            public bool Exists { get; }
+            public string Value { get; }
         }
 
         private static T Load<T>(string assetName) where T : Object

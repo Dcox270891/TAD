@@ -32,7 +32,7 @@ namespace TAD.UI
         private void Awake()
         {
             ResolveReferences();
-            playerProfile = PlayerProfileStore.Load();
+            playerProfile = PlayerSettingsService.Instance.Profile;
         }
 
         private void OnEnable()
@@ -97,7 +97,15 @@ namespace TAD.UI
 
         public void OpenSettings()
         {
-            ShowNotImplemented(settingsButton, "OPTIONS / SETTINGS");
+            var canvas = GetComponentInParent<Canvas>();
+            if (canvas == null ||
+                PlayerSettingsOverlay.Show(
+                    canvas.transform,
+                    settingsButton,
+                    settingsButton != null ? settingsButton.gameObject : null) == null)
+            {
+                Debug.LogError("Main Menu could not show the Player Settings overlay.", this);
+            }
         }
 
         public void OpenPlayerUpgrades()
@@ -180,10 +188,7 @@ namespace TAD.UI
                 return;
             }
 
-            if (playerProfile == null)
-            {
-                playerProfile = PlayerProfileStore.Load();
-            }
+            playerProfile = PlayerSettingsService.Instance.Profile;
 
             playerProfile.lastPlayedLevelId = level.Id;
             SaveProfile();
@@ -211,10 +216,9 @@ namespace TAD.UI
 
         private void SaveProfile()
         {
-            if (playerProfile != null)
-            {
-                PlayerProfileStore.Save(playerProfile);
-            }
+            var settings = PlayerSettingsService.Instance;
+            playerProfile = settings.Profile;
+            settings.Save();
         }
 
         private void Subscribe()

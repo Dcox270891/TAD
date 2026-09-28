@@ -1,3 +1,4 @@
+using TAD.Progression;
 using UnityEngine;
 
 namespace TAD.Defenders
@@ -28,6 +29,9 @@ namespace TAD.Defenders
 
         private MeshRenderer textRenderer;
         private bool isSubscribed;
+        private bool isSettingsSubscribed;
+        private bool hasVisibleFill;
+        private PlayerSettingsService settingsService;
 
         private void Awake()
         {
@@ -39,12 +43,15 @@ namespace TAD.Defenders
         {
             ResolveComponents();
             Subscribe();
+            SubscribeToSettings();
             Refresh();
         }
 
         private void OnDisable()
         {
             Unsubscribe();
+            UnsubscribeFromSettings();
+            SetVisible(false);
         }
 
         /// <summary>Assigns the prefab-owned parts used to render this farmhand's progression.</summary>
@@ -73,6 +80,13 @@ namespace TAD.Defenders
             ResolveComponents();
             if (farmHand == null)
             {
+                SetVisible(false);
+                return;
+            }
+
+            if (Application.isPlaying && !PlayerSettingsService.Instance.IsDefenderExperienceVisible)
+            {
+                SetVisible(false);
                 return;
             }
 
@@ -137,6 +151,34 @@ namespace TAD.Defenders
             isSubscribed = false;
         }
 
+        private void SubscribeToSettings()
+        {
+            if (!Application.isPlaying || isSettingsSubscribed)
+            {
+                return;
+            }
+
+            settingsService = PlayerSettingsService.Instance;
+            settingsService.SettingsChanged += HandleSettingsChanged;
+            isSettingsSubscribed = true;
+        }
+
+        private void UnsubscribeFromSettings()
+        {
+            if (!isSettingsSubscribed)
+            {
+                return;
+            }
+
+            if (settingsService != null)
+            {
+                settingsService.SettingsChanged -= HandleSettingsChanged;
+                settingsService = null;
+            }
+
+            isSettingsSubscribed = false;
+        }
+
         private void ConfigureTransform()
         {
             var parentScale = farmHand.transform.lossyScale;
@@ -183,7 +225,8 @@ namespace TAD.Defenders
                     -0.01f);
                 fillRenderer.transform.localRotation = Quaternion.identity;
                 fillRenderer.transform.localScale = new Vector3(fillWidth, BarWorldHeight, 1f);
-                fillRenderer.enabled = fillWidth > 0f;
+                hasVisibleFill = fillWidth > 0f;
+                fillRenderer.enabled = hasVisibleFill;
             }
         }
 
@@ -221,6 +264,29 @@ namespace TAD.Defenders
             textRenderer.sortingLayerID = visual != null ? visual.sortingLayerID : 0;
             textRenderer.sortingOrder = (visual != null ? visual.sortingOrder : 0) + LabelOrderOffset;
             textRenderer.enabled = true;
+        }
+
+        private void HandleSettingsChanged(PlayerProfileData profile)
+        {
+            Refresh();
+        }
+
+        private void SetVisible(bool visible)
+        {
+            if (backgroundRenderer != null)
+            {
+                backgroundRenderer.enabled = visible;
+            }
+
+            if (fillRenderer != null)
+            {
+                fillRenderer.enabled = visible && hasVisibleFill;
+            }
+
+            if (textRenderer != null)
+            {
+                textRenderer.enabled = visible;
+            }
         }
 
         private static Sprite GetSharedBarSprite()

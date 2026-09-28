@@ -1,4 +1,5 @@
 using TAD.Pooling;
+using TAD.Progression;
 using UnityEngine;
 
 namespace TAD.Attackers
@@ -31,6 +32,8 @@ namespace TAD.Attackers
         private float barWidth = MinimumBarWorldWidth;
         private bool hasVisibleFill;
         private bool isSubscribed;
+        private bool isSettingsSubscribed;
+        private PlayerSettingsService settingsService;
 
         private void Awake()
         {
@@ -44,12 +47,14 @@ namespace TAD.Attackers
             ResolveComponents();
             EnsureRenderers();
             Subscribe();
+            SubscribeToSettings();
             Refresh();
         }
 
         private void OnDisable()
         {
             Unsubscribe();
+            UnsubscribeFromSettings();
             SetVisible(false);
         }
 
@@ -58,6 +63,12 @@ namespace TAD.Attackers
         {
             ResolveComponents();
             EnsureRenderers();
+            if (Application.isPlaying && !PlayerSettingsService.Instance.AreAttackerHealthBarsVisible)
+            {
+                SetVisible(false);
+                return;
+            }
+
             if (attacker == null || !attacker.isActiveAndEnabled || !attacker.gameObject.activeInHierarchy ||
                 attacker.IsDefeated || attacker.RemainingHealth <= 0f || attacker.MaximumHealth <= 0f)
             {
@@ -142,7 +153,40 @@ namespace TAD.Attackers
             isSubscribed = false;
         }
 
+        private void SubscribeToSettings()
+        {
+            if (!Application.isPlaying || isSettingsSubscribed)
+            {
+                return;
+            }
+
+            settingsService = PlayerSettingsService.Instance;
+            settingsService.SettingsChanged += HandleSettingsChanged;
+            isSettingsSubscribed = true;
+        }
+
+        private void UnsubscribeFromSettings()
+        {
+            if (!isSettingsSubscribed)
+            {
+                return;
+            }
+
+            if (settingsService != null)
+            {
+                settingsService.SettingsChanged -= HandleSettingsChanged;
+                settingsService = null;
+            }
+
+            isSettingsSubscribed = false;
+        }
+
         private void HandleHealthChanged(float currentHealth, float maximumHealth)
+        {
+            Refresh();
+        }
+
+        private void HandleSettingsChanged(PlayerProfileData profile)
         {
             Refresh();
         }

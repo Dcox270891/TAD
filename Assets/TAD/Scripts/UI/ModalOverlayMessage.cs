@@ -1,4 +1,5 @@
 using System.Collections;
+using TAD.Progression;
 using UnityEngine;
 
 namespace TAD.UI
@@ -52,6 +53,11 @@ namespace TAD.UI
         /// </summary>
         public void ShowTransientMessage(string message, float durationSeconds)
         {
+            if (Application.isPlaying && !PlayerSettingsService.Instance.AreNotificationsEnabled)
+            {
+                return;
+            }
+
             ResolveReferences();
             StopTransientMessage();
             SetMessageText(message);
