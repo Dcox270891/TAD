@@ -52,7 +52,9 @@ if (Test-UnityProjectIsLocked -ProjectRoot $projectRoot -UnityExecutable $unityE
 }
 
 $runId = Get-Date -Format 'yyyyMMdd-HHmmss'
-$resultsRoot = Join-Path $projectRoot (Join-Path 'Temp\GameBasicsTestResults' $runId)
+# Unity clears Temp while it starts a batch test run, so keep generated reports in
+# the ignored Library cache rather than losing them before the gate can inspect them.
+$resultsRoot = Join-Path $projectRoot (Join-Path 'Library\GameBasicsTestResults' $runId)
 New-Item -ItemType Directory -Path $resultsRoot -Force | Out-Null
 
 function Assert-NUnitReportIsSuccessful {
