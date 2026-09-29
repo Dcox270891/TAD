@@ -315,7 +315,20 @@ namespace TAD.UI
         {
             if (spawnedOverlay == null)
             {
-                spawnedOverlay = UnityEngine.Object.FindAnyObjectByType<DefenderLevelUpgradeOverlay>(FindObjectsInactive.Include);
+                // A scene instance explicitly assigned by the bootstrap is authoritative. Looking up an
+                // arbitrary overlay first can bind a newly loaded level to a stale overlay from another
+                // UI root, leaving the configured panel unable to present the player's choice.
+                if (overlayPrefab != null && overlayPrefab.gameObject.scene.IsValid() &&
+                    overlayPrefab.gameObject.scene.isLoaded)
+                {
+                    spawnedOverlay = overlayPrefab;
+                }
+
+                if (spawnedOverlay == null)
+                {
+                    spawnedOverlay = UnityEngine.Object.FindAnyObjectByType<DefenderLevelUpgradeOverlay>(FindObjectsInactive.Include);
+                }
+
                 if (spawnedOverlay == null && overlayPrefab != null)
                 {
                     spawnedOverlay = Instantiate(overlayPrefab);

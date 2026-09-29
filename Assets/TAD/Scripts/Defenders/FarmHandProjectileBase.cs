@@ -28,7 +28,8 @@ namespace TAD.Defenders
         private readonly Collider2D[] impactOverlapResults = new Collider2D[32];
         private readonly HashSet<BasicAttacker> areaImpactTargets = new();
         private static readonly RaycastHit2D[] wallHitBuffer = new RaycastHit2D[WallHitCapacity];
-        private static readonly int environmentLayerMask = LayerMask.GetMask("Environment");
+        private static int environmentLayerMask;
+        private static bool hasResolvedEnvironmentLayerMask;
 
         protected FarmHand SourceFarmHand { get; private set; }
         protected long SourceActivationSessionId { get; private set; }
@@ -350,7 +351,8 @@ namespace TAD.Defenders
             ProjectileType projectileType)
         {
             var delta = target - origin;
-            if (delta.sqrMagnitude <= 0.0001f || environmentLayerMask == 0)
+            var wallLayerMask = GetEnvironmentLayerMask();
+            if (delta.sqrMagnitude <= 0.0001f || wallLayerMask == 0)
             {
                 return false;
             }
@@ -361,7 +363,7 @@ namespace TAD.Defenders
                 delta / distance,
                 wallHitBuffer,
                 distance,
-                environmentLayerMask);
+                wallLayerMask);
             if (hitCount >= wallHitBuffer.Length)
             {
                 ClearWallHitBuffer(hitCount);
@@ -383,6 +385,25 @@ namespace TAD.Defenders
 
             ClearWallHitBuffer(hitCount);
             return isBlocked;
+        }
+
+        /// <summary>
+        /// Resolves the Environment layer only when a projectile actually evaluates an attack path.
+        /// Unity can construct a MonoBehaviour while creating an Inspector preview, where layer-name
+        /// APIs are forbidden; resolving it from a static field initializer caused those previews to
+        /// throw before the projectile was even launched.
+        /// </summary>
+        private static int GetEnvironmentLayerMask()
+        {
+            if (hasResolvedEnvironmentLayerMask)
+            {
+                return environmentLayerMask;
+            }
+
+            hasResolvedEnvironmentLayerMask = true;
+            var environmentLayer = LayerMask.NameToLayer("Environment");
+            environmentLayerMask = environmentLayer >= 0 ? 1 << environmentLayer : 0;
+            return environmentLayerMask;
         }
 
         private static void ClearWallHitBuffer(int hitCount)

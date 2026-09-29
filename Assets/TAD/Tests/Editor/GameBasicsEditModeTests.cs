@@ -194,6 +194,21 @@ namespace TAD.Tests.Editor
         }
 
         [Test]
+        public void FarmHandProjectile_CanBeConstructedInEditMode()
+        {
+            var projectileObject = new GameObject("EditorProjectileConstructionTest");
+            try
+            {
+                Assert.DoesNotThrow(() => projectileObject.AddComponent<FarmHandProjectile>());
+                Assert.That(projectileObject.GetComponent<FarmHandProjectile>(), Is.Not.Null);
+            }
+            finally
+            {
+                Object.DestroyImmediate(projectileObject);
+            }
+        }
+
+        [Test]
         public void DefenderAiPlanner_RelocatesOnlyForMeaningfullyBetterRouteCoverage()
         {
             var chicken = Load<AttackerDefinition>("ChickenDefinition");

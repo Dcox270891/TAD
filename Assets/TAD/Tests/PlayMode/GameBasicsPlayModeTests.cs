@@ -178,9 +178,10 @@ namespace TAD.Tests.PlayMode
 
             Assert.That(DefeatAttackersUntilLevel(defender, attackerDefinition, 5), Is.True);
             Assert.That(defender.PendingWeaponUpgradeLevel, Is.EqualTo(5));
+            var goldBeforeLevelFiveFinalAttempt = defenderBank.CurrentGold;
             Assert.That(defender.TryChooseWeaponUpgrade(validFinalWeapon), Is.False,
                 "A final asset must not bypass its exact level-five parent selection.");
-            Assert.That(defenderBank.CurrentGold, Is.EqualTo(goldBeforeEarlyFinalAttempt));
+            Assert.That(defenderBank.CurrentGold, Is.EqualTo(goldBeforeLevelFiveFinalAttempt));
             Assert.That(defender.TryChooseWeaponUpgrade(levelFiveWeapon), Is.True);
 
             Assert.That(DefeatAttackersUntilLevel(defender, attackerDefinition, 8), Is.True);
@@ -702,7 +703,7 @@ namespace TAD.Tests.PlayMode
             Assert.That(farmHand.CurrentTarget, Is.EqualTo(firstEagle));
             farmHand.SetTargetingMode(DefenderTargetingMode.LastEnemyInRange);
             Assert.That(farmHand.CurrentTarget, Is.EqualTo(secondEagle));
-            secondEagle.transform.position = new Vector2(3f, 0f);
+            secondEagle.transform.position = new Vector2(farmHand.Range + 1f, 0f);
             Physics2D.SyncTransforms();
             yield return new WaitForFixedUpdate();
             Assert.That(farmHand.CurrentTarget, Is.EqualTo(firstEagle));

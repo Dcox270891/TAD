@@ -190,12 +190,31 @@ namespace TAD.Tests.PlayMode
         internal static IEnumerator DestroyAllTestObjects()
         {
             Time.timeScale = 1f;
+            var objectsToDestroy = new HashSet<GameObject>();
+
+            // Spawned pool objects detach from their pool while active. Mark them before their owning
+            // test pool is removed so one test cannot leave an active farmhand or projectile behind for
+            // the next test's physics queries.
+            foreach (var pooledInstance in Object.FindObjectsByType<PooledInstance>(FindObjectsInactive.Include))
+            {
+                if (pooledInstance != null && pooledInstance.Owner != null &&
+                    pooledInstance.Owner.name.StartsWith(TestPrefix, System.StringComparison.Ordinal))
+                {
+                    objectsToDestroy.Add(pooledInstance.gameObject);
+                }
+            }
+
             foreach (var gameObject in Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include))
             {
                 if (gameObject != null && gameObject.name.StartsWith(TestPrefix, System.StringComparison.Ordinal))
                 {
-                    Object.Destroy(gameObject);
+                    objectsToDestroy.Add(gameObject);
                 }
+            }
+
+            foreach (var gameObject in objectsToDestroy)
+            {
+                Object.Destroy(gameObject);
             }
 
             yield return null;
