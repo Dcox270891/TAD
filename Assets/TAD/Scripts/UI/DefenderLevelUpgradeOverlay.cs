@@ -10,7 +10,7 @@ namespace TAD.UI
 {
     /// <summary>
     /// Displays a manually requested defender weapon branch. The reusable prefab owns four control
-    /// slots, while the current tree presents two choices at level two and two at level five.
+    /// slots, while the current tree presents two choices at level two, level five, and level eight.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(ModalOverlay))]
@@ -232,6 +232,7 @@ namespace TAD.UI
 
             var isFreeChoice = targetFarmHand != null && targetFarmHand.IsFreeWeaponUpgradePending;
             var pendingLevel = targetFarmHand != null ? targetFarmHand.PendingWeaponUpgradeLevel : 0;
+            var evolutionLabel = pendingLevel == 8 ? "final weapon evolution" : "weapon evolution";
             if (titleText != null)
             {
                 titleText.text = pendingLevel > 0
@@ -244,8 +245,8 @@ namespace TAD.UI
                 subtitleText.text = isFreeChoice
                     ? $"Choose one free weapon upgrade{FormatSelectionError()}"
                     : hasDefenderBank
-                        ? $"Defender Gold: {defenderGold} - Choose one weapon evolution{FormatSelectionError()}"
-                        : $"Defender Gold unavailable - weapon evolution cannot be purchased.{FormatSelectionError()}";
+                        ? $"Defender Gold: {defenderGold} - Choose one {evolutionLabel}{FormatSelectionError()}"
+                        : $"Defender Gold unavailable - {evolutionLabel} cannot be purchased.{FormatSelectionError()}";
             }
 
             for (var index = 0; index < MaximumUpgradeOptionCount; index++)
@@ -293,7 +294,11 @@ namespace TAD.UI
                     : $"Cost: {definition.Cost} Gold\nNeed {definition.Cost - defenderGold} more Gold"
                 : "Cost: Defender Gold unavailable";
 
-            return $"{definition.DisplayName}\n{definition.Description}\n\n{costText}\nDamage {definition.Damage:0.#}   Range {definition.Range:0.#}   Speed {definition.AttackSpeed:0.#}";
+            var reloadText = definition.UsesReload
+                ? $"\nMagazine {definition.ShotsPerMagazine}   Reload {definition.ReloadDuration:0.#}s"
+                : string.Empty;
+
+            return $"{definition.DisplayName}\n{definition.Description}\n\n{costText}\nDamage {definition.Damage:0.#}   Range {definition.Range:0.#}   Speed {definition.AttackSpeed:0.#}{reloadText}";
         }
 
         private void SelectFirstOption()

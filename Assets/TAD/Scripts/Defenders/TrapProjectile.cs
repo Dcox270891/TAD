@@ -32,6 +32,12 @@ namespace TAD.Defenders
                 Body.position,
                 placementPosition,
                 travelSpeed * Time.fixedDeltaTime);
+            if (IsAttackPathBlockedByWall(Body.position, nextPosition))
+            {
+                ReturnToPool();
+                return;
+            }
+
             Body.MovePosition(nextPosition);
             if ((nextPosition - placementPosition).sqrMagnitude <= 0.0001f)
             {
@@ -100,7 +106,7 @@ namespace TAD.Defenders
             }
 
             var attacker = GetValidAttacker(other);
-            if (attacker != null && TryDamageAttacker(attacker))
+            if (attacker != null && TryApplyImpactEffects(attacker, placementPosition, applyPrimaryDamage: true))
             {
                 ReturnToPool();
             }

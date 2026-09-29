@@ -4,6 +4,7 @@ using TAD.Attackers;
 using TAD.Defenders;
 using TAD.Match;
 using TAD.Progression;
+using UnityEditor;
 using UnityEngine;
 
 namespace TAD.Tests.Editor
@@ -154,6 +155,45 @@ namespace TAD.Tests.Editor
         }
 
         [Test]
+        public void FinalLevelEightWeaponAssets_HaveExactParentsAndConfiguredGameplayEffects()
+        {
+            var pole = LoadAsset<WeaponDefinition>("Assets/TAD/Data/Defenders/PoleWeaponDefinition.asset");
+            var rolling = LoadAsset<WeaponDefinition>("Assets/TAD/Data/Defenders/RollingWeaponDefinition.asset");
+            var airRifle = LoadAsset<WeaponDefinition>("Assets/TAD/Data/Defenders/AirRifleWeaponDefinition.asset");
+            var trapper = LoadAsset<WeaponDefinition>("Assets/TAD/Data/Defenders/TrapperWeaponDefinition.asset");
+            var rake = LoadAsset<WeaponDefinition>("Assets/TAD/Data/Defenders/FinalUpgrades/RakeWeaponDefinition.asset");
+            var shovel = LoadAsset<WeaponDefinition>("Assets/TAD/Data/Defenders/FinalUpgrades/ShovelWeaponDefinition.asset");
+            var heavyRoll = LoadAsset<WeaponDefinition>("Assets/TAD/Data/Defenders/FinalUpgrades/HeavyRollWeaponDefinition.asset");
+            var bounce = LoadAsset<WeaponDefinition>("Assets/TAD/Data/Defenders/FinalUpgrades/BounceWeaponDefinition.asset");
+            var semiAutomatic = LoadAsset<WeaponDefinition>("Assets/TAD/Data/Defenders/FinalUpgrades/SemiAutomaticWeaponDefinition.asset");
+            var pistol = LoadAsset<WeaponDefinition>("Assets/TAD/Data/Defenders/FinalUpgrades/PistolWeaponDefinition.asset");
+            var poisonTrapper = LoadAsset<WeaponDefinition>("Assets/TAD/Data/Defenders/FinalUpgrades/PoisonTrapperWeaponDefinition.asset");
+            var slowTrapper = LoadAsset<WeaponDefinition>("Assets/TAD/Data/Defenders/FinalUpgrades/SlowTrapperWeaponDefinition.asset");
+
+            Assert.That(pole.UnlocksFinalEvolution, Is.True);
+            Assert.That(rolling.UnlocksFinalEvolution, Is.True);
+            Assert.That(airRifle.UnlocksFinalEvolution, Is.True);
+            Assert.That(trapper.UnlocksFinalEvolution, Is.True);
+            Assert.That(rake.RequiredPreviousWeapon, Is.EqualTo(pole));
+            Assert.That(shovel.RequiredPreviousWeapon, Is.EqualTo(pole));
+            Assert.That(heavyRoll.RequiredPreviousWeapon, Is.EqualTo(rolling));
+            Assert.That(bounce.RequiredPreviousWeapon, Is.EqualTo(rolling));
+            Assert.That(semiAutomatic.RequiredPreviousWeapon, Is.EqualTo(airRifle));
+            Assert.That(pistol.RequiredPreviousWeapon, Is.EqualTo(airRifle));
+            Assert.That(poisonTrapper.RequiredPreviousWeapon, Is.EqualTo(trapper));
+            Assert.That(slowTrapper.RequiredPreviousWeapon, Is.EqualTo(trapper));
+            Assert.That(rake.ProjectileDefinition.BleedDuration, Is.GreaterThan(0f));
+            Assert.That(shovel.ProjectileDefinition.StunDuration, Is.GreaterThan(0f));
+            Assert.That(heavyRoll.ProjectileDefinition.ProjectileScaleMultiplier, Is.GreaterThan(1f));
+            Assert.That(bounce.ProjectileDefinition.ProjectileBehavior, Is.EqualTo(ProjectileBehavior.Bouncing));
+            Assert.That(bounce.ProjectileDefinition.ImpactAreaRadius, Is.GreaterThan(0f));
+            Assert.That(semiAutomatic.ShotsPerMagazine, Is.GreaterThan(1));
+            Assert.That(semiAutomatic.ReloadDuration, Is.GreaterThan(pistol.ReloadDuration));
+            Assert.That(poisonTrapper.ProjectileDefinition.PoisonDuration, Is.GreaterThan(0f));
+            Assert.That(slowTrapper.ProjectileDefinition.SlowDuration, Is.GreaterThan(0f));
+        }
+
+        [Test]
         public void DefenderAiPlanner_RelocatesOnlyForMeaningfullyBetterRouteCoverage()
         {
             var chicken = Load<AttackerDefinition>("ChickenDefinition");
@@ -299,6 +339,13 @@ namespace TAD.Tests.Editor
         {
             var asset = Resources.Load<T>("TADTests/" + assetName);
             Assert.That(asset, Is.Not.Null, "Missing deterministic game-test asset " + assetName + ".");
+            return asset;
+        }
+
+        private static T LoadAsset<T>(string path) where T : Object
+        {
+            var asset = AssetDatabase.LoadAssetAtPath<T>(path);
+            Assert.That(asset, Is.Not.Null, "Missing authored asset " + path + ".");
             return asset;
         }
     }

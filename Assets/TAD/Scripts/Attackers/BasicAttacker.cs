@@ -8,6 +8,18 @@ using UnityEngine;
 namespace TAD.Attackers
 {
     /// <summary>
+    /// Identifies the persistent damage effect currently applied by a defender projectile.
+    /// Bleed and poison share the same pooled attacker implementation but remain distinct for
+    /// presentation, balancing, and future resistance rules.
+    /// </summary>
+    public enum AttackerDamageOverTimeType
+    {
+        None = 0,
+        Bleed = 1,
+        Poison = 2
+    }
+
+    /// <summary>
     /// Moves a reusable animal attacker toward the Food Store and reports its remaining health on arrival.
     /// </summary>
     [DisallowMultipleComponent]
@@ -15,12 +27,40 @@ namespace TAD.Attackers
     public sealed class BasicAttacker : MonoBehaviour, IFoodStoreRaider, IPoolLifecycle
     {
         private const float WaypointArrivalDistance = 0.04f;
+        private const float DamageOverTimeTickInterval = 0.25f;
+
+        private struct ActiveDamageOverTime
+        {
+            public FarmHand Source;
+            public long SourceActivationSessionId;
+            public float DamagePerSecond;
+            public float RemainingDuration;
+            public float TickAccumulator;
+
+            public bool IsActive => DamagePerSecond > 0f && RemainingDuration > 0f;
+
+            public void Clear()
+            {
+                Source = null;
+                SourceActivationSessionId = 0L;
+                DamagePerSecond = 0f;
+                RemainingDuration = 0f;
+                TickAccumulator = 0f;
+            }
+        }
+
+        private struct ActiveSlow
+        {
+            public float Multiplier;
+            public float RemainingDuration;
+        }
 
         [SerializeField] private AttackerDefinition definition;
         [SerializeField] private Vector2 startingMoveDirection = Vector2.right;
 
         private readonly List<Vector3> routePoints = new();
         private readonly HashSet<FarmHand> helpedToKillDefenders = new();
+        private readonly Dictionary<FarmHand, long> helpedToKillActivationSessions = new();
         private readonly List<Collider2D> ignoredHalfCoverColliders = new();
         // Physical farmhand colliders are never navigation obstacles. The actual range and projectile colliders
         // remain triggers, so they are deliberately left alone to preserve targeting and damage callbacks.
@@ -38,6 +78,10 @@ namespace TAD.Attackers
         private bool hasReachedFoodStore;
         private bool isDefeated;
         private int nextRoutePointIndex;
+        private ActiveDamageOverTime bleedEffect;
+        private ActiveDamageOverTime poisonEffect;
+        private float stunRemainingDuration;
+        private readonly List<ActiveSlow> activeSlows = new();
 
         public AttackerDefinition Definition => definition;
         public string AttackerId => definition != null ? definition.AttackerId : string.Empty;
@@ -52,6 +96,8 @@ namespace TAD.Attackers
         public float RemainingHealth => currentHealth;
         public float MaximumHealth => definition != null ? definition.MaximumHealth : 0f;
         public float MovementSpeed => definition != null ? definition.MovementSpeed : 0f;
+        /// <summary>Current movement speed after active stun and slow effects are applied.</summary>
+        public float EffectiveMovementSpeed => IsStunned ? 0f : MovementSpeed * GetSlowMultiplier();
         public bool HasReachedFoodStore => hasReachedFoodStore;
 
         /// <summary>Raised whenever this pooled attacker's health is reset or changed.</summary>
@@ -75,6 +121,18 @@ namespace TAD.Attackers
 
         /// <summary>Unique defenders that have dealt a non-lethal hit during this attacker activation.</summary>
         public IReadOnlyCollection<FarmHand> HelpedToKillDefenders => helpedToKillDefenders;
+
+        /// <summary>True while a shovel or other stun source has halted this attacker.</summary>
+        public bool IsStunned => stunRemainingDuration > 0f;
+
+        /// <summary>True while a rake's bleed effect is active.</summary>
+        public bool IsBleeding => bleedEffect.IsActive;
+
+        /// <summary>True while a poison trap's poison effect is active.</summary>
+        public bool IsPoisoned => poisonEffect.IsActive;
+
+        /// <summary>True while one or more slow effects reduce this attacker's movement speed.</summary>
+        public bool IsSlowed => GetSlowMultiplier() < 0.999f;
 
         private void Awake()
         {
@@ -118,6 +176,22 @@ namespace TAD.Attackers
                 return;
             }
 
+            TickStatusEffects();
+            if (hasReachedFoodStore || isDefeated || currentHealth <= 0f)
+            {
+                return;
+            }
+
+            if (IsStunned)
+            {
+                if (body != null)
+                {
+                    body.linearVelocity = Vector2.zero;
+                }
+
+                return;
+            }
+
             routeMapper ??= pooledInstance != null && pooledInstance.Owner != null
                 ? pooledInstance.Owner.RouteMapper
                 : Object.FindAnyObjectByType<FarmRouteMapper>();
@@ -141,7 +215,7 @@ namespace TAD.Attackers
             // side of a narrow arrival radius to the other without ever entering it, causing a permanent
             // oscillation at the waypoint.
             var waypoint = (Vector2)routePoints[nextRoutePointIndex];
-            var maximumMoveDistance = Mathf.Max(0f, definition.MovementSpeed) * Time.fixedDeltaTime;
+            var maximumMoveDistance = Mathf.Max(0f, EffectiveMovementSpeed) * Time.fixedDeltaTime;
             var nextPosition = Vector2.MoveTowards(body.position, waypoint, maximumMoveDistance);
             if (routeMapper.TryClampToVisibleMap(nextPosition, out var constrainedNextPosition))
             {
@@ -201,6 +275,108 @@ namespace TAD.Attackers
         }
 
         /// <summary>
+        /// Applies or refreshes a non-stacking bleed. If a stronger bleed replaces a weaker one,
+        /// its defender remains credited for the periodic damage and any killing blow.
+        /// </summary>
+        public void ApplyBleed(FarmHand source, float damagePerSecond, float duration)
+        {
+            ApplyBleed(
+                source,
+                source != null ? source.ActivationSessionId : 0L,
+                damagePerSecond,
+                duration);
+        }
+
+        /// <summary>
+        /// Applies bleed from a projectile that captured the source farmhand's enabled lifetime at launch.
+        /// A source that has since been reused cannot attach a new bleed to this attacker.
+        /// </summary>
+        public void ApplyBleed(
+            FarmHand source,
+            long sourceActivationSessionId,
+            float damagePerSecond,
+            float duration)
+        {
+            ApplyDamageOverTime(
+                ref bleedEffect,
+                source,
+                sourceActivationSessionId,
+                damagePerSecond,
+                duration);
+        }
+
+        /// <summary>Applies or refreshes a non-stacking poison effect.</summary>
+        public void ApplyPoison(FarmHand source, float damagePerSecond, float duration)
+        {
+            ApplyPoison(
+                source,
+                source != null ? source.ActivationSessionId : 0L,
+                damagePerSecond,
+                duration);
+        }
+
+        /// <summary>Equivalent token-aware poison entry point used by pooled defender projectiles.</summary>
+        public void ApplyPoison(
+            FarmHand source,
+            long sourceActivationSessionId,
+            float damagePerSecond,
+            float duration)
+        {
+            ApplyDamageOverTime(
+                ref poisonEffect,
+                source,
+                sourceActivationSessionId,
+                damagePerSecond,
+                duration);
+        }
+
+        /// <summary>Stops the attacker for the supplied real gameplay duration.</summary>
+        public void ApplyStun(float duration)
+        {
+            if (duration > 0f && !isDefeated && !hasReachedFoodStore)
+            {
+                stunRemainingDuration = Mathf.Max(stunRemainingDuration, duration);
+            }
+        }
+
+        /// <summary>
+        /// Applies a movement multiplier for a duration. Separate slow sources coexist so a brief
+        /// strong slow cannot erase a longer, weaker one when it expires.
+        /// </summary>
+        public void ApplySlow(float movementMultiplier, float duration)
+        {
+            if (duration <= 0f || isDefeated || hasReachedFoodStore)
+            {
+                return;
+            }
+
+            movementMultiplier = Mathf.Clamp(movementMultiplier, 0.05f, 1f);
+            if (movementMultiplier >= 0.999f)
+            {
+                return;
+            }
+
+            for (var index = 0; index < activeSlows.Count; index++)
+            {
+                var existing = activeSlows[index];
+                if (Mathf.Abs(existing.Multiplier - movementMultiplier) > 0.001f)
+                {
+                    continue;
+                }
+
+                existing.RemainingDuration = Mathf.Max(existing.RemainingDuration, duration);
+                activeSlows[index] = existing;
+                return;
+            }
+
+            activeSlows.Add(new ActiveSlow
+            {
+                Multiplier = movementMultiplier,
+                RemainingDuration = duration
+            });
+        }
+
+        /// <summary>
         /// Applies damage from a defender. Every distinct defender that lands a non-lethal hit is recorded as an
         /// assist recipient. On defeat, the returned snapshot excludes the killer so assist XP can be shared fairly
         /// while the killer receives the entire unallocated remainder.
@@ -226,6 +402,7 @@ namespace TAD.Attackers
                 if (defender != null && defender.CanEarnExperience)
                 {
                     helpedToKillDefenders.Add(defender);
+                    helpedToKillActivationSessions[defender] = defender.ActivationSessionId;
                 }
 
                 return true;
@@ -236,15 +413,29 @@ namespace TAD.Attackers
             {
                 // A killing defender receives the remaining kill reward rather than a second assist allocation.
                 helpedToKillDefenders.Remove(defender);
+                helpedToKillActivationSessions.Remove(defender);
             }
 
             if (helpedToKillDefenders.Count > 0)
             {
-                assistRecipients = new FarmHand[helpedToKillDefenders.Count];
-                helpedToKillDefenders.CopyTo(assistRecipients);
+                var eligibleRecipients = new List<FarmHand>(helpedToKillDefenders.Count);
+                foreach (var assistedDefender in helpedToKillDefenders)
+                {
+                    if (assistedDefender != null &&
+                        helpedToKillActivationSessions.TryGetValue(
+                            assistedDefender,
+                            out var assistedActivationSessionId) &&
+                        assistedDefender.IsActivationSessionCurrent(assistedActivationSessionId))
+                    {
+                        eligibleRecipients.Add(assistedDefender);
+                    }
+                }
+
+                assistRecipients = eligibleRecipients.ToArray();
             }
 
             helpedToKillDefenders.Clear();
+            helpedToKillActivationSessions.Clear();
             BeginDefeat();
             return true;
         }
@@ -298,6 +489,8 @@ namespace TAD.Attackers
             moveDirection = startingMoveDirection.sqrMagnitude > 0f ? startingMoveDirection.normalized : Vector2.right;
             routePoints.Clear();
             helpedToKillDefenders.Clear();
+            helpedToKillActivationSessions.Clear();
+            ResetStatusEffects();
             nextRoutePointIndex = 0;
 
             if (body != null)
@@ -382,6 +575,7 @@ namespace TAD.Attackers
             isDefeated = true;
             moveDirection = Vector2.zero;
             routePoints.Clear();
+            ResetStatusEffects();
             nextRoutePointIndex = 0;
 
             if (body != null)
@@ -590,6 +784,130 @@ namespace TAD.Attackers
             }
 
             gameObject.SetActive(false);
+        }
+
+        private void ApplyDamageOverTime(
+            ref ActiveDamageOverTime effect,
+            FarmHand source,
+            long sourceActivationSessionId,
+            float damagePerSecond,
+            float duration)
+        {
+            if (damagePerSecond <= 0f || duration <= 0f || isDefeated || hasReachedFoodStore)
+            {
+                return;
+            }
+
+            // A late contact from an old projectile must not seed a status effect on behalf of the
+            // farmhand currently occupying that pooled instance.
+            if (source != null && !source.IsActivationSessionCurrent(sourceActivationSessionId))
+            {
+                return;
+            }
+
+            if (!effect.IsActive || damagePerSecond >= effect.DamagePerSecond ||
+                (effect.Source != null && !effect.Source.IsActivationSessionCurrent(effect.SourceActivationSessionId)))
+            {
+                effect.Source = source;
+                effect.SourceActivationSessionId = sourceActivationSessionId;
+                effect.DamagePerSecond = damagePerSecond;
+            }
+
+            effect.RemainingDuration = Mathf.Max(effect.RemainingDuration, duration);
+            // A refreshed effect should not wait through an arbitrary old tick delay.
+            effect.TickAccumulator = Mathf.Min(effect.TickAccumulator, DamageOverTimeTickInterval);
+        }
+
+        private void TickStatusEffects()
+        {
+            var deltaTime = Time.fixedDeltaTime;
+            stunRemainingDuration = Mathf.Max(0f, stunRemainingDuration - deltaTime);
+            TickDamageOverTime(ref bleedEffect, deltaTime);
+            if (isDefeated || currentHealth <= 0f)
+            {
+                return;
+            }
+
+            TickDamageOverTime(ref poisonEffect, deltaTime);
+            if (isDefeated || currentHealth <= 0f)
+            {
+                return;
+            }
+
+            for (var index = activeSlows.Count - 1; index >= 0; index--)
+            {
+                var slow = activeSlows[index];
+                slow.RemainingDuration -= deltaTime;
+                if (slow.RemainingDuration <= 0f)
+                {
+                    activeSlows.RemoveAt(index);
+                    continue;
+                }
+
+                activeSlows[index] = slow;
+            }
+        }
+
+        private void TickDamageOverTime(ref ActiveDamageOverTime effect, float deltaTime)
+        {
+            if (!effect.IsActive)
+            {
+                return;
+            }
+
+            var activeTime = Mathf.Min(deltaTime, effect.RemainingDuration);
+            effect.RemainingDuration -= deltaTime;
+            effect.TickAccumulator += activeTime;
+            if (effect.TickAccumulator + 0.0001f < DamageOverTimeTickInterval && effect.RemainingDuration > 0f)
+            {
+                return;
+            }
+
+            var damage = effect.DamagePerSecond * effect.TickAccumulator;
+            effect.TickAccumulator = 0f;
+            if (damage > 0f)
+            {
+                var source = effect.Source;
+                if (source != null && source.IsActivationSessionCurrent(effect.SourceActivationSessionId))
+                {
+                    source.TryDamageAttacker(this, damage, effect.SourceActivationSessionId);
+                }
+                else if (source != null && source.isActiveAndEnabled && source.gameObject.activeInHierarchy)
+                {
+                    // The same farmhand instance has been reused. Its new activation did not inflict this
+                    // effect, so discard the stale status instead of awarding its XP or gold.
+                    effect.Clear();
+                    return;
+                }
+                else
+                {
+                    TakeDamage(damage);
+                }
+            }
+
+            if (effect.RemainingDuration <= 0f || isDefeated || currentHealth <= 0f)
+            {
+                effect.Clear();
+            }
+        }
+
+        private float GetSlowMultiplier()
+        {
+            var multiplier = 1f;
+            for (var index = 0; index < activeSlows.Count; index++)
+            {
+                multiplier = Mathf.Min(multiplier, activeSlows[index].Multiplier);
+            }
+
+            return multiplier;
+        }
+
+        private void ResetStatusEffects()
+        {
+            bleedEffect.Clear();
+            poisonEffect.Clear();
+            stunRemainingDuration = 0f;
+            activeSlows.Clear();
         }
     }
 }

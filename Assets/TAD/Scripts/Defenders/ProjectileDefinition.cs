@@ -20,7 +20,8 @@ namespace TAD.Defenders
         Direct = 0,
         PoleSweep = 1,
         Rolling = 2,
-        Trap = 3
+        Trap = 3,
+        Bouncing = 4
     }
 
     /// <summary>
@@ -63,6 +64,37 @@ namespace TAD.Defenders
         [Tooltip("Degrees swept by a Pole Sweep projectile around its farmhand.")]
         private float poleSweepAngle = 180f;
 
+        [Header("Impact and Status Effects")]
+        [SerializeField, Min(0f)]
+        [Tooltip("Radius around an impact that receives the area damage and configured status effects. Zero affects only the direct target.")]
+        private float impactAreaRadius;
+        [SerializeField, Min(0f)]
+        [Tooltip("Extra damage dealt to every other attacker inside Impact Area Radius. The triggering target still receives the weapon's normal damage.")]
+        private float impactAreaDamage;
+        [SerializeField, Min(0f)] private float bleedDamagePerSecond;
+        [SerializeField, Min(0f)] private float bleedDuration;
+        [SerializeField, Min(0f)] private float poisonDamagePerSecond;
+        [SerializeField, Min(0f)] private float poisonDuration;
+        [SerializeField, Min(0f)] private float stunDuration;
+        [SerializeField, Range(0.05f, 1f)] private float slowMovementMultiplier = 1f;
+        [SerializeField, Min(0f)] private float slowDuration;
+
+        [Header("Projectile Presentation")]
+        [SerializeField, Min(0.01f)]
+        [Tooltip("Multiplier applied to the authored projectile visual and hitbox for this reusable definition.")]
+        private float projectileScaleMultiplier = 1f;
+
+        [Header("Bounce Behaviour")]
+        [SerializeField, Min(0.05f)]
+        [Tooltip("Distance travelled between each ground impact by a bouncing projectile.")]
+        private float bounceDistance = 1f;
+        [SerializeField, Range(0f, 89f)]
+        [Tooltip("Alternating deflection from the intended travel direction after each bounce.")]
+        private float bounceAngle = 20f;
+        [SerializeField, Min(1)]
+        [Tooltip("Number of ground impacts made before a bouncing projectile returns to its pool.")]
+        private int maximumBounceCount = 3;
+
         public ProjectileType ProjectileType => projectileType;
         public ProjectileBehavior ProjectileBehavior => projectileBehavior;
         public ProjectileLifetimeMode ProjectileLifetimeMode => projectileLifetimeMode;
@@ -73,6 +105,20 @@ namespace TAD.Defenders
         public float InitialSpeedMultiplier => initialSpeedMultiplier;
         public float RollingAcceleration => rollingAcceleration;
         public float PoleSweepAngle => poleSweepAngle;
+        public float ImpactAreaRadius => impactAreaRadius;
+        public float ImpactAreaDamage => impactAreaDamage;
+        public float BleedDamagePerSecond => bleedDamagePerSecond;
+        public float BleedDuration => bleedDuration;
+        public float PoisonDamagePerSecond => poisonDamagePerSecond;
+        public float PoisonDuration => poisonDuration;
+        public float StunDuration => stunDuration;
+        public float SlowMovementMultiplier => slowMovementMultiplier;
+        public float SlowDuration => slowDuration;
+        public float ProjectileScaleMultiplier => projectileScaleMultiplier;
+        public float BounceDistance => bounceDistance;
+        public float BounceAngle => bounceAngle;
+        public int MaximumBounceCount => maximumBounceCount;
+        public bool HasImpactArea => impactAreaRadius > 0f;
         public bool UsesTimedLifetime => projectileLifetimeMode == ProjectileLifetimeMode.Timed;
 
         /// <summary>
@@ -96,6 +142,19 @@ namespace TAD.Defenders
             initialSpeedMultiplier = Mathf.Clamp01(initialSpeedMultiplier);
             rollingAcceleration = Mathf.Max(0f, rollingAcceleration);
             poleSweepAngle = Mathf.Clamp(poleSweepAngle, 1f, 360f);
+            impactAreaRadius = Mathf.Max(0f, impactAreaRadius);
+            impactAreaDamage = Mathf.Max(0f, impactAreaDamage);
+            bleedDamagePerSecond = Mathf.Max(0f, bleedDamagePerSecond);
+            bleedDuration = Mathf.Max(0f, bleedDuration);
+            poisonDamagePerSecond = Mathf.Max(0f, poisonDamagePerSecond);
+            poisonDuration = Mathf.Max(0f, poisonDuration);
+            stunDuration = Mathf.Max(0f, stunDuration);
+            slowMovementMultiplier = Mathf.Clamp(slowMovementMultiplier, 0.05f, 1f);
+            slowDuration = Mathf.Max(0f, slowDuration);
+            projectileScaleMultiplier = Mathf.Max(0.01f, projectileScaleMultiplier);
+            bounceDistance = Mathf.Max(0.05f, bounceDistance);
+            bounceAngle = Mathf.Clamp(bounceAngle, 0f, 89f);
+            maximumBounceCount = Mathf.Max(1, maximumBounceCount);
 
             if (!System.Enum.IsDefined(typeof(ProjectileType), projectileType))
             {

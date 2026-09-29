@@ -138,6 +138,18 @@ MonoBehaviour:
   rangedLevelFiveUpgradeOptions:
   - {fileID: 11400000, guid: f10c2b2ff3579d140ac2b7b19ae8d4cf, type: 2}
   - {fileID: 11400000, guid: 9b8b2dcaac92681458c4e0eb0a8ba9a5, type: 2}
+  poleLevelEightUpgradeOptions:
+  - {fileID: 11400000, guid: 2fa31121cbb1e404f82b988709c12b01, type: 2}
+  - {fileID: 11400000, guid: e064615cc4bfeca439ceb677a85ffd23, type: 2}
+  rollingLevelEightUpgradeOptions:
+  - {fileID: 11400000, guid: 65a1c77d3bcc03544988dabce2c44fc5, type: 2}
+  - {fileID: 11400000, guid: a267084b300f9c74c9148aeefe9b7ef2, type: 2}
+  airRifleLevelEightUpgradeOptions:
+  - {fileID: 11400000, guid: c7bf21ec89a75c448b7871e027f2ee4f, type: 2}
+  - {fileID: 11400000, guid: 05453199acf79eb4ebd8c2dcd0528a4c, type: 2}
+  trapperLevelEightUpgradeOptions:
+  - {fileID: 11400000, guid: 369f51d2ffaed7a469ef2ceea03d75b1, type: 2}
+  - {fileID: 11400000, guid: f9c583fb394f8ea4abe9a1c4d75366ed, type: 2}
 --- !u!114 &1991510340437602593
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 79697559321644b468d8daf28721571f, type: 3}
+  m_Name: RakeWeaponDefinition
+  m_EditorClassIdentifier: TAD.Runtime::TAD.Defenders.WeaponDefinition
+  displayName: Rake
+  description: A broad final pole evolution. Each sweep damages a target and leaves a heavy bleed behind.
+  requiredPreviousWeapon: {fileID: 11400000, guid: 80c7bf7be7647c041b69c346c86af0a5, type: 2}
+  unlocksFinalEvolution: 0
+  cost: 90
+  range: 2.2
+  attackSpeed: 1.55
+  damage: 18
+  shotsPerMagazine: 1
+  reloadDuration: 0
+  projectileDefinition: {fileID: 11400000, guid: ca6f193b4e5e69448bf3c7e4445f957a, type: 2}

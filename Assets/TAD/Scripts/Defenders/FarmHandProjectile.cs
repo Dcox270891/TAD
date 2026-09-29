@@ -23,7 +23,14 @@ namespace TAD.Defenders
                 return;
             }
 
-            Body.MovePosition(Body.position + (travelDirection * travelSpeed * Time.fixedDeltaTime));
+            var nextPosition = Body.position + (travelDirection * travelSpeed * Time.fixedDeltaTime);
+            if (IsAttackPathBlockedByWall(Body.position, nextPosition))
+            {
+                ReturnToPool();
+                return;
+            }
+
+            Body.MovePosition(nextPosition);
             remainingLifetime -= Time.fixedDeltaTime;
             if (remainingLifetime <= 0f)
             {
@@ -50,7 +57,7 @@ namespace TAD.Defenders
         private void OnTriggerEnter2D(Collider2D other)
         {
             var attacker = GetValidAttacker(other);
-            if (attacker != null && TryDamageAttacker(attacker))
+            if (attacker != null && TryApplyImpactEffects(attacker, transform.position, applyPrimaryDamage: true))
             {
                 ReturnToPool();
             }

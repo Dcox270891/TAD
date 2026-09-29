@@ -10,9 +10,10 @@ using UnityEngine.Serialization;
 namespace TAD.UI
 {
     /// <summary>
-    /// Owns the defender's two-stage weapon tree. Human defenders open the modal from a farmhand's
+    /// Owns the defender's three-stage weapon tree. Human defenders open the modal from a farmhand's
     /// details card after its green world indicator appears; AI defenders resolve their own choice
-    /// from the same route-aware option data.
+    /// from the same route-aware option data. Level-eight choices are selected from the exact
+    /// level-five weapon that the farmhand currently holds.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class DefenderLevelUpgradeBootstrap : MonoBehaviour
@@ -25,6 +26,10 @@ namespace TAD.UI
         [SerializeField] private WeaponDefinition[] levelTwoUpgradeOptions = new WeaponDefinition[UpgradeOptionCount];
         [SerializeField] private WeaponDefinition[] meleeLevelFiveUpgradeOptions = new WeaponDefinition[UpgradeOptionCount];
         [SerializeField] private WeaponDefinition[] rangedLevelFiveUpgradeOptions = new WeaponDefinition[UpgradeOptionCount];
+        [SerializeField] private WeaponDefinition[] poleLevelEightUpgradeOptions = new WeaponDefinition[UpgradeOptionCount];
+        [SerializeField] private WeaponDefinition[] rollingLevelEightUpgradeOptions = new WeaponDefinition[UpgradeOptionCount];
+        [SerializeField] private WeaponDefinition[] airRifleLevelEightUpgradeOptions = new WeaponDefinition[UpgradeOptionCount];
+        [SerializeField] private WeaponDefinition[] trapperLevelEightUpgradeOptions = new WeaponDefinition[UpgradeOptionCount];
 
         private readonly Queue<FarmHand> pendingFarmHands = new();
         private readonly HashSet<FarmHand> pendingFarmHandSet = new();
@@ -82,18 +87,50 @@ namespace TAD.UI
             }
         }
 
-        /// <summary>Assigns the overlay and the two options for each branch of the weapon tree.</summary>
+        /// <summary>
+        /// Assigns the overlay and the two options for the free level-two and level-five branches.
+        /// The serialized level-eight branches remain in place for existing fixtures and prefabs.
+        /// </summary>
         public void Configure(
             DefenderLevelUpgradeOverlay prefab,
             WeaponDefinition[] levelTwoOptions,
             WeaponDefinition[] meleeLevelFiveOptions,
             WeaponDefinition[] rangedLevelFiveOptions)
         {
+            Configure(
+                prefab,
+                levelTwoOptions,
+                meleeLevelFiveOptions,
+                rangedLevelFiveOptions,
+                poleLevelEightUpgradeOptions,
+                rollingLevelEightUpgradeOptions,
+                airRifleLevelEightUpgradeOptions,
+                trapperLevelEightUpgradeOptions);
+        }
+
+        /// <summary>
+        /// Assigns the overlay and both options for every weapon-tree branch, including the exact
+        /// level-eight evolutions for Pole, Rolling, Air Rifle, and Trapper respectively.
+        /// </summary>
+        public void Configure(
+            DefenderLevelUpgradeOverlay prefab,
+            WeaponDefinition[] levelTwoOptions,
+            WeaponDefinition[] meleeLevelFiveOptions,
+            WeaponDefinition[] rangedLevelFiveOptions,
+            WeaponDefinition[] poleLevelEightOptions,
+            WeaponDefinition[] rollingLevelEightOptions,
+            WeaponDefinition[] airRifleLevelEightOptions,
+            WeaponDefinition[] trapperLevelEightOptions)
+        {
             UnsubscribeOverlay();
             overlayPrefab = prefab;
             levelTwoUpgradeOptions = CopyOptions(levelTwoOptions);
             meleeLevelFiveUpgradeOptions = CopyOptions(meleeLevelFiveOptions);
             rangedLevelFiveUpgradeOptions = CopyOptions(rangedLevelFiveOptions);
+            poleLevelEightUpgradeOptions = CopyOptions(poleLevelEightOptions);
+            rollingLevelEightUpgradeOptions = CopyOptions(rollingLevelEightOptions);
+            airRifleLevelEightUpgradeOptions = CopyOptions(airRifleLevelEightOptions);
+            trapperLevelEightUpgradeOptions = CopyOptions(trapperLevelEightOptions);
             hasReportedConfigurationError = false;
 
             if (Application.isPlaying && MatchRoleSelection.IsPlayerDefender)
@@ -317,6 +354,7 @@ namespace TAD.UI
             {
                 2 => levelTwoUpgradeOptions,
                 5 => GetLevelFiveOptions(farmHand),
+                8 => GetLevelEightOptions(farmHand),
                 _ => null
             };
 
@@ -331,6 +369,50 @@ namespace TAD.UI
             return projectile != null && projectile.ProjectileType == ProjectileType.Ranged
                 ? rangedLevelFiveUpgradeOptions
                 : meleeLevelFiveUpgradeOptions;
+        }
+
+        private WeaponDefinition[] GetLevelEightOptions(FarmHand farmHand)
+        {
+            var previousWeapon = farmHand != null ? farmHand.WeaponDefinition : null;
+            if (previousWeapon == null)
+            {
+                ReportConfigurationError();
+                return null;
+            }
+
+            WeaponDefinition[] matchingOptions = null;
+            var matchingBranchCount = 0;
+            TrySelectExactLevelEightBranch(poleLevelEightUpgradeOptions, previousWeapon, ref matchingOptions, ref matchingBranchCount);
+            TrySelectExactLevelEightBranch(rollingLevelEightUpgradeOptions, previousWeapon, ref matchingOptions, ref matchingBranchCount);
+            TrySelectExactLevelEightBranch(airRifleLevelEightUpgradeOptions, previousWeapon, ref matchingOptions, ref matchingBranchCount);
+            TrySelectExactLevelEightBranch(trapperLevelEightUpgradeOptions, previousWeapon, ref matchingOptions, ref matchingBranchCount);
+
+            if (matchingBranchCount == 1)
+            {
+                return matchingOptions;
+            }
+
+            // Treat incomplete, mixed-parent, missing, and duplicate branch definitions as an
+            // authoring error. Selecting the wrong final evolution would be much worse than
+            // leaving the farmhand ready for its correctly configured choice.
+            ReportConfigurationError();
+            return null;
+        }
+
+        private static void TrySelectExactLevelEightBranch(
+            WeaponDefinition[] candidateOptions,
+            WeaponDefinition previousWeapon,
+            ref WeaponDefinition[] matchingOptions,
+            ref int matchingBranchCount)
+        {
+            if (!HasCompleteOptions(candidateOptions) || candidateOptions[0].RequiredPreviousWeapon != previousWeapon ||
+                candidateOptions[1].RequiredPreviousWeapon != previousWeapon)
+            {
+                return;
+            }
+
+            matchingOptions = candidateOptions;
+            matchingBranchCount++;
         }
 
         private bool HasCompleteConfiguration(FarmHand farmHand, IReadOnlyList<WeaponDefinition> options)
@@ -371,7 +453,7 @@ namespace TAD.UI
 
             hasReportedConfigurationError = true;
             Debug.LogError(
-                "Defender Level Upgrade needs an overlay prefab plus two configured options for level 2, level-5 melee, and level-5 ranged branches.",
+                "Defender Level Upgrade needs an overlay prefab plus two configured options for level 2, level-5 melee, level-5 ranged, and each exact-parent level-8 branch (Pole, Rolling, Air Rifle, and Trapper).",
                 this);
         }
 

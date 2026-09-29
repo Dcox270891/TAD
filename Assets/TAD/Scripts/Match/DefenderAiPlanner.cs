@@ -392,7 +392,13 @@ namespace TAD.Match
             var projectileTypeMultiplier = projectile != null && projectile.ProjectileType == ProjectileType.Ranged
                 ? 1.12f
                 : 0.90f;
-            var damagePerSecond = weapon.Damage * progressionDamageMultiplier * weapon.AttackSpeed;
+            // A burst still matters at the beginning of a route, but reload downtime must be
+            // included when deciding between a Semi Automatic and steadier Pistol evolution.
+            var effectiveAttackSpeed = Mathf.Lerp(
+                weapon.SustainedAttackSpeed,
+                weapon.AttackSpeed,
+                0.35f);
+            var damagePerSecond = weapon.Damage * progressionDamageMultiplier * effectiveAttackSpeed;
             var totalScore = 0f;
 
             for (var routeIndex = 0; routeIndex < plannedRoutes.Count; routeIndex++)
@@ -492,8 +498,10 @@ namespace TAD.Match
             var projectileType = projectile != null ? projectile.ProjectileType : ProjectileType.Melee;
             return definition.Archetype switch
             {
-                AttackerArchetype.Fast => 1f + Mathf.Clamp(weapon.AttackSpeed * 0.08f, 0f, 0.25f),
-                AttackerArchetype.Strong => 1f + Mathf.Clamp(weapon.Damage * 0.02f, 0f, 0.35f),
+                AttackerArchetype.Fast => 1f + Mathf.Clamp(weapon.AttackSpeed * 0.08f, 0f, 0.25f) +
+                                        GetControlMultiplier(projectile),
+                AttackerArchetype.Strong => 1f + Mathf.Clamp(weapon.Damage * 0.02f, 0f, 0.35f) +
+                                          GetDamageOverTimeMultiplier(projectile),
                 // Flying animals cannot be targeted by melee at all, so never recommend a melee
                 // weapon as a response to a route containing only flying enemies.
                 AttackerArchetype.Flying => projectileType == ProjectileType.Ranged ? 1.20f : 0f,
@@ -512,9 +520,38 @@ namespace TAD.Match
             {
                 ProjectileBehavior.PoleSweep => 1f + Mathf.Min(0.35f, attackerCount * 0.06f),
                 ProjectileBehavior.Rolling => 1f + Mathf.Min(0.25f, attackerCount * 0.05f),
+                ProjectileBehavior.Bouncing => 1f + Mathf.Min(0.70f, attackerCount * 0.10f),
                 ProjectileBehavior.Trap => attackerCount > 1 ? 1.20f : 0.85f,
                 _ => 1f
             };
+        }
+
+        private static float GetControlMultiplier(ProjectileDefinition projectile)
+        {
+            if (projectile == null)
+            {
+                return 0f;
+            }
+
+            var slowValue = projectile.SlowDuration > 0f && projectile.SlowMovementMultiplier < 1f
+                ? (1f - projectile.SlowMovementMultiplier) * 0.35f
+                : 0f;
+            var stunValue = projectile.StunDuration > 0f
+                ? Mathf.Min(0.35f, projectile.StunDuration * 0.20f)
+                : 0f;
+            return slowValue + stunValue;
+        }
+
+        private static float GetDamageOverTimeMultiplier(ProjectileDefinition projectile)
+        {
+            if (projectile == null)
+            {
+                return 0f;
+            }
+
+            var bleedPotential = projectile.BleedDamagePerSecond * projectile.BleedDuration;
+            var poisonPotential = projectile.PoisonDamagePerSecond * projectile.PoisonDuration;
+            return Mathf.Min(0.40f, (bleedPotential + poisonPotential) * 0.012f);
         }
 
         private static float GetRouteDistanceInsideRange(

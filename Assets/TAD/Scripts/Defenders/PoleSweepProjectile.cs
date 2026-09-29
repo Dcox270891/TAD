@@ -79,10 +79,15 @@ namespace TAD.Defenders
             var reach = Mathf.Max(0.01f, AttackRange);
             var position = (Vector2)SourceFarmHand.transform.position + (direction * (reach * 0.5f));
 
+            // Launch applies the authored presentation multiplier, but a pole sweep also changes
+            // its length every physics frame to match the farmhand's current range. Keep both
+            // pieces of data here so Rake and Shovel retain their deliberately larger final-tier
+            // hit presentation instead of reverting to the base pole thickness mid-swing.
+            var presentationScale = Definition.ProjectileScaleMultiplier;
             transform.localScale = new Vector3(
-                BaseLocalScale.x,
-                BaseLocalScale.y * reach,
-                BaseLocalScale.z);
+                BaseLocalScale.x * presentationScale,
+                BaseLocalScale.y * reach * presentationScale,
+                BaseLocalScale.z * presentationScale);
             if (setImmediately)
             {
                 Body.position = position;
@@ -111,7 +116,7 @@ namespace TAD.Defenders
             var attacker = GetValidAttacker(other);
             if (attacker != null && attackersDamaged.Add(attacker))
             {
-                TryDamageAttacker(attacker);
+                TryApplyImpactEffects(attacker, transform.position, applyPrimaryDamage: true);
             }
         }
 

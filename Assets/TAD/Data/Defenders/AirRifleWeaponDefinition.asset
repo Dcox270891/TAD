@@ -13,9 +13,13 @@ MonoBehaviour:
   m_Name: AirRifleWeaponDefinition
   m_EditorClassIdentifier: Assembly-CSharp::TAD.Defenders.WeaponDefinition
   displayName: Air Rifle
-  description: A high-cost ranged upgrade that fires a standard fast bullet. It can cross half cover but not full cover.
+  description: A high-cost ranged single-shot rifle. It reaches over half cover, then reloads after every round.
+  requiredPreviousWeapon: {fileID: 0}
+  unlocksFinalEvolution: 1
   cost: 70
   range: 7
   attackSpeed: 1.6
   damage: 25
+  shotsPerMagazine: 1
+  reloadDuration: 1.15
   projectileDefinition: {fileID: 11400000, guid: c418a0ff5bf785f4da28322bd33b336f, type: 2}

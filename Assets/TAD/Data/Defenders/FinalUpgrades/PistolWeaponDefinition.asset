@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 79697559321644b468d8daf28721571f, type: 3}
+  m_Name: PistolWeaponDefinition
+  m_EditorClassIdentifier: TAD.Runtime::TAD.Defenders.WeaponDefinition
+  displayName: Pistol
+  description: A steady final rifle evolution with an eight-round magazine and a much faster reload.
+  requiredPreviousWeapon: {fileID: 11400000, guid: 9b8b2dcaac92681458c4e0eb0a8ba9a5, type: 2}
+  unlocksFinalEvolution: 0
+  cost: 128
+  range: 7.25
+  attackSpeed: 2.75
+  damage: 28
+  shotsPerMagazine: 8
+  reloadDuration: 1.1
+  projectileDefinition: {fileID: 11400000, guid: c418a0ff5bf785f4da28322bd33b336f, type: 2}

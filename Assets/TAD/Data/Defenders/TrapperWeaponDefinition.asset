@@ -14,8 +14,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TAD.Defenders.WeaponDefinition
   displayName: Trapper
   description: A ranged ground trap. It is placed inside range, arms on the ground, and remains until an attacker activates it.
+  requiredPreviousWeapon: {fileID: 0}
+  unlocksFinalEvolution: 1
   cost: 44
   range: 2.1
   attackSpeed: 0.85
   damage: 15
+  shotsPerMagazine: 1
+  reloadDuration: 0
   projectileDefinition: {fileID: 11400000, guid: 2f58223db1a8f81429cb38bbf7aa54bc, type: 2}

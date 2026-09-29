@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
 using NUnit.Framework;
 using TAD.Attackers;
 using TAD.Defenders;
@@ -153,6 +154,139 @@ namespace TAD.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator DefenderFinalEvolution_RequiresTheExactLevelFiveParentAndChargesAtLevelEight()
+        {
+            var defenderBank = GameBasicsTestSupport.CreateBank(BankSide.Defender, startingGold: 1000);
+            var defender = GameBasicsTestSupport.CreateFarmHand();
+            var projectile = ScriptableObject.CreateInstance<ProjectileDefinition>();
+            var baseWeapon = CreateTestWeapon("Base", projectile);
+            var levelTwoWeapon = CreateTestWeapon("Level Two", projectile);
+            var levelFiveWeapon = CreateTestWeapon("Level Five", projectile, cost: 20, unlocksFinalEvolution: true);
+            var otherLevelFiveWeapon = CreateTestWeapon("Other Level Five", projectile, unlocksFinalEvolution: true);
+            var wrongFinalWeapon = CreateTestWeapon("Wrong Final", projectile, cost: 55, requiredPreviousWeapon: otherLevelFiveWeapon);
+            var validFinalWeapon = CreateTestWeapon("Valid Final", projectile, cost: 75, requiredPreviousWeapon: levelFiveWeapon);
+            var attackerDefinition = ScriptableObject.CreateInstance<AttackerDefinition>();
+
+            defender.SetWeapon(baseWeapon);
+            Assert.That(DefeatAttackersUntilLevel(defender, attackerDefinition, 2), Is.True);
+            Assert.That(defender.PendingWeaponUpgradeLevel, Is.EqualTo(2));
+            var goldBeforeEarlyFinalAttempt = defenderBank.CurrentGold;
+            Assert.That(defender.TryChooseWeaponUpgrade(validFinalWeapon), Is.False,
+                "A final asset must not bypass the free level-two branch.");
+            Assert.That(defenderBank.CurrentGold, Is.EqualTo(goldBeforeEarlyFinalAttempt));
+            Assert.That(defender.TryChooseWeaponUpgrade(levelTwoWeapon), Is.True);
+
+            Assert.That(DefeatAttackersUntilLevel(defender, attackerDefinition, 5), Is.True);
+            Assert.That(defender.PendingWeaponUpgradeLevel, Is.EqualTo(5));
+            Assert.That(defender.TryChooseWeaponUpgrade(validFinalWeapon), Is.False,
+                "A final asset must not bypass its exact level-five parent selection.");
+            Assert.That(defenderBank.CurrentGold, Is.EqualTo(goldBeforeEarlyFinalAttempt));
+            Assert.That(defender.TryChooseWeaponUpgrade(levelFiveWeapon), Is.True);
+
+            Assert.That(DefeatAttackersUntilLevel(defender, attackerDefinition, 8), Is.True);
+            yield return null;
+
+            Assert.That(defender.CurrentLevel, Is.EqualTo(8));
+            Assert.That(defender.PendingWeaponUpgradeLevel, Is.EqualTo(8));
+            Assert.That(defender.IsPaidWeaponUpgradePending, Is.True);
+            var goldBeforeFinalChoice = defenderBank.CurrentGold;
+            Assert.That(defender.TryChooseWeaponUpgrade(wrongFinalWeapon), Is.False);
+            Assert.That(defenderBank.CurrentGold, Is.EqualTo(goldBeforeFinalChoice));
+            Assert.That(defender.TryChooseWeaponUpgrade(validFinalWeapon), Is.True);
+            Assert.That(defender.WeaponDefinition, Is.EqualTo(validFinalWeapon));
+            Assert.That(defender.HasSelectedFinalWeaponEvolution, Is.True);
+            Assert.That(defenderBank.CurrentGold, Is.EqualTo(goldBeforeFinalChoice - validFinalWeapon.Cost));
+
+            Object.Destroy(attackerDefinition);
+            Object.Destroy(projectile);
+            Object.Destroy(baseWeapon);
+            Object.Destroy(levelTwoWeapon);
+            Object.Destroy(levelFiveWeapon);
+            Object.Destroy(otherLevelFiveWeapon);
+            Object.Destroy(wrongFinalWeapon);
+            Object.Destroy(validFinalWeapon);
+        }
+
+        [UnityTest]
+        public IEnumerator FarmHandActivationSession_RejectsStaleDelayedDamageAfterReuse()
+        {
+            var defenderBank = GameBasicsTestSupport.CreateBank(BankSide.Defender);
+            var defender = GameBasicsTestSupport.CreateFarmHand();
+            var attackerDefinition = ScriptableObject.CreateInstance<AttackerDefinition>();
+            var attacker = GameBasicsTestSupport.CreateAttacker(attackerDefinition);
+            var originalSession = defender.ActivationSessionId;
+            var healthBeforeReuse = attacker.RemainingHealth;
+
+            defender.gameObject.SetActive(false);
+            yield return null;
+            defender.gameObject.SetActive(true);
+            yield return null;
+
+            Assert.That(defender.ActivationSessionId, Is.Not.EqualTo(originalSession));
+            Assert.That(defender.IsActivationSessionCurrent(originalSession), Is.False);
+            var goldBeforeStaleDamage = defenderBank.CurrentGold;
+            Assert.That(defender.TryDamageAttacker(attacker, healthBeforeReuse, originalSession), Is.False);
+            Assert.That(attacker.RemainingHealth, Is.EqualTo(healthBeforeReuse));
+            Assert.That(defenderBank.CurrentGold, Is.EqualTo(goldBeforeStaleDamage));
+
+            Object.Destroy(attackerDefinition);
+        }
+
+        [UnityTest]
+        public IEnumerator Projectiles_RespectFullAndHalfCoverAfterTheyHaveBeenFired()
+        {
+            var environmentLayer = LayerMask.NameToLayer("Environment");
+            Assert.That(environmentLayer, Is.GreaterThanOrEqualTo(0));
+
+            var defender = GameBasicsTestSupport.CreateFarmHand();
+            defender.transform.position = new Vector2(-1f, 0f);
+            var attackerDefinition = ScriptableObject.CreateInstance<AttackerDefinition>();
+            var attacker = GameBasicsTestSupport.CreateAttacker(attackerDefinition);
+            attacker.transform.position = new Vector2(10f, 0f);
+            var projectileDefinition = CreateTestProjectileDefinition(ProjectileType.Ranged);
+            var projectile = CreateTestProjectile();
+
+            var wallObject = new GameObject("TAD Test Full Cover Projectile Wall");
+            wallObject.layer = environmentLayer;
+            var wallCollider = wallObject.AddComponent<BoxCollider2D>();
+            wallCollider.size = new Vector2(0.25f, 3f);
+            var wall = wallObject.AddComponent<FarmWall>();
+            SetPrivateField(wall, "cover", FarmWallCover.Full);
+            Physics2D.SyncTransforms();
+
+            Assert.That(projectile.Launch(defender, defender.transform.position, attacker, projectileDefinition, 20f, 1f), Is.True);
+            for (var index = 0; index < 12 && projectile.IsLaunched; index++)
+            {
+                yield return new WaitForFixedUpdate();
+            }
+
+            Assert.That(projectile.IsLaunched, Is.False, "Full cover must stop a ranged projectile already in flight.");
+
+            SetPrivateField(wall, "cover", FarmWallCover.Half);
+            projectile.gameObject.SetActive(true);
+            Assert.That(projectile.Launch(defender, defender.transform.position, attacker, projectileDefinition, 20f, 1f), Is.True);
+            for (var index = 0; index < 12; index++)
+            {
+                yield return new WaitForFixedUpdate();
+            }
+
+            Assert.That(projectile.IsLaunched, Is.True, "Ranged projectiles must retain the ability to cross half cover.");
+            projectile.Cancel();
+
+            SetPrivateField(projectileDefinition, "projectileType", ProjectileType.Melee);
+            projectile.gameObject.SetActive(true);
+            Assert.That(projectile.Launch(defender, defender.transform.position, attacker, projectileDefinition, 20f, 1f), Is.True);
+            for (var index = 0; index < 12 && projectile.IsLaunched; index++)
+            {
+                yield return new WaitForFixedUpdate();
+            }
+
+            Assert.That(projectile.IsLaunched, Is.False, "Melee projectiles must not cross half cover.");
+            Object.Destroy(attackerDefinition);
+            Object.Destroy(projectileDefinition);
+        }
+
+        [UnityTest]
         public IEnumerator PendingWeaponUpgrade_FarmhandStillDamagesButDoesNotEarnExperience()
         {
             var defenderBank = GameBasicsTestSupport.CreateBank(BankSide.Defender);
@@ -241,6 +375,66 @@ namespace TAD.Tests.PlayMode
             Assert.That(reusedProjectile.IsLaunched, Is.False);
             Assert.That(reusedProjectile.Source, Is.Null);
             Assert.That(reusedProjectile.ProjectileDefinition, Is.Null);
+        }
+
+        [UnityTest]
+        public IEnumerator Pool_ReusedAttackerClearsBleedPoisonStunAndSlow()
+        {
+            var pool = GameBasicsTestSupport.CreateSpawnPool();
+            Assert.That(pool, Is.Not.Null);
+            yield return null;
+
+            var firstObject = pool.Spawn(PooledObjectType.Attacker, Vector3.zero, Quaternion.identity);
+            var firstAttacker = firstObject.GetComponent<BasicAttacker>();
+            var firstInstance = firstObject.GetComponent<PooledInstance>();
+            Assert.That(firstAttacker, Is.Not.Null);
+            Assert.That(firstInstance, Is.Not.Null);
+
+            firstAttacker.ApplyBleed(null, 4f, 3f);
+            firstAttacker.ApplyPoison(null, 3f, 3f);
+            firstAttacker.ApplyStun(2f);
+            firstAttacker.ApplySlow(0.5f, 2f);
+            Assert.That(firstAttacker.IsBleeding, Is.True);
+            Assert.That(firstAttacker.IsPoisoned, Is.True);
+            Assert.That(firstAttacker.IsStunned, Is.True);
+            Assert.That(firstAttacker.IsSlowed, Is.True);
+
+            firstInstance.ReturnToPool();
+            var reusedObject = pool.Spawn(PooledObjectType.Attacker, Vector3.one, Quaternion.identity);
+            var reusedAttacker = reusedObject.GetComponent<BasicAttacker>();
+            Assert.That(reusedAttacker.IsBleeding, Is.False);
+            Assert.That(reusedAttacker.IsPoisoned, Is.False);
+            Assert.That(reusedAttacker.IsStunned, Is.False);
+            Assert.That(reusedAttacker.IsSlowed, Is.False);
+            Assert.That(reusedAttacker.EffectiveMovementSpeed, Is.EqualTo(reusedAttacker.MovementSpeed));
+        }
+
+        [UnityTest]
+        public IEnumerator DefenderReuse_DoesNotCreditStaleBleedToItsNewActivation()
+        {
+            var defenderBank = GameBasicsTestSupport.CreateBank(BankSide.Defender);
+            var defender = GameBasicsTestSupport.CreateFarmHand();
+            var attackerDefinition = ScriptableObject.CreateInstance<AttackerDefinition>();
+            var attacker = GameBasicsTestSupport.CreateAttacker(attackerDefinition);
+            var originalActivationSession = defender.ActivationSessionId;
+
+            attacker.ApplyBleed(defender, originalActivationSession, 50f, 1f);
+            Assert.That(attacker.IsBleeding, Is.True);
+
+            defender.gameObject.SetActive(false);
+            defender.gameObject.SetActive(true);
+            Assert.That(defender.ActivationSessionId, Is.Not.EqualTo(originalActivationSession));
+
+            for (var index = 0; index < 20; index++)
+            {
+                yield return new WaitForFixedUpdate();
+            }
+
+            Assert.That(attacker.IsBleeding, Is.False);
+            Assert.That(defender.TotalExperience, Is.EqualTo(0f));
+            Assert.That(defenderBank.CurrentGold, Is.EqualTo(defenderBank.StartingGold));
+            Assert.That(attacker.RemainingHealth, Is.EqualTo(attacker.MaximumHealth));
+            Object.Destroy(attackerDefinition);
         }
 
         [UnityTest]
@@ -944,6 +1138,75 @@ namespace TAD.Tests.PlayMode
             SceneManager.sceneLoaded -= HandleSceneLoaded;
             Assert.That(loadedSceneName, Is.EqualTo("MainMenu"));
             Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("MainMenu"));
+        }
+
+        private static bool DefeatAttackersUntilLevel(
+            FarmHand defender,
+            AttackerDefinition attackerDefinition,
+            int targetLevel)
+        {
+            var safetyCounter = 0;
+            while (defender.CurrentLevel < targetLevel && safetyCounter++ < 80)
+            {
+                var attacker = GameBasicsTestSupport.CreateAttacker(attackerDefinition);
+                if (!defender.TryDamageAttacker(attacker, attacker.RemainingHealth))
+                {
+                    return false;
+                }
+            }
+
+            return defender.CurrentLevel == targetLevel;
+        }
+
+        private static WeaponDefinition CreateTestWeapon(
+            string displayName,
+            ProjectileDefinition projectile,
+            int cost = 0,
+            WeaponDefinition requiredPreviousWeapon = null,
+            bool unlocksFinalEvolution = false)
+        {
+            var weapon = ScriptableObject.CreateInstance<WeaponDefinition>();
+            SetPrivateField(weapon, "displayName", displayName);
+            SetPrivateField(weapon, "cost", cost);
+            SetPrivateField(weapon, "range", 1f);
+            SetPrivateField(weapon, "attackSpeed", 1f);
+            SetPrivateField(weapon, "damage", 1f);
+            SetPrivateField(weapon, "projectileDefinition", projectile);
+            SetPrivateField(weapon, "requiredPreviousWeapon", requiredPreviousWeapon);
+            SetPrivateField(weapon, "unlocksFinalEvolution", unlocksFinalEvolution);
+            return weapon;
+        }
+
+        private static ProjectileDefinition CreateTestProjectileDefinition(ProjectileType projectileType)
+        {
+            var definition = ScriptableObject.CreateInstance<ProjectileDefinition>();
+            SetPrivateField(definition, "projectileType", projectileType);
+            SetPrivateField(definition, "projectileBehavior", ProjectileBehavior.Direct);
+            SetPrivateField(definition, "projectileLifetimeMode", ProjectileLifetimeMode.Timed);
+            SetPrivateField(definition, "projectileSpeed", 10f);
+            SetPrivateField(definition, "projectileLifetime", 3f);
+            return definition;
+        }
+
+        private static FarmHandProjectile CreateTestProjectile()
+        {
+            var projectileObject = new GameObject("TAD Test Cover Projectile");
+            projectileObject.SetActive(false);
+            projectileObject.AddComponent<SpriteRenderer>();
+            projectileObject.AddComponent<Rigidbody2D>();
+            projectileObject.AddComponent<CircleCollider2D>();
+            var projectile = projectileObject.AddComponent<FarmHandProjectile>();
+            projectileObject.SetActive(true);
+            return projectile;
+        }
+
+        private static void SetPrivateField<T>(object target, string fieldName, T value)
+        {
+            var field = target.GetType().GetField(
+                fieldName,
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(field, Is.Not.Null, $"Missing private test field: {fieldName}");
+            field.SetValue(target, value);
         }
     }
 }

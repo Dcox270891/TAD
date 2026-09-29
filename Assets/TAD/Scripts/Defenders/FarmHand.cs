@@ -45,6 +45,7 @@ namespace TAD.Defenders
         private const float LevelVisualScaleMultiplier = 1.05f;
         private const int FirstWeaponUpgradeLevel = 2;
         private const int WeaponEvolutionUpgradeLevel = 5;
+        private const int FinalWeaponEvolutionUpgradeLevel = 8;
         private const float RelocationArrivalDistance = 0.001f;
         private const float RelocationCostMultiplier = 0.25f;
 
@@ -66,6 +67,7 @@ namespace TAD.Defenders
         [System.NonSerialized] private int pendingWeaponUpgradeLevel;
         [System.NonSerialized] private bool hasSelectedFirstWeaponUpgrade;
         [System.NonSerialized] private bool hasSelectedWeaponEvolution;
+        [System.NonSerialized] private bool hasSelectedFinalWeaponEvolution;
         [System.NonSerialized] private Vector3 baseLocalScale;
         [System.NonSerialized] private bool hasCapturedBaseLocalScale;
         [System.NonSerialized] private int investedGold;
@@ -83,6 +85,9 @@ namespace TAD.Defenders
         private readonly RaycastHit2D[] lineOfSightHits = new RaycastHit2D[LineOfSightHitCapacity];
         private ContactFilter2D lineOfSightFilter;
         private float nextFireTime;
+        private float reloadCompleteTime;
+        private int shotsRemainingInMagazine;
+        private long activationSessionId;
         private bool isRangeIndicatorVisible;
         private readonly List<FarmHandProjectileBase> limitedActiveProjectiles = new();
 
@@ -150,8 +155,10 @@ namespace TAD.Defenders
         /// <summary>True while the free level-two Stick-or-Stone selection is waiting.</summary>
         public bool IsFreeWeaponUpgradePending => pendingWeaponUpgradeLevel == FirstWeaponUpgradeLevel;
 
-        /// <summary>True while the paid level-five weapon evolution is waiting.</summary>
-        public bool IsPaidWeaponUpgradePending => pendingWeaponUpgradeLevel == WeaponEvolutionUpgradeLevel;
+        /// <summary>True while either paid weapon-evolution selection is waiting.</summary>
+        public bool IsPaidWeaponUpgradePending =>
+            pendingWeaponUpgradeLevel == WeaponEvolutionUpgradeLevel ||
+            pendingWeaponUpgradeLevel == FinalWeaponEvolutionUpgradeLevel;
 
         /// <summary>
         /// Pending farmhands remain in combat, but their rewards are paused until their upgrade choice has been made.
@@ -168,6 +175,15 @@ namespace TAD.Defenders
         /// <summary>True after this farmhand has completed its paid level-five weapon evolution.</summary>
         public bool HasSelectedWeaponEvolution => hasSelectedWeaponEvolution;
 
+        /// <summary>True after this farmhand has completed its paid level-eight final evolution.</summary>
+        public bool HasSelectedFinalWeaponEvolution => hasSelectedFinalWeaponEvolution;
+
+        /// <summary>True while the current weapon magazine is reloading.</summary>
+        public bool IsReloading => weaponDefinition != null && weaponDefinition.UsesReload && Time.time < reloadCompleteTime;
+
+        /// <summary>Shots that can be fired before the current weapon next reloads.</summary>
+        public int ShotsRemainingInMagazine => Mathf.Max(0, shotsRemainingInMagazine);
+
         /// <summary>Legacy API retained for custom scripts; the permanent weapon choice now occurs at level 2.</summary>
         [System.Obsolete("Use HasSelectedWeaponUpgrade. The weapon choice now occurs at level 2.")]
         public bool HasSelectedLevelThreeUpgrade => HasSelectedWeaponUpgrade;
@@ -177,6 +193,12 @@ namespace TAD.Defenders
         /// The value remains the same if this farmhand is later reused from the pool.
         /// </summary>
         public long InstanceId => pooledInstance != null ? pooledInstance.RuntimeInstanceId : 0L;
+
+        /// <summary>
+        /// Identity of this specific enabled lifetime. Unlike <see cref="InstanceId"/>, this value changes
+        /// whenever a pooled farmhand is activated, allowing delayed combat work to reject a later reuse.
+        /// </summary>
+        public long ActivationSessionId => activationSessionId;
 
         /// <summary>Configured level-one experience threshold for this farmhand.</summary>
         public int BaseExperienceRequirement => expMax;
@@ -348,9 +370,10 @@ namespace TAD.Defenders
 
         private void OnEnable()
         {
+            BeginActivationSession();
             ClearAttackersInRange();
             ResetRelocation();
-            nextFireTime = Time.time;
+            ResetWeaponFiringState();
             isRangeIndicatorVisible = false;
             ResolveComponents();
             EnsurePlacementCollider();
@@ -394,7 +417,7 @@ namespace TAD.Defenders
             CancelLimitedProjectiles();
             weaponDefinition = definition;
             ClearAttackersInRange();
-            nextFireTime = Time.time;
+            ResetWeaponFiringState();
             ConfigureRangeCollider();
             ConfigureRangeVisual();
             WeaponChanged?.Invoke(weaponDefinition);
@@ -402,7 +425,7 @@ namespace TAD.Defenders
 
         /// <summary>
         /// Applies the currently pending weapon choice. The Stick-or-Stone branch at level 2 is free;
-        /// a level-five evolution charges the selected weapon's normal Defender-bank cost.
+        /// level-five and level-eight evolutions charge the selected weapon's normal Defender-bank cost.
         /// </summary>
         public bool TryChooseWeaponUpgrade(WeaponDefinition definition)
         {
@@ -433,6 +456,10 @@ namespace TAD.Defenders
             {
                 hasSelectedWeaponEvolution = true;
             }
+            else if (selectedUpgradeLevel == FinalWeaponEvolutionUpgradeLevel)
+            {
+                hasSelectedFinalWeaponEvolution = true;
+            }
 
             SetWeapon(definition);
             ProgressionChanged?.Invoke();
@@ -441,7 +468,8 @@ namespace TAD.Defenders
 
         /// <summary>
         /// Validates the progression branch without duplicating the UI's configured option lists.
-        /// At level five an evolution must retain the Projectile Type selected at level two.
+        /// At level five an evolution must retain the Projectile Type selected at level two. At level
+        /// eight the chosen asset must name this farmhand's exact level-five parent weapon.
         /// </summary>
         public bool IsWeaponCompatibleWithPendingUpgrade(WeaponDefinition definition)
         {
@@ -452,18 +480,30 @@ namespace TAD.Defenders
 
             if (pendingWeaponUpgradeLevel == FirstWeaponUpgradeLevel)
             {
-                return true;
+                // Final evolutions name a required level-five parent. They must never be accepted
+                // merely because an external script bypassed the curated two-option upgrade UI.
+                return definition.RequiredPreviousWeapon == null;
             }
 
-            if (pendingWeaponUpgradeLevel != WeaponEvolutionUpgradeLevel)
+            if (pendingWeaponUpgradeLevel == WeaponEvolutionUpgradeLevel)
+            {
+                var currentProjectile = weaponDefinition != null ? weaponDefinition.ProjectileDefinition : null;
+                var nextProjectile = definition.ProjectileDefinition;
+                // A level-eight asset may share the same projectile category, but it is not a
+                // level-five evolution. Its exact parent is validated by the level-eight branch.
+                return definition.RequiredPreviousWeapon == null &&
+                       currentProjectile != null && nextProjectile != null &&
+                       currentProjectile.ProjectileType == nextProjectile.ProjectileType;
+            }
+
+            if (pendingWeaponUpgradeLevel != FinalWeaponEvolutionUpgradeLevel)
             {
                 return false;
             }
 
-            var currentProjectile = weaponDefinition != null ? weaponDefinition.ProjectileDefinition : null;
-            var nextProjectile = definition.ProjectileDefinition;
-            return currentProjectile != null && nextProjectile != null &&
-                   currentProjectile.ProjectileType == nextProjectile.ProjectileType;
+            return weaponDefinition != null &&
+                   definition.RequiredPreviousWeapon != null &&
+                   definition.RequiredPreviousWeapon == weaponDefinition;
         }
 
         /// <summary>Legacy API retained for custom scripts; the permanent weapon choice now occurs at level 2.</summary>
@@ -570,9 +610,41 @@ namespace TAD.Defenders
             return true;
         }
 
+        /// <summary>
+        /// Applies delayed damage only when it still belongs to this exact enabled farmhand lifetime.
+        /// Projectiles and damage-over-time effects capture the token at launch so pooling cannot award
+        /// their rewards to a later occupant of the same farmhand instance.
+        /// </summary>
+        public bool TryDamageAttacker(
+            BasicAttacker attacker,
+            float damageAmount,
+            long sourceActivationSessionId)
+        {
+            return IsActivationSessionCurrent(sourceActivationSessionId) &&
+                   TryDamageAttacker(attacker, damageAmount);
+        }
+
+        /// <summary>Returns whether a delayed combat action still belongs to this enabled farmhand lifetime.</summary>
+        public bool IsActivationSessionCurrent(long sessionId)
+        {
+            return sessionId != 0L &&
+                   activationSessionId == sessionId &&
+                   isActiveAndEnabled &&
+                   gameObject.activeInHierarchy;
+        }
+
         private void OnTriggerEnter2D(Collider2D other)
         {
             TrackAttacker(other);
+        }
+
+        private void BeginActivationSession()
+        {
+            // Reaching this limit would require more than nine quintillion enable cycles, but retaining a
+            // non-zero token preserves the "zero means no valid source" contract if it ever occurs.
+            activationSessionId = activationSessionId == long.MaxValue
+                ? 1L
+                : activationSessionId + 1L;
         }
 
         private void OnTriggerStay2D(Collider2D other)
@@ -606,7 +678,7 @@ namespace TAD.Defenders
 
             ClearAttackersInRange();
             ResetRelocation();
-            nextFireTime = Time.time;
+            ResetWeaponFiringState();
             isRangeIndicatorVisible = false;
             EnsurePlacementCollider();
             ConfigureRangeBody();
@@ -622,6 +694,8 @@ namespace TAD.Defenders
             ClearAttackersInRange();
             ResetRelocation();
             nextFireTime = 0f;
+            reloadCompleteTime = 0f;
+            shotsRemainingInMagazine = 0;
             SetRangeIndicatorVisible(false);
         }
 
@@ -669,6 +743,14 @@ namespace TAD.Defenders
             {
                 return;
             }
+
+            if (IsReloading)
+            {
+                nextFireTime = Mathf.Max(nextFireTime, reloadCompleteTime);
+                return;
+            }
+
+            CompleteReloadIfNeeded();
 
             var weapon = weaponDefinition;
             var projectileDefinition = weapon != null ? weapon.ProjectileDefinition : null;
@@ -731,8 +813,57 @@ namespace TAD.Defenders
                 facingDirection = targetDirection.normalized;
             }
 
-            nextFireTime = Time.time + weapon.FireInterval;
+            ScheduleNextShot(weapon);
             Fired?.Invoke(FacingDirection, weapon);
+        }
+
+        /// <summary>Restores the authored magazine whenever a pooled defender is activated or re-equipped.</summary>
+        private void ResetWeaponFiringState()
+        {
+            shotsRemainingInMagazine = weaponDefinition != null
+                ? weaponDefinition.ShotsPerMagazine
+                : 0;
+            reloadCompleteTime = 0f;
+            nextFireTime = Time.time;
+        }
+
+        private void CompleteReloadIfNeeded()
+        {
+            if (weaponDefinition == null || !weaponDefinition.UsesReload ||
+                shotsRemainingInMagazine > 0 || Time.time < reloadCompleteTime)
+            {
+                return;
+            }
+
+            shotsRemainingInMagazine = weaponDefinition.ShotsPerMagazine;
+            reloadCompleteTime = 0f;
+        }
+
+        /// <summary>
+        /// Applies normal fire cadence first, then starts the shared weapon reload only after a successful shot.
+        /// Failed pool launches never consume ammunition.
+        /// </summary>
+        private void ScheduleNextShot(WeaponDefinition weapon)
+        {
+            if (weapon == null)
+            {
+                return;
+            }
+
+            nextFireTime = Time.time + weapon.FireInterval;
+            if (!weapon.UsesReload)
+            {
+                return;
+            }
+
+            shotsRemainingInMagazine = Mathf.Max(0, shotsRemainingInMagazine - 1);
+            if (shotsRemainingInMagazine > 0)
+            {
+                return;
+            }
+
+            reloadCompleteTime = Time.time + weapon.ReloadDuration;
+            nextFireTime = Mathf.Max(nextFireTime, reloadCompleteTime);
         }
 
         private bool CanLaunchProjectile(ProjectileDefinition projectileDefinition)
@@ -1280,6 +1411,16 @@ namespace TAD.Defenders
                 return true;
             }
 
+            if (currentLevel == FinalWeaponEvolutionUpgradeLevel &&
+                hasSelectedWeaponEvolution &&
+                !hasSelectedFinalWeaponEvolution &&
+                weaponDefinition != null &&
+                weaponDefinition.UnlocksFinalEvolution)
+            {
+                pendingWeaponUpgradeLevel = FinalWeaponEvolutionUpgradeLevel;
+                return true;
+            }
+
             return false;
         }
 
@@ -1291,6 +1432,8 @@ namespace TAD.Defenders
             pendingWeaponUpgradeLevel = 0;
             hasSelectedFirstWeaponUpgrade = false;
             hasSelectedWeaponEvolution = false;
+            hasSelectedFinalWeaponEvolution = false;
+            ResetWeaponFiringState();
             ApplyLevelPresentation();
             var startingWeapon = baseWeaponDefinition ?? weaponDefinition;
             investedGold = startingWeapon != null ? Mathf.Max(0, startingWeapon.Cost) : 0;

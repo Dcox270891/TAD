@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 79697559321644b468d8daf28721571f, type: 3}
+  m_Name: PoisonTrapperWeaponDefinition
+  m_EditorClassIdentifier: TAD.Runtime::TAD.Defenders.WeaponDefinition
+  displayName: Poison Trapper
+  description: A final trap evolution. Only the animal that triggers it takes the initial hit, while nearby animals are poisoned.
+  requiredPreviousWeapon: {fileID: 11400000, guid: f10c2b2ff3579d140ac2b7b19ae8d4cf, type: 2}
+  unlocksFinalEvolution: 0
+  cost: 98
+  range: 2.65
+  attackSpeed: 0.8
+  damage: 11
+  shotsPerMagazine: 1
+  reloadDuration: 0
+  projectileDefinition: {fileID: 11400000, guid: b8c202c1e06f05b498fab1571082ce3b, type: 2}

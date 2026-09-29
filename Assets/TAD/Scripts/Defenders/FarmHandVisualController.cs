@@ -326,6 +326,15 @@ namespace TAD.Defenders
                 }
             }
 
+            // Final evolutions inherit the proven directional presentation of their exact level-five
+            // parent until bespoke artwork is authored. This keeps a newly selected Rake, Shovel,
+            // Heavy Roll, Bounce, Semi Automatic, Pistol, Poison Trapper, or Slow Trapper visible
+            // and firing immediately rather than hiding the held-weapon layer.
+            if (weapon.RequiredPreviousWeapon != null && weapon.RequiredPreviousWeapon != weapon)
+            {
+                return GetWeaponVisual(weapon.RequiredPreviousWeapon);
+            }
+
             return null;
         }
 
