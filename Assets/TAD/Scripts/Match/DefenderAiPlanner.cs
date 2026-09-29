@@ -494,7 +494,9 @@ namespace TAD.Match
             {
                 AttackerArchetype.Fast => 1f + Mathf.Clamp(weapon.AttackSpeed * 0.08f, 0f, 0.25f),
                 AttackerArchetype.Strong => 1f + Mathf.Clamp(weapon.Damage * 0.02f, 0f, 0.35f),
-                AttackerArchetype.Flying => projectileType == ProjectileType.Ranged ? 1.20f : 0.80f,
+                // Flying animals cannot be targeted by melee at all, so never recommend a melee
+                // weapon as a response to a route containing only flying enemies.
+                AttackerArchetype.Flying => projectileType == ProjectileType.Ranged ? 1.20f : 0f,
                 _ => 1f
             };
         }

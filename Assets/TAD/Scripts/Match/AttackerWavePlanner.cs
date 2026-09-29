@@ -209,7 +209,8 @@ namespace TAD.Match
                 }
 
                 var timeInRange = distanceInRange / speed;
-                totalDamage += threat.DamagePerSecond * timeInRange * GetThreatReliability(threat);
+                totalDamage += threat.DamagePerSecond * timeInRange *
+                               GetThreatReliability(candidate.Definition, threat);
             }
 
             return totalDamage;
@@ -239,8 +240,19 @@ namespace TAD.Match
             return (end - start).magnitude * Mathf.Max(0f, exitT - enterT);
         }
 
-        private static float GetThreatReliability(AttackerAiDefenderThreat threat)
+        private static float GetThreatReliability(
+            AttackerDefinition attackerDefinition,
+            AttackerAiDefenderThreat threat)
         {
+            // Flight is a hard counter to melee, not merely a reduced damage expectation. This mirrors
+            // FarmHand target selection and projectile collision handling so the attacker AI does not
+            // underestimate a flying group against an all-melee defense.
+            if (attackerDefinition != null && attackerDefinition.Archetype == AttackerArchetype.Flying &&
+                threat.ProjectileType == ProjectileType.Melee)
+            {
+                return 0f;
+            }
+
             var behaviourReliability = threat.ProjectileBehavior switch
             {
                 ProjectileBehavior.Trap => 0.60f,

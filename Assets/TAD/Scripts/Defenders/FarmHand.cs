@@ -807,7 +807,8 @@ namespace TAD.Defenders
             for (var index = 0; index < attackersInRange.Count; index++)
             {
                 var candidate = attackersInRange[index];
-                if (!IsCandidateBlockedByWall(candidate, projectileType))
+                if (CanTargetCandidate(candidate, projectileType) &&
+                    !IsCandidateBlockedByWall(candidate, projectileType))
                 {
                     attacker = candidate;
                     return true;
@@ -827,7 +828,8 @@ namespace TAD.Defenders
             for (var index = attackersInRange.Count - 1; index >= 0; index--)
             {
                 var candidate = attackersInRange[index];
-                if (!IsCandidateBlockedByWall(candidate, projectileType))
+                if (CanTargetCandidate(candidate, projectileType) &&
+                    !IsCandidateBlockedByWall(candidate, projectileType))
                 {
                     attacker = candidate;
                     return true;
@@ -853,7 +855,8 @@ namespace TAD.Defenders
             for (var index = 0; index < attackersInRange.Count; index++)
             {
                 var candidate = attackersInRange[index];
-                if (IsCandidateBlockedByWall(candidate, projectileType))
+                if (!CanTargetCandidate(candidate, projectileType) ||
+                    IsCandidateBlockedByWall(candidate, projectileType))
                 {
                     continue;
                 }
@@ -867,6 +870,15 @@ namespace TAD.Defenders
             }
 
             return attacker != null;
+        }
+
+        /// <summary>
+        /// Keeps every target-order policy aligned with the projectile's combat rules. Flying animals remain
+        /// in the range sensor so a later ranged weapon can acquire them immediately, but melee never selects them.
+        /// </summary>
+        private static bool CanTargetCandidate(BasicAttacker candidate, ProjectileType projectileType)
+        {
+            return IsValidAttacker(candidate) && ProjectileDefinition.CanTarget(projectileType, candidate);
         }
 
         private static float GetTargetingValue(BasicAttacker attacker, DefenderTargetingMode mode)

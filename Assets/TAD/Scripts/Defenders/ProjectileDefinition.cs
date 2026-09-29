@@ -1,3 +1,4 @@
+using TAD.Attackers;
 using UnityEngine;
 
 namespace TAD.Defenders
@@ -73,6 +74,18 @@ namespace TAD.Defenders
         public float RollingAcceleration => rollingAcceleration;
         public float PoleSweepAngle => poleSweepAngle;
         public bool UsesTimedLifetime => projectileLifetimeMode == ProjectileLifetimeMode.Timed;
+
+        /// <summary>
+        /// Returns whether this projectile category can legally attack the supplied animal.
+        /// Flying animals are airborne, so they can only be selected or damaged by ranged projectiles.
+        /// </summary>
+        public bool CanTarget(BasicAttacker attacker) => CanTarget(projectileType, attacker);
+
+        /// <summary>Shared compatibility rule used by target selection, projectile launch, and contact damage.</summary>
+        public static bool CanTarget(ProjectileType projectileType, BasicAttacker attacker)
+        {
+            return attacker != null && (projectileType == ProjectileType.Ranged || !attacker.IsFlying);
+        }
 
 #if UNITY_EDITOR
         private void OnValidate()

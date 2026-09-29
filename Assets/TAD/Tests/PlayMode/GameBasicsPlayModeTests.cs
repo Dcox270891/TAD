@@ -304,6 +304,80 @@ namespace TAD.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator FarmHandPlacement_ValidatesPurchaseAndRelocationCostBeforeOpeningAPreview()
+        {
+            var fixture = GameBasicsTestSupport.CreateQueueFixture();
+            var defenderBank = GameBasicsTestSupport.CreateBank(BankSide.Defender, startingGold: 0);
+            yield return null;
+
+            Assert.That(fixture.SpawnPool.RouteMapper.RebuildRoutes(), Is.True);
+            var placementController = fixture.SpawnPool.GetComponent<FarmHandPlacementController>();
+            Assert.That(placementController, Is.Not.Null);
+
+            Assert.That(placementController.BeginPlacement(), Is.False);
+            Assert.That(placementController.IsPlacementActive, Is.False);
+            Assert.That(ModalOverlay.IsGameplayInputBlocked, Is.True);
+
+            var warning = Object.FindAnyObjectByType<ModalOverlayMessage>();
+            Assert.That(warning, Is.Not.Null);
+            warning.CompleteChoice();
+            yield return null;
+            Assert.That(ModalOverlay.IsGameplayInputBlocked, Is.False);
+
+            defenderBank.Configure(BankSide.Defender, initialGold: 100);
+            Assert.That(placementController.TryPlaceFarmHandAt(Vector2.zero), Is.True);
+            yield return null;
+
+            var farmHand = Object.FindAnyObjectByType<FarmHand>();
+            Assert.That(farmHand, Is.Not.Null);
+            Assert.That(defenderBank.TrySpendGold(defenderBank.CurrentGold), Is.True);
+            var goldBeforeRelocationAttempt = defenderBank.CurrentGold;
+
+            Assert.That(placementController.BeginRelocation(farmHand), Is.False);
+            Assert.That(placementController.IsPlacementActive, Is.False);
+            Assert.That(farmHand.IsRelocating, Is.False);
+            Assert.That(defenderBank.CurrentGold, Is.EqualTo(goldBeforeRelocationAttempt));
+            Assert.That(ModalOverlay.IsGameplayInputBlocked, Is.True);
+
+            warning.CompleteChoice();
+            yield return null;
+            Assert.That(ModalOverlay.IsGameplayInputBlocked, Is.False);
+        }
+
+        [UnityTest]
+        public IEnumerator FarmHandPlacement_RejectsOccupiedPreviewPositionBeforeConfirmation()
+        {
+            var fixture = GameBasicsTestSupport.CreateQueueFixture();
+            var defenderBank = GameBasicsTestSupport.CreateBank(BankSide.Defender);
+            yield return null;
+
+            Assert.That(fixture.SpawnPool.RouteMapper.RebuildRoutes(), Is.True);
+            var placementController = fixture.SpawnPool.GetComponent<FarmHandPlacementController>();
+            Assert.That(placementController, Is.Not.Null);
+            Assert.That(placementController.TryPlaceFarmHandAt(Vector2.zero), Is.True);
+            yield return null;
+            Physics2D.SyncTransforms();
+
+            var farmHand = Object.FindAnyObjectByType<FarmHand>();
+            Assert.That(farmHand, Is.Not.Null);
+            var goldBeforePreview = defenderBank.CurrentGold;
+            Assert.That(placementController.BeginPlacement(), Is.True);
+            Assert.That(placementController.TrySetPlacementPreviewPosition((Vector2)farmHand.transform.position), Is.False);
+            Assert.That(placementController.IsPlacementActive, Is.True);
+            Assert.That(defenderBank.CurrentGold, Is.EqualTo(goldBeforePreview));
+            Assert.That(ModalOverlay.IsGameplayInputBlocked, Is.False);
+
+            var warning = Object.FindAnyObjectByType<ModalOverlayMessage>();
+            var canvasGroup = warning != null ? warning.GetComponent<CanvasGroup>() : null;
+            Assert.That(canvasGroup, Is.Not.Null);
+            Assert.That(canvasGroup.alpha, Is.EqualTo(1f));
+            Assert.That(canvasGroup.interactable, Is.False);
+            Assert.That(canvasGroup.blocksRaycasts, Is.False);
+
+            placementController.CancelPlacement();
+        }
+
+        [UnityTest]
         public IEnumerator DefenderDetails_TargetingControlIsEditableForDefendersAndReadOnlyForAttackers()
         {
             var farmHand = GameBasicsTestSupport.CreateFarmHand();
@@ -415,9 +489,23 @@ namespace TAD.Tests.PlayMode
             farmHand.SetTargetingMode(DefenderTargetingMode.Fastest);
             Assert.That(farmHand.CurrentTarget, Is.EqualTo(firstGreyhound));
 
+            // The default sensor weapon has no projectile definition, so it uses the safe melee fallback.
+            // Flying animals remain tracked in range but must never be selected by any melee targeting mode.
+            farmHand.SetTargetingMode(DefenderTargetingMode.HighestKillGain);
+            Assert.That(farmHand.CurrentTarget, Is.EqualTo(firstBull));
+
+            farmHand.SetTargetingMode(DefenderTargetingMode.LastEnemyInRange);
+            Assert.That(farmHand.CurrentTarget, Is.EqualTo(secondGreyhound));
+
+            var airRifle = Resources.Load<WeaponDefinition>("TADTests/AirRifleWeaponDefinition");
+            Assert.That(airRifle, Is.Not.Null);
+            farmHand.SetWeapon(airRifle);
+            Physics2D.SyncTransforms();
+            yield return new WaitForFixedUpdate();
+
+            // Ranged weapons retain the existing ability to select flying animals.
             farmHand.SetTargetingMode(DefenderTargetingMode.HighestKillGain);
             Assert.That(farmHand.CurrentTarget, Is.EqualTo(firstEagle));
-
             farmHand.SetTargetingMode(DefenderTargetingMode.LastEnemyInRange);
             Assert.That(farmHand.CurrentTarget, Is.EqualTo(secondEagle));
             secondEagle.transform.position = new Vector2(3f, 0f);
@@ -429,6 +517,25 @@ namespace TAD.Tests.PlayMode
             Assert.That(farmHand.CurrentTarget, Is.EqualTo(secondGreyhound));
 
             Object.Destroy(sensorWeapon);
+        }
+
+        [UnityTest]
+        public IEnumerator ProjectileTargetingRules_AllowOnlyRangedProjectilesToTargetFlyingAnimals()
+        {
+            var bull = Resources.Load<AttackerDefinition>("TADTests/BullDefinition");
+            var eagle = Resources.Load<AttackerDefinition>("TADTests/EagleDefinition");
+            Assert.That(bull, Is.Not.Null);
+            Assert.That(eagle, Is.Not.Null);
+
+            var groundAttacker = GameBasicsTestSupport.CreateAttacker(bull);
+            var flyingAttacker = GameBasicsTestSupport.CreateAttacker(eagle);
+            yield return null;
+
+            Assert.That(groundAttacker.IsFlying, Is.False);
+            Assert.That(flyingAttacker.IsFlying, Is.True);
+            Assert.That(ProjectileDefinition.CanTarget(ProjectileType.Melee, groundAttacker), Is.True);
+            Assert.That(ProjectileDefinition.CanTarget(ProjectileType.Melee, flyingAttacker), Is.False);
+            Assert.That(ProjectileDefinition.CanTarget(ProjectileType.Ranged, flyingAttacker), Is.True);
         }
 
         [UnityTest]

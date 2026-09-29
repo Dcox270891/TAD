@@ -301,24 +301,41 @@ namespace TAD.Defenders
             return false;
         }
 
-        /// <summary>Begins a placement preview at the centre of the visible map.</summary>
-        public void BeginPlacement()
+        /// <summary>
+        /// Begins a placement preview at the centre of the visible map after confirming the Defender can
+        /// afford a new farmhand. The cost is still taken only when the player confirms a valid position.
+        /// </summary>
+        public bool BeginPlacement()
         {
             if (!isPlacementInputEnabled)
             {
-                return;
+                return false;
             }
 
             EnsurePlacementUi();
 
-            if (isPlacing || ModalOverlay.IsGameplayInputBlocked || !TryGetInitialPreviewPosition(out var initialPosition))
+            if (isPlacing || ModalOverlay.IsGameplayInputBlocked)
             {
-                return;
+                return false;
+            }
+
+            var bank = ResolveDefenderBank();
+            if (bank == null || !bank.CanAfford(GetFarmHandCost()))
+            {
+                // Do not open a placement choice the player cannot complete. This uses the existing
+                // purchase warning before a preview, rather than delaying the feedback until the tick.
+                ShowInsufficientFundsMessage();
+                return false;
+            }
+
+            if (!TryGetInitialPreviewPosition(out var initialPosition))
+            {
+                return false;
             }
 
             if (!CreatePreview(farmHandPrefab))
             {
-                return;
+                return false;
             }
 
             ClearTargetedFarmHand();
@@ -326,8 +343,9 @@ namespace TAD.Defenders
             placementMode = PlacementMode.Purchase;
             ignoreMouseUntilReleased = Mouse.current != null && Mouse.current.leftButton.isPressed;
             isMousePlacementLocked = false;
-            SetPreviewPosition(initialPosition);
+            SetInitialPreviewPosition(initialPosition);
             spawnedUi?.SetPlacementActive(true);
+            return true;
         }
 
         /// <summary>
@@ -338,7 +356,21 @@ namespace TAD.Defenders
         {
             if (!isPlacementInputEnabled || farmHand == null || !farmHand.isActiveAndEnabled ||
                 !farmHand.gameObject.activeInHierarchy || farmHand.IsRelocating || isPlacing ||
-                ModalOverlay.IsGameplayInputBlocked || !TryGetInitialPreviewPosition(out _))
+                ModalOverlay.IsGameplayInputBlocked)
+            {
+                return false;
+            }
+
+            var bank = ResolveDefenderBank();
+            if (bank == null || !bank.CanAfford(farmHand.RelocationCost))
+            {
+                // The Move action remains clickable even when unaffordable so this can explain why
+                // relocation cannot start instead of silently disabling the control.
+                ShowPlacementMessage(RelocationFundsMessage);
+                return false;
+            }
+
+            if (!TryGetInitialPreviewPosition(out _))
             {
                 return false;
             }
@@ -354,7 +386,7 @@ namespace TAD.Defenders
             isPlacing = true;
             ignoreMouseUntilReleased = Mouse.current != null && Mouse.current.leftButton.isPressed;
             isMousePlacementLocked = false;
-            SetPreviewPosition((Vector2)farmHand.transform.position);
+            SetInitialPreviewPosition((Vector2)farmHand.transform.position);
             ClearTargetedFarmHand();
             spawnedUi?.SetPlacementActive(true);
             return true;
@@ -375,6 +407,21 @@ namespace TAD.Defenders
             {
                 EndPlacement();
             }
+        }
+
+        /// <summary>
+        /// Applies an explicit player-selected preview position without confirming the transaction.
+        /// This is also useful for controller and automated input integrations that need immediate
+        /// occupied-position feedback before the confirmation button is available.
+        /// </summary>
+        public bool TrySetPlacementPreviewPosition(Vector2 requestedPosition)
+        {
+            if (!isPlacementInputEnabled || !isPlacing || ModalOverlay.IsGameplayInputBlocked)
+            {
+                return false;
+            }
+
+            return TrySetPreviewPosition(requestedPosition, showUnavailableWarning: true);
         }
 
         /// <summary>Removes the preview without consuming a pooled farmhand.</summary>
@@ -512,7 +559,9 @@ namespace TAD.Defenders
                 return;
             }
 
-            TrySetPreviewFromScreenPosition(touchscreen.primaryTouch.position.ReadValue());
+            TrySetPreviewFromScreenPosition(
+                touchscreen.primaryTouch.position.ReadValue(),
+                showUnavailableWarning: touchscreen.primaryTouch.press.wasPressedThisFrame);
         }
 
         private void UpdateMousePreview()
@@ -542,7 +591,7 @@ namespace TAD.Defenders
             {
                 // A world click chooses a candidate position without confirming it. Subsequent world
                 // clicks can revise that candidate while the cursor remains free to reach the tick/cross.
-                if (TrySetPreviewFromScreenPosition(mouse.position.ReadValue()))
+                if (TrySetPreviewFromScreenPosition(mouse.position.ReadValue(), showUnavailableWarning: true))
                 {
                     isMousePlacementLocked = true;
                 }
@@ -552,7 +601,7 @@ namespace TAD.Defenders
 
             if (!isMousePlacementLocked)
             {
-                TrySetPreviewFromScreenPosition(mouse.position.ReadValue());
+                TrySetPreviewFromScreenPosition(mouse.position.ReadValue(), showUnavailableWarning: false);
             }
         }
 
@@ -567,7 +616,9 @@ namespace TAD.Defenders
             var movement = gamepad.leftStick.ReadValue();
             if (!isMousePlacementLocked && movement.sqrMagnitude > 0.0001f)
             {
-                SetPreviewPosition(previewPosition + (movement * controllerPlacementSpeed * Time.unscaledDeltaTime));
+                TrySetPreviewPosition(
+                    previewPosition + (movement * controllerPlacementSpeed * Time.unscaledDeltaTime),
+                    showUnavailableWarning: false);
             }
 
             if (gamepad.buttonSouth.wasPressedThisFrame)
@@ -585,15 +636,14 @@ namespace TAD.Defenders
             return TryGetMapPositionFromScreenPosition(new Vector2(Screen.width * 0.5f, Screen.height * 0.5f), out position);
         }
 
-        private bool TrySetPreviewFromScreenPosition(Vector2 screenPosition)
+        private bool TrySetPreviewFromScreenPosition(Vector2 screenPosition, bool showUnavailableWarning)
         {
             if (!TryGetMapPositionFromScreenPosition(screenPosition, out var position))
             {
                 return false;
             }
 
-            SetPreviewPosition(position);
-            return true;
+            return TrySetPreviewPosition(position, showUnavailableWarning);
         }
 
         private bool TryGetMapPositionFromScreenPosition(Vector2 screenPosition, out Vector2 position)
@@ -617,7 +667,11 @@ namespace TAD.Defenders
             return routeMapper.TryClampToVisibleMap(worldPoint, out position);
         }
 
-        private void SetPreviewPosition(Vector2 requestedPosition)
+        /// <summary>
+        /// Applies the opening preview position, then immediately explains an occupied location. Subsequent
+        /// player-selected positions use <see cref="TrySetPreviewPosition"/> and stay at the last valid point.
+        /// </summary>
+        private void SetInitialPreviewPosition(Vector2 requestedPosition)
         {
             if (previewObject == null || routeMapper == null ||
                 !routeMapper.TryClampToVisibleMap(requestedPosition, out var constrainedPosition))
@@ -625,11 +679,55 @@ namespace TAD.Defenders
                 return;
             }
 
+            ApplyPreviewPosition(constrainedPosition);
+            if (!IsPreviewPositionAvailable(constrainedPosition))
+            {
+                ShowTransientPlacementMessage(OccupiedPlacementMessage);
+            }
+        }
+
+        /// <summary>
+        /// Moves the preview only to a legal non-overlapping footprint. Input callers opt into the
+        /// short click-through warning only for an explicit click/tap, preventing hover or thumbstick spam.
+        /// </summary>
+        private bool TrySetPreviewPosition(Vector2 requestedPosition, bool showUnavailableWarning)
+        {
+            if (previewObject == null || routeMapper == null ||
+                !routeMapper.TryClampToVisibleMap(requestedPosition, out var constrainedPosition))
+            {
+                return false;
+            }
+
+            if (!IsPreviewPositionAvailable(constrainedPosition))
+            {
+                if (showUnavailableWarning)
+                {
+                    ShowTransientPlacementMessage(OccupiedPlacementMessage);
+                }
+
+                return false;
+            }
+
+            ApplyPreviewPosition(constrainedPosition);
+            return true;
+        }
+
+        private void ApplyPreviewPosition(Vector2 constrainedPosition)
+        {
             previewPosition = constrainedPosition;
             previewObject.transform.position = new Vector3(
                 previewPosition.x,
                 previewPosition.y,
                 routeMapper.transform.position.z);
+        }
+
+        private bool IsPreviewPositionAvailable(Vector2 position)
+        {
+            var footprintSource = placementMode == PlacementMode.Relocation
+                ? relocatingFarmHand
+                : farmHandPrefab;
+            var ignoredFarmHand = placementMode == PlacementMode.Relocation ? relocatingFarmHand : null;
+            return IsFarmHandPlacementAvailable(position, footprintSource, ignoredFarmHand);
         }
 
         private bool CreatePreview(FarmHand sourceFarmHand)

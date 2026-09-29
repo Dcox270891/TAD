@@ -66,7 +66,7 @@ namespace TAD.Defenders
             float damageAmount)
         {
             if (sourceFarmHand == null || definition == null || definition.ProjectileBehavior != ExpectedProjectileBehavior ||
-                !IsValidTarget(target) || definition.ProjectileSpeed <= 0f || damageAmount <= 0f ||
+                !IsValidTarget(target) || !definition.CanTarget(target) || definition.ProjectileSpeed <= 0f || damageAmount <= 0f ||
                 (definition.UsesTimedLifetime && definition.ProjectileLifetime <= 0f))
             {
                 return false;
@@ -141,12 +141,14 @@ namespace TAD.Defenders
         protected BasicAttacker GetValidAttacker(Collider2D other)
         {
             var attacker = other != null ? other.GetComponentInParent<BasicAttacker>() : null;
-            return IsValidTarget(attacker) ? attacker : null;
+            return IsValidTarget(attacker) && Definition != null && Definition.CanTarget(attacker)
+                ? attacker
+                : null;
         }
 
         protected bool TryDamageAttacker(BasicAttacker attacker)
         {
-            return IsValidTarget(attacker) && SourceFarmHand != null &&
+            return IsValidTarget(attacker) && Definition != null && Definition.CanTarget(attacker) && SourceFarmHand != null &&
                    SourceFarmHand.TryDamageAttacker(attacker, Damage);
         }
 

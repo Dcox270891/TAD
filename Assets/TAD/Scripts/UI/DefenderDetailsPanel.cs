@@ -676,8 +676,10 @@ namespace TAD.UI
                 moveButtonText.text = $"MOVE  •  {target.RelocationCost} GOLD";
             }
 
-            var bank = target.DefenderBank;
-            moveButton.interactable = bank != null && bank.CanAfford(target.RelocationCost);
+            // Keep Move available even when the Defender cannot currently afford it. The placement
+            // controller then gives the player the explicit relocation-cost warning before opening
+            // a preview, instead of offering a silent disabled button.
+            moveButton.interactable = true;
         }
 
         private void UpdateUpgradeButton()
