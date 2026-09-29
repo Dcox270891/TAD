@@ -15,7 +15,7 @@ MonoBehaviour:
   projectileType: 0
   projectileBehavior: 1
   projectileLifetimeMode: 0
-  projectilePrefab: {fileID: 2074273349284568064, guid: ff4fd6ba21af5704b81faf95406d3461, type: 3}
+  projectilePrefab: {fileID: 1236729632306841698, guid: b26f037cee572e84c9cd7f6cf0fc6a39, type: 3}
   projectileSpeed: 7
   projectileLifetime: 0.9
   maximumActiveProjectiles: 1

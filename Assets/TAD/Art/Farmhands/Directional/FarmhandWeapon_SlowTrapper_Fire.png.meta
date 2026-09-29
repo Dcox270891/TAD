@@ -1,0 +1,1466 @@
+fileFormatVersion: 2
+guid: b0a877b8deb2eb34290ba70cdcfe2982
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -5213044793993481608
+    second: FarmhandWeapon_SlowTrapper_Fire_0
+  - first:
+      213: 8629884649539607219
+    second: FarmhandWeapon_SlowTrapper_Fire_1
+  - first:
+      213: 7600221501863475652
+    second: FarmhandWeapon_SlowTrapper_Fire_2
+  - first:
+      213: 4440952187895105842
+    second: FarmhandWeapon_SlowTrapper_Fire_3
+  - first:
+      213: -6188838004663288868
+    second: FarmhandWeapon_SlowTrapper_Fire_4
+  - first:
+      213: 5479285723519171235
+    second: FarmhandWeapon_SlowTrapper_Fire_5
+  - first:
+      213: -6500793062748926035
+    second: FarmhandWeapon_SlowTrapper_Fire_6
+  - first:
+      213: 5688809312382450912
+    second: FarmhandWeapon_SlowTrapper_Fire_7
+  - first:
+      213: -266452534608976966
+    second: FarmhandWeapon_SlowTrapper_Fire_8
+  - first:
+      213: -7500223963684867625
+    second: FarmhandWeapon_SlowTrapper_Fire_9
+  - first:
+      213: 1069035025850514606
+    second: FarmhandWeapon_SlowTrapper_Fire_10
+  - first:
+      213: 5443344451113054846
+    second: FarmhandWeapon_SlowTrapper_Fire_11
+  - first:
+      213: -2354537313358564914
+    second: FarmhandWeapon_SlowTrapper_Fire_12
+  - first:
+      213: -1298667219478661745
+    second: FarmhandWeapon_SlowTrapper_Fire_13
+  - first:
+      213: 5825948817167997253
+    second: FarmhandWeapon_SlowTrapper_Fire_14
+  - first:
+      213: 8071430056911382764
+    second: FarmhandWeapon_SlowTrapper_Fire_15
+  - first:
+      213: 2600537853482082039
+    second: FarmhandWeapon_SlowTrapper_Fire_16
+  - first:
+      213: 2099975166361280723
+    second: FarmhandWeapon_SlowTrapper_Fire_17
+  - first:
+      213: 201541927681358943
+    second: FarmhandWeapon_SlowTrapper_Fire_18
+  - first:
+      213: 7601013696488302414
+    second: FarmhandWeapon_SlowTrapper_Fire_19
+  - first:
+      213: -6022090942043495990
+    second: FarmhandWeapon_SlowTrapper_Fire_20
+  - first:
+      213: -4349152269242513717
+    second: FarmhandWeapon_SlowTrapper_Fire_21
+  - first:
+      213: -5268647233416017781
+    second: FarmhandWeapon_SlowTrapper_Fire_22
+  - first:
+      213: -3720023694183598848
+    second: FarmhandWeapon_SlowTrapper_Fire_23
+  - first:
+      213: -872086861083336897
+    second: FarmhandWeapon_SlowTrapper_Fire_24
+  - first:
+      213: -8484077294983400928
+    second: FarmhandWeapon_SlowTrapper_Fire_25
+  - first:
+      213: -95199691117506936
+    second: FarmhandWeapon_SlowTrapper_Fire_26
+  - first:
+      213: 7742678144267662383
+    second: FarmhandWeapon_SlowTrapper_Fire_27
+  - first:
+      213: 1292607532430830834
+    second: FarmhandWeapon_SlowTrapper_Fire_28
+  - first:
+      213: 5624821091922402544
+    second: FarmhandWeapon_SlowTrapper_Fire_29
+  - first:
+      213: 1032693510463578003
+    second: FarmhandWeapon_SlowTrapper_Fire_30
+  - first:
+      213: 5286541814343858809
+    second: FarmhandWeapon_SlowTrapper_Fire_31
+  - first:
+      213: -7066899224069408280
+    second: FarmhandWeapon_SlowTrapper_Fire_32
+  - first:
+      213: -3592797564065722579
+    second: FarmhandWeapon_SlowTrapper_Fire_33
+  - first:
+      213: 3827253583268949841
+    second: FarmhandWeapon_SlowTrapper_Fire_34
+  - first:
+      213: -3686308011667281165
+    second: FarmhandWeapon_SlowTrapper_Fire_35
+  - first:
+      213: 5634326691414640279
+    second: FarmhandWeapon_SlowTrapper_Fire_36
+  - first:
+      213: -2213185197273371456
+    second: FarmhandWeapon_SlowTrapper_Fire_37
+  - first:
+      213: 1922892631746898217
+    second: FarmhandWeapon_SlowTrapper_Fire_38
+  - first:
+      213: -7594390242121366573
+    second: FarmhandWeapon_SlowTrapper_Fire_39
+  - first:
+      213: 1228000468152613704
+    second: FarmhandWeapon_SlowTrapper_Fire_40
+  - first:
+      213: 6715046870404495267
+    second: FarmhandWeapon_SlowTrapper_Fire_41
+  - first:
+      213: 8318629004686789480
+    second: FarmhandWeapon_SlowTrapper_Fire_42
+  - first:
+      213: 9082169753577029838
+    second: FarmhandWeapon_SlowTrapper_Fire_43
+  - first:
+      213: -2349974768184973618
+    second: FarmhandWeapon_SlowTrapper_Fire_44
+  - first:
+      213: -7515714661366180285
+    second: FarmhandWeapon_SlowTrapper_Fire_45
+  - first:
+      213: -4258347095705377878
+    second: FarmhandWeapon_SlowTrapper_Fire_46
+  - first:
+      213: 535238691241670330
+    second: FarmhandWeapon_SlowTrapper_Fire_47
+  - first:
+      213: 5424759559388699207
+    second: FarmhandWeapon_SlowTrapper_Fire_48
+  - first:
+      213: 621704482745776177
+    second: FarmhandWeapon_SlowTrapper_Fire_49
+  - first:
+      213: -2778717433181227152
+    second: FarmhandWeapon_SlowTrapper_Fire_50
+  - first:
+      213: -6026781848776313130
+    second: FarmhandWeapon_SlowTrapper_Fire_51
+  - first:
+      213: 2642857221497167503
+    second: FarmhandWeapon_SlowTrapper_Fire_52
+  - first:
+      213: -4792219942896605559
+    second: FarmhandWeapon_SlowTrapper_Fire_53
+  - first:
+      213: -2217340146892265693
+    second: FarmhandWeapon_SlowTrapper_Fire_54
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 24
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationMethod: 0
+  spriteTessellationDetail: -1
+  spriteGeometrySubdivision: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 75
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: iOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: VisionOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: tvOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WindowsStoreApps
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: slowtrapper_d00_fire0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 960
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 2699dd5667f5e8e42baf5de979ef9255
+      internalID: 1353767215
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: slowtrapper_d00_fire1
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 960
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: aef6104f384fedc438ec64fd49bb82d6
+      internalID: -522672732
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: slowtrapper_d00_fire2
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 960
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 1dc211dd1f3692b48b5efc8d406afa24
+      internalID: -1113716806
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: slowtrapper_d01_fire0
+      rect:
+        serializedVersion: 2
+        x: 576
+        y: 960
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 083c14d9cc0014f49a656c67b660fe76
+      internalID: -1313969890
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: slowtrapper_d01_fire1
+      rect:
+        serializedVersion: 2
+        x: 768
+        y: 960
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9890ea160dc816c478e5b659227dea2d
+      internalID: 1547702662
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: slowtrapper_d01_fire2
+      rect:
+        serializedVersion: 2
+        x: 960
+        y: 960
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 31ce198caf9a40848b94f562da520738
+      internalID: -798312717
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: slowtrapper_d02_fire0
+      rect:
+        serializedVersion: 2
+        x: 1152
+        y: 960
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: af3fd14c093903540a436d7acca2bfc3
+      internalID: 1429436736
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: slowtrapper_d02_fire1
+      rect:
+        serializedVersion: 2
+        x: 1344
+        y: 960
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f210b2e5adf183246b2cc486121bedde
+      internalID: 674666130
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: slowtrapper_d02_fire2
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 768
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 40fcb00f644b2b04a959e65e8ab8dd43
+      internalID: -968223077
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: slowtrapper_d03_fire0
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 768
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c30d2ede82acef444bd22783ef0ccdca
+      internalID: 276309857
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: slowtrapper_d03_fire1
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 768
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3df8f5a09c1e35944a8d8bb51d70045b
+      internalID: 1336842133
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: slowtrapper_d03_fire2
+      rect:
+        serializedVersion: 2
+        x: 576
+        y: 768
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 6d70973b6d04e964db9f1d4ae1a6e65e
+      internalID: -1320844500
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: slowtrapper_d04_fire0
+      rect:
+        serializedVersion: 2
+        x: 768
+        y: 768
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 483b01dcd52abd04ab32837026e943d6
+      internalID: 1356071424
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: slowtrapper_d04_fire1
+      rect:
+        serializedVersion: 2
+        x: 960
+        y: 768
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5c3396a28869e384db0503fbd98946f0
+      internalID: -706603155
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: slowtrapper_d04_fire2
+      rect:
+        serializedVersion: 2
+        x: 1152
+        y: 768
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9a64896611796df41ae3929fdcc245c4
+      internalID: 1316935459
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: slowtrapper_d05_fire0
+      rect:
+        serializedVersion: 2
+        x: 1344
+        y: 768
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 038622748bd94b74d953cf1011efa1d2
+      internalID: -821536888
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: slowtrapper_d05_fire1
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 576
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 652d21de1b7b9bd498cdcfc4b71843e4
+      internalID: -444348104
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: slowtrapper_d05_fire2
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 576
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9a486c603bcc6d14d95926593b8252da
+      internalID: 657024338
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: slowtrapper_d06_fire0
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 576
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 171e25705f622674d875ddf439d836ce
+      internalID: -1735607157
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: slowtrapper_d06_fire1
+      rect:
+        serializedVersion: 2
+        x: 576
+        y: 576
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a5d3a49260d07d24e87e33f1918d4b39
+      internalID: 2083761860
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: slowtrapper_d06_fire2
+      rect:
+        serializedVersion: 2
+        x: 768
+        y: 576
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 1e80847f461e0c54f9ed4c3f5438d880
+      internalID: 1706390728
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: slowtrapper_d07_fire0
+      rect:
+        serializedVersion: 2
+        x: 960
+        y: 576
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 29653305a60e5d642b5d06e64973962f
+      internalID: -59285410
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: slowtrapper_d07_fire1
+      rect:
+        serializedVersion: 2
+        x: 1152
+        y: 576
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 291487c482a606e40b51bfcadc81b719
+      internalID: -1176081539
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: slowtrapper_d07_fire2
+      rect:
+        serializedVersion: 2
+        x: 1344
+        y: 576
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c800673b2a47bbd45b270826ec23a29c
+      internalID: 27299144
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: slowtrapper_d08_fire0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 384
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ada9fe7329ffd7d42af7170c6a3689d0
+      internalID: 1796878507
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: slowtrapper_d08_fire1
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 384
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 513c83ddc0ec48144b45db3574323c40
+      internalID: 1965903
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: slowtrapper_d08_fire2
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 384
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: bb8a1c357d8d4f04e8aa11be9eed165e
+      internalID: 1574502982
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: slowtrapper_d09_fire0
+      rect:
+        serializedVersion: 2
+        x: 576
+        y: 384
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 47762a27c13548f44b5137ea82b4b329
+      internalID: 735886700
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: slowtrapper_d09_fire1
+      rect:
+        serializedVersion: 2
+        x: 768
+        y: 384
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 78db030b9572cf5439736a38aa7d9046
+      internalID: 227211986
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: slowtrapper_d09_fire2
+      rect:
+        serializedVersion: 2
+        x: 960
+        y: 384
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: fb79046cc8b39584284e2be6f5887c67
+      internalID: -1580319152
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: slowtrapper_d10_fire0
+      rect:
+        serializedVersion: 2
+        x: 1152
+        y: 384
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ab15896004132a341a848f4859e772c7
+      internalID: 1457352112
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: slowtrapper_d10_fire1
+      rect:
+        serializedVersion: 2
+        x: 1344
+        y: 384
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a7c3bd8f7e65e4144bd46a281d885ea7
+      internalID: 1111912171
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: slowtrapper_d10_fire2
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 192
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 137b4544f9fbdaa4a956b86a31ac3f3b
+      internalID: 2095612778
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: slowtrapper_d11_fire0
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 192
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e014ac384a08e6347b6ffe76066725e7
+      internalID: -256204672
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: slowtrapper_d11_fire1
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 192
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c6e0050d7606a3848a277e8e5a200ad1
+      internalID: 1749422912
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: slowtrapper_d11_fire2
+      rect:
+        serializedVersion: 2
+        x: 576
+        y: 192
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 1daa08b0d33a86649a3363a17c2ee162
+      internalID: 515114858
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: slowtrapper_d12_fire0
+      rect:
+        serializedVersion: 2
+        x: 768
+        y: 192
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 55c13102b91a8da45b69e34e1c1736e0
+      internalID: 389083012
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: slowtrapper_d12_fire1
+      rect:
+        serializedVersion: 2
+        x: 960
+        y: 192
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f043c75052928594690669e8c128ca98
+      internalID: 2027015359
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: slowtrapper_d12_fire2
+      rect:
+        serializedVersion: 2
+        x: 1152
+        y: 192
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 0c780523ebcd27045a650fcc1f9348bd
+      internalID: 1946687100
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: slowtrapper_d13_fire0
+      rect:
+        serializedVersion: 2
+        x: 1344
+        y: 192
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3d5f65d2cfea7184c8f2ed462091cc2d
+      internalID: -1887489781
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: slowtrapper_d13_fire1
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5cb34131925fab94dbb9880b1b76c4d6
+      internalID: 965884316
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: slowtrapper_d13_fire2
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5999337d11d929a4c9c3edf793903cd7
+      internalID: 1277489860
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: slowtrapper_d14_fire0
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f9365cf5aa77d484da432e2562fc283d
+      internalID: -1888490514
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: slowtrapper_d14_fire1
+      rect:
+        serializedVersion: 2
+        x: 576
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5da187fa960a055448e6c945cfd6fe6e
+      internalID: -15139139
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: slowtrapper_d14_fire2
+      rect:
+        serializedVersion: 2
+        x: 768
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 73bbcc9fee486d94c94abbca575ce8a1
+      internalID: 1297495467
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: slowtrapper_d15_fire0
+      rect:
+        serializedVersion: 2
+        x: 960
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 05a0f19ba60a55649a67df8f2d5e7ced
+      internalID: 766283427
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: slowtrapper_d15_fire1
+      rect:
+        serializedVersion: 2
+        x: 1152
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 48a09b3beb72c9b4192bf8bd7bd451d7
+      internalID: -2067615484
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: slowtrapper_d15_fire2
+      rect:
+        serializedVersion: 2
+        x: 1344
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 8281284aa21d9204da450e096f5a1094
+      internalID: 120017160
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 2d8525869192a52458604b892807623e
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      slowtrapper_d00_fire0: 1353767215
+      slowtrapper_d00_fire1: -522672732
+      slowtrapper_d00_fire2: -1113716806
+      slowtrapper_d01_fire0: -1313969890
+      slowtrapper_d01_fire1: 1547702662
+      slowtrapper_d01_fire2: -798312717
+      slowtrapper_d02_fire0: 1429436736
+      slowtrapper_d02_fire1: 674666130
+      slowtrapper_d02_fire2: -968223077
+      slowtrapper_d03_fire0: 276309857
+      slowtrapper_d03_fire1: 1336842133
+      slowtrapper_d03_fire2: -1320844500
+      slowtrapper_d04_fire0: 1356071424
+      slowtrapper_d04_fire1: -706603155
+      slowtrapper_d04_fire2: 1316935459
+      slowtrapper_d05_fire0: -821536888
+      slowtrapper_d05_fire1: -444348104
+      slowtrapper_d05_fire2: 657024338
+      slowtrapper_d06_fire0: -1735607157
+      slowtrapper_d06_fire1: 2083761860
+      slowtrapper_d06_fire2: 1706390728
+      slowtrapper_d07_fire0: -59285410
+      slowtrapper_d07_fire1: -1176081539
+      slowtrapper_d07_fire2: 27299144
+      slowtrapper_d08_fire0: 1796878507
+      slowtrapper_d08_fire1: 1965903
+      slowtrapper_d08_fire2: 1574502982
+      slowtrapper_d09_fire0: 735886700
+      slowtrapper_d09_fire1: 227211986
+      slowtrapper_d09_fire2: -1580319152
+      slowtrapper_d10_fire0: 1457352112
+      slowtrapper_d10_fire1: 1111912171
+      slowtrapper_d10_fire2: 2095612778
+      slowtrapper_d11_fire0: -256204672
+      slowtrapper_d11_fire1: 1749422912
+      slowtrapper_d11_fire2: 515114858
+      slowtrapper_d12_fire0: 389083012
+      slowtrapper_d12_fire1: 2027015359
+      slowtrapper_d12_fire2: 1946687100
+      slowtrapper_d13_fire0: -1887489781
+      slowtrapper_d13_fire1: 965884316
+      slowtrapper_d13_fire2: 1277489860
+      slowtrapper_d14_fire0: -1888490514
+      slowtrapper_d14_fire1: -15139139
+      slowtrapper_d14_fire2: 1297495467
+      slowtrapper_d15_fire0: 766283427
+      slowtrapper_d15_fire1: -2067615484
+      slowtrapper_d15_fire2: 120017160
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

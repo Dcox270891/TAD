@@ -155,6 +155,47 @@ namespace TAD.Tests.Editor
         }
 
         [Test]
+        public void UnarmedProjectileDefinition_IsTheOnlyMeleeWeaponConfiguredToTargetFlyingAttackers()
+        {
+            var unarmed = LoadAsset<WeaponDefinition>("Assets/TAD/Data/Defenders/UnarmedWeaponDefinition.asset");
+            var stick = LoadAsset<WeaponDefinition>("Assets/TAD/Data/Defenders/StickWeaponDefinition.asset");
+            var pole = LoadAsset<WeaponDefinition>("Assets/TAD/Data/Defenders/PoleWeaponDefinition.asset");
+
+            Assert.That(unarmed.ProjectileDefinition.ProjectileType, Is.EqualTo(ProjectileType.Melee));
+            Assert.That(unarmed.ProjectileDefinition.CanTargetFlying, Is.True);
+            Assert.That(stick.ProjectileDefinition.ProjectileType, Is.EqualTo(ProjectileType.Melee));
+            Assert.That(stick.ProjectileDefinition.CanTargetFlying, Is.False);
+            Assert.That(pole.ProjectileDefinition.ProjectileType, Is.EqualTo(ProjectileType.Melee));
+            Assert.That(pole.ProjectileDefinition.CanTargetFlying, Is.False);
+        }
+
+        [Test]
+        public void DefenderAiPlanner_ChoosesUnarmedOverStandardMeleeAgainstFlyingAttackers()
+        {
+            var flying = Load<AttackerDefinition>("EagleDefinition");
+            var unarmed = LoadAsset<WeaponDefinition>("Assets/TAD/Data/Defenders/UnarmedWeaponDefinition.asset");
+            var stick = LoadAsset<WeaponDefinition>("Assets/TAD/Data/Defenders/StickWeaponDefinition.asset");
+            var route = new[] { new Vector3(-2f, 0f), new Vector3(2f, 0f) };
+            var plans = new List<DefenderAiRoutePlan>
+            {
+                new(flying, attackerCount: 1, route)
+            };
+
+            Assert.That(
+                DefenderAiPlanner.TryChooseWeapon(
+                    Vector2.zero,
+                    progressionDamageMultiplier: 1f,
+                    new List<WeaponDefinition> { stick, unarmed },
+                    plans,
+                    out var weapon),
+                Is.True);
+
+            Assert.That(weapon.IsValid, Is.True);
+            Assert.That(weapon.Weapon, Is.EqualTo(unarmed));
+            Assert.That(weapon.Reason, Does.Contain("airborne-capable"));
+        }
+
+        [Test]
         public void FinalLevelEightWeaponAssets_HaveExactParentsAndConfiguredGameplayEffects()
         {
             var pole = LoadAsset<WeaponDefinition>("Assets/TAD/Data/Defenders/PoleWeaponDefinition.asset");

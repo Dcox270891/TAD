@@ -44,6 +44,9 @@ namespace TAD.Defenders
         [SerializeField]
         [Tooltip("Melee projectiles cannot cross any wall. Ranged projectiles can cross half cover but not full cover.")]
         private ProjectileType projectileType = ProjectileType.Melee;
+        [SerializeField]
+        [Tooltip("Allows this individual projectile to target airborne attackers even when it is melee. Reserve this for deliberate exceptions such as Unarmed.")]
+        private bool canTargetFlying;
         [SerializeField] private ProjectileBehavior projectileBehavior = ProjectileBehavior.Direct;
         [SerializeField] private ProjectileLifetimeMode projectileLifetimeMode = ProjectileLifetimeMode.Timed;
         [SerializeField] private GameObject projectilePrefab;
@@ -96,6 +99,8 @@ namespace TAD.Defenders
         private int maximumBounceCount = 3;
 
         public ProjectileType ProjectileType => projectileType;
+        /// <summary>True when this projectile is allowed to select and damage airborne attackers.</summary>
+        public bool CanTargetFlying => projectileType == ProjectileType.Ranged || canTargetFlying;
         public ProjectileBehavior ProjectileBehavior => projectileBehavior;
         public ProjectileLifetimeMode ProjectileLifetimeMode => projectileLifetimeMode;
         public GameObject ProjectilePrefab => projectilePrefab;
@@ -123,14 +128,30 @@ namespace TAD.Defenders
 
         /// <summary>
         /// Returns whether this projectile category can legally attack the supplied animal.
-        /// Flying animals are airborne, so they can only be selected or damaged by ranged projectiles.
+        /// Flying animals are airborne, so they require a projectile explicitly configured to target them.
         /// </summary>
-        public bool CanTarget(BasicAttacker attacker) => CanTarget(projectileType, attacker);
+        public bool CanTarget(BasicAttacker attacker)
+        {
+            return attacker != null && (!attacker.IsFlying || CanTargetFlying);
+        }
 
-        /// <summary>Shared compatibility rule used by target selection, projectile launch, and contact damage.</summary>
+        /// <summary>
+        /// Shared default compatibility rule used where only a projectile category is available.
+        /// Melee remains grounded-only unless a concrete projectile definition opts into the exception.
+        /// </summary>
         public static bool CanTarget(ProjectileType projectileType, BasicAttacker attacker)
         {
-            return attacker != null && (projectileType == ProjectileType.Ranged || !attacker.IsFlying);
+            return CanTarget(projectileType, canTargetFlying: false, attacker);
+        }
+
+        /// <summary>Shared compatibility rule for an explicit airborne-targeting exception.</summary>
+        public static bool CanTarget(
+            ProjectileType projectileType,
+            bool canTargetFlying,
+            BasicAttacker attacker)
+        {
+            return attacker != null &&
+                   (!attacker.IsFlying || projectileType == ProjectileType.Ranged || canTargetFlying);
         }
 
 #if UNITY_EDITOR

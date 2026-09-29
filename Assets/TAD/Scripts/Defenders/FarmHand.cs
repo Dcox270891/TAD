@@ -181,6 +181,23 @@ namespace TAD.Defenders
         /// <summary>True while the current weapon magazine is reloading.</summary>
         public bool IsReloading => weaponDefinition != null && weaponDefinition.UsesReload && Time.time < reloadCompleteTime;
 
+        /// <summary>
+        /// Normalized presentation progress for the active magazine reload. Combat timing remains
+        /// authoritative here; visual layers only use this value to select a reload sprite frame.
+        /// </summary>
+        public float ReloadProgress
+        {
+            get
+            {
+                if (!IsReloading || weaponDefinition == null || weaponDefinition.ReloadDuration <= 0f)
+                {
+                    return 0f;
+                }
+
+                return 1f - Mathf.Clamp01((reloadCompleteTime - Time.time) / weaponDefinition.ReloadDuration);
+            }
+        }
+
         /// <summary>Shots that can be fired before the current weapon next reloads.</summary>
         public int ShotsRemainingInMagazine => Mathf.Max(0, shotsRemainingInMagazine);
 
@@ -253,10 +270,7 @@ namespace TAD.Defenders
             get
             {
                 var projectileDefinition = weaponDefinition != null ? weaponDefinition.ProjectileDefinition : null;
-                var projectileType = projectileDefinition != null
-                    ? projectileDefinition.ProjectileType
-                    : ProjectileType.Melee;
-                return TryGetSelectedAttackableAttacker(projectileType, out var attacker) ? attacker : null;
+                return TryGetSelectedAttackableAttacker(projectileDefinition, out var attacker) ? attacker : null;
             }
         }
 
@@ -762,7 +776,7 @@ namespace TAD.Defenders
                 return;
             }
 
-            if (!TryGetSelectedAttackableAttacker(projectileDefinition.ProjectileType, out var target))
+            if (!TryGetSelectedAttackableAttacker(projectileDefinition, out var target))
             {
                 // Avoid repeating line-of-sight physics queries every rendered frame while every nearby target is covered.
                 nextFireTime = Time.time + BlockedTargetRetryInterval;
@@ -911,21 +925,24 @@ namespace TAD.Defenders
             limitedActiveProjectiles.Clear();
         }
 
-        private bool TryGetSelectedAttackableAttacker(ProjectileType projectileType, out BasicAttacker attacker)
+        private bool TryGetSelectedAttackableAttacker(ProjectileDefinition projectileDefinition, out BasicAttacker attacker)
         {
             PruneInvalidAttackers();
+            var projectileType = projectileDefinition != null
+                ? projectileDefinition.ProjectileType
+                : ProjectileType.Melee;
 
             switch (targetingMode)
             {
                 case DefenderTargetingMode.HighestHealth:
                 case DefenderTargetingMode.Fastest:
                 case DefenderTargetingMode.HighestKillGain:
-                    return TryGetHighestValueAttackableAttacker(projectileType, targetingMode, out attacker);
+                    return TryGetHighestValueAttackableAttacker(projectileDefinition, projectileType, targetingMode, out attacker);
                 case DefenderTargetingMode.LastEnemyInRange:
-                    return TryGetLastEnemyInRange(projectileType, out attacker);
+                    return TryGetLastEnemyInRange(projectileDefinition, projectileType, out attacker);
                 case DefenderTargetingMode.FirstEnemyInRange:
                 default:
-                    return TryGetFirstEnemyInRange(projectileType, out attacker);
+                    return TryGetFirstEnemyInRange(projectileDefinition, projectileType, out attacker);
             }
         }
 
@@ -933,12 +950,15 @@ namespace TAD.Defenders
         /// The sensor appends attackers in entry order and prunes defeated, pooled, reached, and departed animals before every search.
         /// This automatically advances to the next eligible animal when the current first enemy is no longer valid.
         /// </summary>
-        private bool TryGetFirstEnemyInRange(ProjectileType projectileType, out BasicAttacker attacker)
+        private bool TryGetFirstEnemyInRange(
+            ProjectileDefinition projectileDefinition,
+            ProjectileType projectileType,
+            out BasicAttacker attacker)
         {
             for (var index = 0; index < attackersInRange.Count; index++)
             {
                 var candidate = attackersInRange[index];
-                if (CanTargetCandidate(candidate, projectileType) &&
+                if (CanTargetCandidate(candidate, projectileDefinition, projectileType) &&
                     !IsCandidateBlockedByWall(candidate, projectileType))
                 {
                     attacker = candidate;
@@ -954,12 +974,15 @@ namespace TAD.Defenders
         /// Selects the newest eligible attacker. The range list is appended in entry order, so scanning it backwards
         /// naturally selects the latest animal to enter while still respecting wall and cover rules.
         /// </summary>
-        private bool TryGetLastEnemyInRange(ProjectileType projectileType, out BasicAttacker attacker)
+        private bool TryGetLastEnemyInRange(
+            ProjectileDefinition projectileDefinition,
+            ProjectileType projectileType,
+            out BasicAttacker attacker)
         {
             for (var index = attackersInRange.Count - 1; index >= 0; index--)
             {
                 var candidate = attackersInRange[index];
-                if (CanTargetCandidate(candidate, projectileType) &&
+                if (CanTargetCandidate(candidate, projectileDefinition, projectileType) &&
                     !IsCandidateBlockedByWall(candidate, projectileType))
                 {
                     attacker = candidate;
@@ -976,6 +999,7 @@ namespace TAD.Defenders
         /// leaves equal values with the first animal that entered range.
         /// </summary>
         private bool TryGetHighestValueAttackableAttacker(
+            ProjectileDefinition projectileDefinition,
             ProjectileType projectileType,
             DefenderTargetingMode mode,
             out BasicAttacker attacker)
@@ -986,7 +1010,7 @@ namespace TAD.Defenders
             for (var index = 0; index < attackersInRange.Count; index++)
             {
                 var candidate = attackersInRange[index];
-                if (!CanTargetCandidate(candidate, projectileType) ||
+                if (!CanTargetCandidate(candidate, projectileDefinition, projectileType) ||
                     IsCandidateBlockedByWall(candidate, projectileType))
                 {
                     continue;
@@ -1005,11 +1029,21 @@ namespace TAD.Defenders
 
         /// <summary>
         /// Keeps every target-order policy aligned with the projectile's combat rules. Flying animals remain
-        /// in the range sensor so a later ranged weapon can acquire them immediately, but melee never selects them.
+        /// in the range sensor so a later airborne-capable weapon can acquire them immediately.
         /// </summary>
-        private static bool CanTargetCandidate(BasicAttacker candidate, ProjectileType projectileType)
+        private static bool CanTargetCandidate(
+            BasicAttacker candidate,
+            ProjectileDefinition projectileDefinition,
+            ProjectileType fallbackProjectileType)
         {
-            return IsValidAttacker(candidate) && ProjectileDefinition.CanTarget(projectileType, candidate);
+            if (!IsValidAttacker(candidate))
+            {
+                return false;
+            }
+
+            return projectileDefinition != null
+                ? projectileDefinition.CanTarget(candidate)
+                : ProjectileDefinition.CanTarget(fallbackProjectileType, candidate);
         }
 
         private static float GetTargetingValue(BasicAttacker attacker, DefenderTargetingMode mode)

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using TAD.Defenders;
+using TAD.Pooling;
 using UnityEditor;
 using UnityEditor.U2D.Sprites;
 using UnityEngine;
@@ -20,16 +21,20 @@ namespace TAD.Editor
         private const int DirectionCount = 16;
         private const int MovementFrameCount = 2;
         private const int FiringFrameCount = 3;
+        private const int ReloadFrameCount = 3;
         private const int DirectionalColumns = 8;
         private const int DirectionalRows = 4;
         private const int FiringRows = 6;
         private const int ProjectileColumns = 6;
+        private const int UpgradeProjectileRows = 4;
         private const int SpritePixelsPerUnit = 24;
 
         private const string ArtDirectory = "Assets/TAD/Art/Farmhands/Directional";
         private const string ProjectileArtDirectory = "Assets/TAD/Art/Farmhands/Projectiles";
+        private const string UpgradeProjectileArtPath = ProjectileArtDirectory + "/DefenderUpgradeProjectiles.png";
         private const string VisualDataDirectory = "Assets/TAD/Data/Defenders/Visuals";
         private const string FarmHandPrefabPath = "Assets/TAD/Prefabs/Defenders/FarmHand.prefab";
+        private const string UpgradeProjectilePrefabDirectory = "Assets/TAD/Prefabs/Projectiles/Upgrades";
 
         private static readonly WeaponVisualSpec[] WeaponSpecs =
         {
@@ -52,7 +57,50 @@ namespace TAD.Editor
             new(
                 "AirRifle",
                 "airrifle",
-                "Assets/TAD/Data/Defenders/AirRifleWeaponDefinition.asset")
+                "Assets/TAD/Data/Defenders/AirRifleWeaponDefinition.asset",
+                true),
+            new(
+                "Stick",
+                "stick",
+                "Assets/TAD/Data/Defenders/StickWeaponDefinition.asset"),
+            new(
+                "Stone",
+                "stone",
+                "Assets/TAD/Data/Defenders/StoneWeaponDefinition.asset"),
+            new(
+                "Rake",
+                "rake",
+                "Assets/TAD/Data/Defenders/FinalUpgrades/RakeWeaponDefinition.asset"),
+            new(
+                "Shovel",
+                "shovel",
+                "Assets/TAD/Data/Defenders/FinalUpgrades/ShovelWeaponDefinition.asset"),
+            new(
+                "HeavyRoll",
+                "heavyroll",
+                "Assets/TAD/Data/Defenders/FinalUpgrades/HeavyRollWeaponDefinition.asset"),
+            new(
+                "Bounce",
+                "bounce",
+                "Assets/TAD/Data/Defenders/FinalUpgrades/BounceWeaponDefinition.asset"),
+            new(
+                "SemiAutomatic",
+                "semiautomatic",
+                "Assets/TAD/Data/Defenders/FinalUpgrades/SemiAutomaticWeaponDefinition.asset",
+                true),
+            new(
+                "Pistol",
+                "pistol",
+                "Assets/TAD/Data/Defenders/FinalUpgrades/PistolWeaponDefinition.asset",
+                true),
+            new(
+                "PoisonTrapper",
+                "poisontrapper",
+                "Assets/TAD/Data/Defenders/FinalUpgrades/PoisonTrapperWeaponDefinition.asset"),
+            new(
+                "SlowTrapper",
+                "slowtrapper",
+                "Assets/TAD/Data/Defenders/FinalUpgrades/SlowTrapperWeaponDefinition.asset")
         };
 
         private static readonly ProjectileVisualSpec[] ProjectileSpecs =
@@ -62,6 +110,67 @@ namespace TAD.Editor
             new("Assets/TAD/Prefabs/Projectiles/RollingProjectile.prefab", "farmhand_projectile_rolling"),
             new("Assets/TAD/Prefabs/Projectiles/TrapProjectile.prefab", "farmhand_projectile_trap_closed"),
             new("Assets/TAD/Prefabs/Projectiles/AirRifleBulletProjectile.prefab", "farmhand_projectile_air_rifle")
+        };
+
+        private static readonly UpgradeProjectileVisualSpec[] UpgradeProjectileSpecs =
+        {
+            new(
+                "StickProjectile",
+                "Assets/TAD/Prefabs/Projectiles/FarmHandProjectile.prefab",
+                "Assets/TAD/Data/Defenders/Projectiles/StickProjectileDefinition.asset",
+                "upgrade_projectile_stick"),
+            new(
+                "StoneProjectile",
+                "Assets/TAD/Prefabs/Projectiles/AirRifleBulletProjectile.prefab",
+                "Assets/TAD/Data/Defenders/Projectiles/StoneProjectileDefinition.asset",
+                "upgrade_projectile_stone"),
+            new(
+                "RakeProjectile",
+                "Assets/TAD/Prefabs/Projectiles/PoleSweepProjectile.prefab",
+                "Assets/TAD/Data/Defenders/FinalUpgrades/Projectiles/RakeProjectileDefinition.asset",
+                "upgrade_projectile_rake"),
+            new(
+                "ShovelProjectile",
+                "Assets/TAD/Prefabs/Projectiles/PoleSweepProjectile.prefab",
+                "Assets/TAD/Data/Defenders/FinalUpgrades/Projectiles/ShovelProjectileDefinition.asset",
+                "upgrade_projectile_shovel"),
+            new(
+                "HeavyRollProjectile",
+                "Assets/TAD/Prefabs/Projectiles/RollingProjectile.prefab",
+                "Assets/TAD/Data/Defenders/FinalUpgrades/Projectiles/HeavyRollProjectileDefinition.asset",
+                "upgrade_projectile_heavy_roll"),
+            new(
+                "BounceProjectile",
+                "Assets/TAD/Prefabs/Projectiles/RollingProjectile.prefab",
+                "Assets/TAD/Data/Defenders/FinalUpgrades/Projectiles/BounceProjectileDefinition.asset",
+                "upgrade_projectile_bounce",
+                isBounce: true),
+            new(
+                "SemiAutomaticBulletProjectile",
+                "Assets/TAD/Prefabs/Projectiles/AirRifleBulletProjectile.prefab",
+                "Assets/TAD/Data/Defenders/FinalUpgrades/Projectiles/SemiAutomaticBulletProjectileDefinition.asset",
+                "upgrade_projectile_semi_automatic"),
+            new(
+                "PistolBulletProjectile",
+                "Assets/TAD/Prefabs/Projectiles/AirRifleBulletProjectile.prefab",
+                "Assets/TAD/Data/Defenders/FinalUpgrades/Projectiles/PistolBulletProjectileDefinition.asset",
+                "upgrade_projectile_pistol"),
+            new(
+                "PoisonTrapProjectile",
+                "Assets/TAD/Prefabs/Projectiles/TrapProjectile.prefab",
+                "Assets/TAD/Data/Defenders/FinalUpgrades/Projectiles/PoisonTrapProjectileDefinition.asset",
+                "upgrade_projectile_poison_closed",
+                isTrap: true,
+                armedSpriteName: "upgrade_projectile_poison_armed",
+                detonationPrefix: "upgrade_projectile_poison_explosion"),
+            new(
+                "SlowTrapProjectile",
+                "Assets/TAD/Prefabs/Projectiles/TrapProjectile.prefab",
+                "Assets/TAD/Data/Defenders/FinalUpgrades/Projectiles/SlowTrapProjectileDefinition.asset",
+                "upgrade_projectile_slow_closed",
+                isTrap: true,
+                armedSpriteName: "upgrade_projectile_slow_armed",
+                detonationPrefix: "upgrade_projectile_slow_explosion")
         };
 
         [MenuItem("TAD/Defenders/Rebuild Farmhand Visuals")]
@@ -124,16 +233,36 @@ namespace TAD.Editor
                     "fire",
                     FiringFrameCount,
                     FiringRows);
-                weaponVisuals.Add(CreateOrUpdateWeaponVisual(spec, moveSprites, fireSprites));
+                var reloadSprites = spec.HasReloadAnimation
+                    ? ImportDirectionalSheet(
+                        ArtDirectory + $"/FarmhandWeapon_{spec.SheetTitle}_Reload.png",
+                        spec.Key,
+                        "reload",
+                        ReloadFrameCount,
+                        FiringRows)
+                    : null;
+                weaponVisuals.Add(CreateOrUpdateWeaponVisual(spec, moveSprites, fireSprites, reloadSprites));
             }
 
             var projectileSprites = ImportProjectileSheet();
+            var upgradeProjectileSprites = ImportUpgradeProjectileSheet();
             UpdateFarmHandPrefab(appearance, weaponVisuals);
             UpdateProjectilePrefabs(projectileSprites);
+            UpdateUpgradeProjectilePrefabs(upgradeProjectileSprites);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             Debug.Log("TAD rebuilt the modular farmhand, weapon-firing, and projectile visual set.");
+        }
+
+        /// <summary>
+        /// Queues the potentially long import on the Editor update loop. This keeps automation
+        /// transport requests short while the Unity asset database slices the authored sheets.
+        /// </summary>
+        public static void ScheduleRebuildFromAutomation()
+        {
+            EditorApplication.delayCall -= RebuildFromAutomation;
+            EditorApplication.delayCall += RebuildFromAutomation;
         }
 
         private static void EnsureRequiredFiles()
@@ -143,13 +272,18 @@ namespace TAD.Editor
                 ArtDirectory + "/FarmhandBody_Default_Move.png",
                 ArtDirectory + "/FarmhandHair_ShortBrown_Move.png",
                 ArtDirectory + "/FarmhandOutfit_BlueOveralls_Move.png",
-                ProjectileArtDirectory + "/FarmhandProjectiles.png"
+                ProjectileArtDirectory + "/FarmhandProjectiles.png",
+                UpgradeProjectileArtPath
             };
 
             foreach (var spec in WeaponSpecs)
             {
                 requiredPaths.Add(ArtDirectory + $"/FarmhandWeapon_{spec.SheetTitle}_Move.png");
                 requiredPaths.Add(ArtDirectory + $"/FarmhandWeapon_{spec.SheetTitle}_Fire.png");
+                if (spec.HasReloadAnimation)
+                {
+                    requiredPaths.Add(ArtDirectory + $"/FarmhandWeapon_{spec.SheetTitle}_Reload.png");
+                }
                 requiredPaths.Add(spec.WeaponPath);
             }
 
@@ -202,6 +336,40 @@ namespace TAD.Editor
                 specs,
                 ProjectileColumns,
                 1);
+        }
+
+        private static Dictionary<string, Sprite> ImportUpgradeProjectileSheet()
+        {
+            var specs = new List<SpriteSpec>
+            {
+                new("upgrade_projectile_stick", 0, 0),
+                new("upgrade_projectile_stone", 1, 0),
+                new("upgrade_projectile_rake", 2, 0),
+                new("upgrade_projectile_shovel", 3, 0),
+                new("upgrade_projectile_heavy_roll", 4, 0),
+                new("upgrade_projectile_bounce", 5, 0),
+                new("upgrade_projectile_semi_automatic", 0, 1),
+                new("upgrade_projectile_pistol", 1, 1),
+                new("upgrade_projectile_poison_closed", 2, 1),
+                new("upgrade_projectile_poison_armed", 3, 1),
+                new("upgrade_projectile_slow_closed", 4, 1),
+                new("upgrade_projectile_slow_armed", 5, 1),
+                new("upgrade_projectile_poison_explosion0", 0, 2),
+                new("upgrade_projectile_poison_explosion1", 1, 2),
+                new("upgrade_projectile_poison_explosion2", 2, 2),
+                new("upgrade_projectile_slow_explosion0", 3, 2),
+                new("upgrade_projectile_slow_explosion1", 4, 2),
+                new("upgrade_projectile_slow_explosion2", 5, 2),
+                new("upgrade_projectile_bounce_impact0", 0, 3),
+                new("upgrade_projectile_bounce_impact1", 1, 3),
+                new("upgrade_projectile_bounce_impact2", 2, 3)
+            };
+
+            return ImportAndSliceSheet(
+                UpgradeProjectileArtPath,
+                specs,
+                ProjectileColumns,
+                UpgradeProjectileRows);
         }
 
         private static Dictionary<string, Sprite> ImportAndSliceSheet(
@@ -325,7 +493,8 @@ namespace TAD.Editor
         private static FarmHandWeaponVisualDefinition CreateOrUpdateWeaponVisual(
             WeaponVisualSpec spec,
             IReadOnlyDictionary<string, Sprite> moveSprites,
-            IReadOnlyDictionary<string, Sprite> fireSprites)
+            IReadOnlyDictionary<string, Sprite> fireSprites,
+            IReadOnlyDictionary<string, Sprite> reloadSprites)
         {
             var weapon = AssetDatabase.LoadAssetAtPath<WeaponDefinition>(spec.WeaponPath);
             if (weapon == null)
@@ -339,6 +508,14 @@ namespace TAD.Editor
             serialized.FindProperty("weapon").objectReferenceValue = weapon;
             AssignSpriteArray(serialized.FindProperty("movementSprites"), spec.Key, "move", MovementFrameCount, moveSprites);
             AssignSpriteArray(serialized.FindProperty("firingSprites"), spec.Key, "fire", FiringFrameCount, fireSprites);
+            if (spec.HasReloadAnimation)
+            {
+                AssignSpriteArray(serialized.FindProperty("reloadSprites"), spec.Key, "reload", ReloadFrameCount, reloadSprites);
+            }
+            else
+            {
+                ClearSpriteArray(serialized.FindProperty("reloadSprites"), ReloadFrameCount);
+            }
             serialized.FindProperty("firingFrameDuration").floatValue = 0.09f;
             serialized.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(visual);
@@ -370,6 +547,20 @@ namespace TAD.Editor
 
                     property.GetArrayElementAtIndex((direction * frameCount) + frame).objectReferenceValue = sprite;
                 }
+            }
+        }
+
+        private static void ClearSpriteArray(SerializedProperty property, int frameCount)
+        {
+            if (property == null)
+            {
+                throw new InvalidOperationException("Expected serialized sprite array was not found.");
+            }
+
+            property.arraySize = DirectionCount * frameCount;
+            for (var index = 0; index < property.arraySize; index++)
+            {
+                property.GetArrayElementAtIndex(index).objectReferenceValue = null;
             }
         }
 
@@ -520,6 +711,307 @@ namespace TAD.Editor
             }
         }
 
+        /// <summary>
+        /// Builds compact prefab variants for every new gameplay projectile. The variants inherit the
+        /// proven pooled movement/collision scripts from their base projectile, while their sprites and
+        /// presentation-only effect controllers stay specific to the selected upgrade.
+        /// </summary>
+        private static void UpdateUpgradeProjectilePrefabs(IReadOnlyDictionary<string, Sprite> projectileSprites)
+        {
+            EnsureFolder(UpgradeProjectilePrefabDirectory);
+            var variants = new List<GameObject>(UpgradeProjectileSpecs.Length);
+            foreach (var spec in UpgradeProjectileSpecs)
+            {
+                var prefabPath = UpgradeProjectilePrefabDirectory + "/" + spec.PrefabName + ".prefab";
+                var editablePath = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath) != null
+                    ? prefabPath
+                    : spec.BasePrefabPath;
+                var root = PrefabUtility.LoadPrefabContents(editablePath);
+                try
+                {
+                    ConfigureUpgradeProjectilePrefab(root, spec, projectileSprites);
+                    PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+                }
+                finally
+                {
+                    PrefabUtility.UnloadPrefabContents(root);
+                }
+
+                var variant = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+                if (variant == null)
+                {
+                    throw new InvalidOperationException("Unable to create upgrade projectile prefab: " + prefabPath);
+                }
+
+                variants.Add(variant);
+                UpdateProjectileDefinitionPrefabReference(spec.ProjectileDefinitionPath, variant);
+            }
+
+            UpdateSpawnPoolProjectileVariants(variants);
+        }
+
+        private static void ConfigureUpgradeProjectilePrefab(
+            GameObject root,
+            UpgradeProjectileVisualSpec spec,
+            IReadOnlyDictionary<string, Sprite> sprites)
+        {
+            var renderer = root.GetComponent<SpriteRenderer>();
+            if (renderer == null)
+            {
+                throw new InvalidOperationException(spec.BasePrefabPath + " no longer has a root SpriteRenderer.");
+            }
+
+            renderer.sprite = GetRequiredSprite(sprites, spec.SpriteName);
+            renderer.enabled = false;
+            EditorUtility.SetDirty(renderer);
+
+            if (spec.IsTrap)
+            {
+                ConfigureTrapVisual(root, renderer, spec, sprites);
+            }
+
+            if (spec.IsBounce)
+            {
+                ConfigureBounceVisual(root, renderer, sprites);
+            }
+        }
+
+        private static void ConfigureTrapVisual(
+            GameObject root,
+            SpriteRenderer renderer,
+            UpgradeProjectileVisualSpec spec,
+            IReadOnlyDictionary<string, Sprite> sprites)
+        {
+            var trap = root.GetComponent<TrapProjectile>();
+            if (trap == null)
+            {
+                throw new InvalidOperationException(spec.PrefabName + " must inherit a TrapProjectile.");
+            }
+
+            var visual = root.GetComponent<TrapProjectileVisualController>();
+            if (visual == null)
+            {
+                visual = root.AddComponent<TrapProjectileVisualController>();
+            }
+
+            var trapSerialized = new SerializedObject(trap);
+            SetFloat(trapSerialized, "detonationVisualDuration", 0.24f);
+            trapSerialized.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(trap);
+
+            var visualSerialized = new SerializedObject(visual);
+            SetObjectReference(visualSerialized, "trapProjectile", trap);
+            SetObjectReference(visualSerialized, "visual", renderer);
+            SetObjectReference(visualSerialized, "closedSprite", GetRequiredSprite(sprites, spec.SpriteName));
+            SetObjectReference(visualSerialized, "armedSprite", GetRequiredSprite(sprites, spec.ArmedSpriteName));
+            AssignSpriteSequence(
+                visualSerialized.FindProperty("detonationSprites"),
+                new[]
+                {
+                    GetRequiredSprite(sprites, spec.DetonationPrefix + "0"),
+                    GetRequiredSprite(sprites, spec.DetonationPrefix + "1"),
+                    GetRequiredSprite(sprites, spec.DetonationPrefix + "2")
+                });
+            SetFloat(visualSerialized, "detonationFrameDuration", 0.08f);
+            visualSerialized.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(visual);
+        }
+
+        private static void ConfigureBounceVisual(
+            GameObject root,
+            SpriteRenderer renderer,
+            IReadOnlyDictionary<string, Sprite> sprites)
+        {
+            var rolling = root.GetComponent<RollingProjectile>();
+            if (rolling == null)
+            {
+                throw new InvalidOperationException("BounceProjectile must inherit a RollingProjectile.");
+            }
+
+            var impactRenderer = GetOrCreateProjectileChildRenderer(root.transform, "BounceImpactVisual", renderer, 1);
+            var visual = root.GetComponent<RollingProjectileVisualController>();
+            if (visual == null)
+            {
+                visual = root.AddComponent<RollingProjectileVisualController>();
+            }
+
+            var rollingSerialized = new SerializedObject(rolling);
+            SetFloat(rollingSerialized, "finalBounceVisualDuration", 0.24f);
+            rollingSerialized.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(rolling);
+
+            var visualSerialized = new SerializedObject(visual);
+            SetObjectReference(visualSerialized, "rollingProjectile", rolling);
+            SetObjectReference(visualSerialized, "impactRenderer", impactRenderer);
+            AssignSpriteSequence(
+                visualSerialized.FindProperty("bounceSprites"),
+                new[]
+                {
+                    GetRequiredSprite(sprites, "upgrade_projectile_bounce_impact0"),
+                    GetRequiredSprite(sprites, "upgrade_projectile_bounce_impact1"),
+                    GetRequiredSprite(sprites, "upgrade_projectile_bounce_impact2")
+                });
+            SetFloat(visualSerialized, "bounceFrameDuration", 0.08f);
+            visualSerialized.ApplyModifiedPropertiesWithoutUndo();
+            impactRenderer.enabled = false;
+            EditorUtility.SetDirty(impactRenderer);
+            EditorUtility.SetDirty(visual);
+        }
+
+        private static void UpdateProjectileDefinitionPrefabReference(string definitionPath, GameObject projectilePrefab)
+        {
+            var definition = AssetDatabase.LoadAssetAtPath<ProjectileDefinition>(definitionPath);
+            if (definition == null)
+            {
+                // The final-upgrade builder is deliberately allowed to run after artwork import on a
+                // clean checkout. It will resolve this visual prefab when it creates the data asset.
+                return;
+            }
+
+            var serialized = new SerializedObject(definition);
+            SetObjectReference(serialized, "projectilePrefab", projectilePrefab);
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(definition);
+        }
+
+        private static void UpdateSpawnPoolProjectileVariants(IReadOnlyList<GameObject> variants)
+        {
+            var spawnPoolPaths = new[]
+            {
+                "Assets/TAD/Prefabs/Pooling/SpawnPool.prefab",
+                "Assets/Resources/TADTests/SpawnPool.prefab"
+            };
+            foreach (var prefabPath in spawnPoolPaths)
+            {
+                var root = PrefabUtility.LoadPrefabContents(prefabPath);
+                try
+                {
+                    var pool = root.GetComponent<SpawnPool>();
+                    if (pool == null)
+                    {
+                        throw new InvalidOperationException("Spawn pool prefab is missing SpawnPool: " + prefabPath);
+                    }
+
+                    var serialized = new SerializedObject(pool);
+                    var property = serialized.FindProperty("additionalProjectilePrefabs");
+                    if (property == null)
+                    {
+                        throw new InvalidOperationException("SpawnPool no longer exposes additionalProjectilePrefabs.");
+                    }
+
+                    var configured = new List<UnityEngine.Object>(property.arraySize + variants.Count);
+                    for (var index = 0; index < property.arraySize; index++)
+                    {
+                        var existing = property.GetArrayElementAtIndex(index).objectReferenceValue;
+                        if (existing != null && !configured.Contains(existing))
+                        {
+                            configured.Add(existing);
+                        }
+                    }
+
+                    foreach (var variant in variants)
+                    {
+                        if (variant != null && !configured.Contains(variant))
+                        {
+                            configured.Add(variant);
+                        }
+                    }
+
+                    property.arraySize = configured.Count;
+                    for (var index = 0; index < configured.Count; index++)
+                    {
+                        property.GetArrayElementAtIndex(index).objectReferenceValue = configured[index];
+                    }
+
+                    serialized.ApplyModifiedPropertiesWithoutUndo();
+                    EditorUtility.SetDirty(pool);
+                    PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+                }
+                finally
+                {
+                    PrefabUtility.UnloadPrefabContents(root);
+                }
+            }
+        }
+
+        private static SpriteRenderer GetOrCreateProjectileChildRenderer(
+            Transform root,
+            string childName,
+            SpriteRenderer sourceRenderer,
+            int sortingOffset)
+        {
+            var child = root.Find(childName);
+            if (child == null)
+            {
+                var gameObject = new GameObject(childName, typeof(SpriteRenderer));
+                gameObject.layer = root.gameObject.layer;
+                gameObject.transform.SetParent(root, worldPositionStays: false);
+                child = gameObject.transform;
+            }
+
+            child.gameObject.layer = root.gameObject.layer;
+            child.localPosition = Vector3.zero;
+            child.localRotation = Quaternion.identity;
+            child.localScale = Vector3.one;
+            var renderer = child.GetComponent<SpriteRenderer>();
+            if (renderer == null)
+            {
+                renderer = child.gameObject.AddComponent<SpriteRenderer>();
+            }
+
+            renderer.sharedMaterial = sourceRenderer.sharedMaterial;
+            renderer.color = Color.white;
+            renderer.sortingLayerID = sourceRenderer.sortingLayerID;
+            renderer.sortingOrder = sourceRenderer.sortingOrder + sortingOffset;
+            return renderer;
+        }
+
+        private static Sprite GetRequiredSprite(IReadOnlyDictionary<string, Sprite> sprites, string spriteName)
+        {
+            if (string.IsNullOrWhiteSpace(spriteName) || !sprites.TryGetValue(spriteName, out var sprite) || sprite == null)
+            {
+                throw new InvalidOperationException("Missing sliced upgrade projectile sprite: " + spriteName);
+            }
+
+            return sprite;
+        }
+
+        private static void AssignSpriteSequence(SerializedProperty property, IReadOnlyList<Sprite> sprites)
+        {
+            if (property == null)
+            {
+                throw new InvalidOperationException("Expected serialized sprite sequence was not found.");
+            }
+
+            property.arraySize = sprites.Count;
+            for (var index = 0; index < sprites.Count; index++)
+            {
+                property.GetArrayElementAtIndex(index).objectReferenceValue = sprites[index];
+            }
+        }
+
+        private static void SetObjectReference(SerializedObject serialized, string propertyName, UnityEngine.Object value)
+        {
+            var property = serialized.FindProperty(propertyName);
+            if (property == null)
+            {
+                throw new InvalidOperationException("Expected serialized property was not found: " + propertyName);
+            }
+
+            property.objectReferenceValue = value;
+        }
+
+        private static void SetFloat(SerializedObject serialized, string propertyName, float value)
+        {
+            var property = serialized.FindProperty(propertyName);
+            if (property == null)
+            {
+                throw new InvalidOperationException("Expected serialized property was not found: " + propertyName);
+            }
+
+            property.floatValue = value;
+        }
+
         private static T LoadOrCreateAsset<T>(string assetPath)
             where T : ScriptableObject
         {
@@ -577,16 +1069,18 @@ namespace TAD.Editor
 
         private readonly struct WeaponVisualSpec
         {
-            public WeaponVisualSpec(string sheetTitle, string key, string weaponPath)
+            public WeaponVisualSpec(string sheetTitle, string key, string weaponPath, bool hasReloadAnimation = false)
             {
                 SheetTitle = sheetTitle;
                 Key = key;
                 WeaponPath = weaponPath;
+                HasReloadAnimation = hasReloadAnimation;
             }
 
             public string SheetTitle { get; }
             public string Key { get; }
             public string WeaponPath { get; }
+            public bool HasReloadAnimation { get; }
         }
 
         private readonly struct ProjectileVisualSpec
@@ -599,6 +1093,38 @@ namespace TAD.Editor
 
             public string PrefabPath { get; }
             public string SpriteName { get; }
+        }
+
+        private readonly struct UpgradeProjectileVisualSpec
+        {
+            public UpgradeProjectileVisualSpec(
+                string prefabName,
+                string basePrefabPath,
+                string projectileDefinitionPath,
+                string spriteName,
+                bool isTrap = false,
+                bool isBounce = false,
+                string armedSpriteName = null,
+                string detonationPrefix = null)
+            {
+                PrefabName = prefabName;
+                BasePrefabPath = basePrefabPath;
+                ProjectileDefinitionPath = projectileDefinitionPath;
+                SpriteName = spriteName;
+                IsTrap = isTrap;
+                IsBounce = isBounce;
+                ArmedSpriteName = armedSpriteName;
+                DetonationPrefix = detonationPrefix;
+            }
+
+            public string PrefabName { get; }
+            public string BasePrefabPath { get; }
+            public string ProjectileDefinitionPath { get; }
+            public string SpriteName { get; }
+            public bool IsTrap { get; }
+            public bool IsBounce { get; }
+            public string ArmedSpriteName { get; }
+            public string DetonationPrefix { get; }
         }
     }
 }

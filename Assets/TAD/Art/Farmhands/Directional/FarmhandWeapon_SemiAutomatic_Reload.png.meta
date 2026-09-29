@@ -1,0 +1,1499 @@
+fileFormatVersion: 2
+guid: 2eecf6e908bdcb24fb451f00810e259a
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -2769150789062440737
+    second: FarmhandWeapon_SemiAutomatic_Reload_0
+  - first:
+      213: 8406780043893656363
+    second: FarmhandWeapon_SemiAutomatic_Reload_1
+  - first:
+      213: -4883451933343508521
+    second: FarmhandWeapon_SemiAutomatic_Reload_2
+  - first:
+      213: -7783405610137680528
+    second: FarmhandWeapon_SemiAutomatic_Reload_3
+  - first:
+      213: -6714552702349204411
+    second: FarmhandWeapon_SemiAutomatic_Reload_4
+  - first:
+      213: 5234177157247824883
+    second: FarmhandWeapon_SemiAutomatic_Reload_5
+  - first:
+      213: -1672284366814350379
+    second: FarmhandWeapon_SemiAutomatic_Reload_6
+  - first:
+      213: 597501666740674660
+    second: FarmhandWeapon_SemiAutomatic_Reload_7
+  - first:
+      213: 4463484378836826653
+    second: FarmhandWeapon_SemiAutomatic_Reload_8
+  - first:
+      213: -69636704901257087
+    second: FarmhandWeapon_SemiAutomatic_Reload_9
+  - first:
+      213: -152557775468381466
+    second: FarmhandWeapon_SemiAutomatic_Reload_10
+  - first:
+      213: -7236847539269089232
+    second: FarmhandWeapon_SemiAutomatic_Reload_11
+  - first:
+      213: -3287908669548282952
+    second: FarmhandWeapon_SemiAutomatic_Reload_12
+  - first:
+      213: 1438333357698947571
+    second: FarmhandWeapon_SemiAutomatic_Reload_13
+  - first:
+      213: 1659429714091337122
+    second: FarmhandWeapon_SemiAutomatic_Reload_14
+  - first:
+      213: 7903605041270651065
+    second: FarmhandWeapon_SemiAutomatic_Reload_15
+  - first:
+      213: 3291719357526495899
+    second: FarmhandWeapon_SemiAutomatic_Reload_16
+  - first:
+      213: -6292102315903674955
+    second: FarmhandWeapon_SemiAutomatic_Reload_17
+  - first:
+      213: 4618825361053265942
+    second: FarmhandWeapon_SemiAutomatic_Reload_18
+  - first:
+      213: 1448968208190197455
+    second: FarmhandWeapon_SemiAutomatic_Reload_19
+  - first:
+      213: 2168595914856263572
+    second: FarmhandWeapon_SemiAutomatic_Reload_20
+  - first:
+      213: -5569106851103895669
+    second: FarmhandWeapon_SemiAutomatic_Reload_21
+  - first:
+      213: -1458934487226402291
+    second: FarmhandWeapon_SemiAutomatic_Reload_22
+  - first:
+      213: 5904188296666225886
+    second: FarmhandWeapon_SemiAutomatic_Reload_23
+  - first:
+      213: 4783450315513535972
+    second: FarmhandWeapon_SemiAutomatic_Reload_24
+  - first:
+      213: 3984217597354197703
+    second: FarmhandWeapon_SemiAutomatic_Reload_25
+  - first:
+      213: -3763450878087617256
+    second: FarmhandWeapon_SemiAutomatic_Reload_26
+  - first:
+      213: 6909050449133852392
+    second: FarmhandWeapon_SemiAutomatic_Reload_27
+  - first:
+      213: 8861927563215031190
+    second: FarmhandWeapon_SemiAutomatic_Reload_28
+  - first:
+      213: 5828078001923435728
+    second: FarmhandWeapon_SemiAutomatic_Reload_29
+  - first:
+      213: -4289138896613293642
+    second: FarmhandWeapon_SemiAutomatic_Reload_30
+  - first:
+      213: 8112330168068638021
+    second: FarmhandWeapon_SemiAutomatic_Reload_31
+  - first:
+      213: 1234813767142613408
+    second: FarmhandWeapon_SemiAutomatic_Reload_32
+  - first:
+      213: 3293939032130231336
+    second: FarmhandWeapon_SemiAutomatic_Reload_33
+  - first:
+      213: -8685031756295910944
+    second: FarmhandWeapon_SemiAutomatic_Reload_34
+  - first:
+      213: -6544262413275720235
+    second: FarmhandWeapon_SemiAutomatic_Reload_35
+  - first:
+      213: -6607736484280360438
+    second: FarmhandWeapon_SemiAutomatic_Reload_36
+  - first:
+      213: 2581105129732045930
+    second: FarmhandWeapon_SemiAutomatic_Reload_37
+  - first:
+      213: 4498085674499547732
+    second: FarmhandWeapon_SemiAutomatic_Reload_38
+  - first:
+      213: -8923982789538385613
+    second: FarmhandWeapon_SemiAutomatic_Reload_39
+  - first:
+      213: 8162759856180306816
+    second: FarmhandWeapon_SemiAutomatic_Reload_40
+  - first:
+      213: 4200373983514431141
+    second: FarmhandWeapon_SemiAutomatic_Reload_41
+  - first:
+      213: 526548952981629052
+    second: FarmhandWeapon_SemiAutomatic_Reload_42
+  - first:
+      213: 5959108429636664107
+    second: FarmhandWeapon_SemiAutomatic_Reload_43
+  - first:
+      213: -7480353580846810317
+    second: FarmhandWeapon_SemiAutomatic_Reload_44
+  - first:
+      213: -8273120712807212260
+    second: FarmhandWeapon_SemiAutomatic_Reload_45
+  - first:
+      213: -5171120172520401161
+    second: FarmhandWeapon_SemiAutomatic_Reload_46
+  - first:
+      213: -7621524754358009365
+    second: FarmhandWeapon_SemiAutomatic_Reload_47
+  - first:
+      213: -6659397100479648375
+    second: FarmhandWeapon_SemiAutomatic_Reload_48
+  - first:
+      213: 113762569192449803
+    second: FarmhandWeapon_SemiAutomatic_Reload_49
+  - first:
+      213: -7353149702038060030
+    second: FarmhandWeapon_SemiAutomatic_Reload_50
+  - first:
+      213: -5348520456967198797
+    second: FarmhandWeapon_SemiAutomatic_Reload_51
+  - first:
+      213: 4122651886880895827
+    second: FarmhandWeapon_SemiAutomatic_Reload_52
+  - first:
+      213: -1123082959958955359
+    second: FarmhandWeapon_SemiAutomatic_Reload_53
+  - first:
+      213: 768619875847932604
+    second: FarmhandWeapon_SemiAutomatic_Reload_54
+  - first:
+      213: 2899155808853959331
+    second: FarmhandWeapon_SemiAutomatic_Reload_55
+  - first:
+      213: -7239348840582289547
+    second: FarmhandWeapon_SemiAutomatic_Reload_56
+  - first:
+      213: 2002467975557862471
+    second: FarmhandWeapon_SemiAutomatic_Reload_57
+  - first:
+      213: 6655600439941869043
+    second: FarmhandWeapon_SemiAutomatic_Reload_58
+  - first:
+      213: 1631304966930667930
+    second: FarmhandWeapon_SemiAutomatic_Reload_59
+  - first:
+      213: -8388851557347402720
+    second: FarmhandWeapon_SemiAutomatic_Reload_60
+  - first:
+      213: 8416225220984305680
+    second: FarmhandWeapon_SemiAutomatic_Reload_61
+  - first:
+      213: 3588938674060760909
+    second: FarmhandWeapon_SemiAutomatic_Reload_62
+  - first:
+      213: 8500435374394306048
+    second: FarmhandWeapon_SemiAutomatic_Reload_63
+  - first:
+      213: -5125620554401563041
+    second: FarmhandWeapon_SemiAutomatic_Reload_64
+  - first:
+      213: 6952005176661213652
+    second: FarmhandWeapon_SemiAutomatic_Reload_65
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 24
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationMethod: 0
+  spriteTessellationDetail: -1
+  spriteGeometrySubdivision: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 75
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: iOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: VisionOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: tvOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WindowsStoreApps
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: semiautomatic_d00_reload0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 960
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 808c877df52be6b48af9c7a3fe9aef97
+      internalID: 679444282
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: semiautomatic_d00_reload1
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 960
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d704c8a77f445624e92fab2bc32245b2
+      internalID: -1782262694
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: semiautomatic_d00_reload2
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 960
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 39755e86d99457c47ba628abe7cf46b5
+      internalID: -194306567
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: semiautomatic_d01_reload0
+      rect:
+        serializedVersion: 2
+        x: 576
+        y: 960
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 93f9fa96b8268a5499536e904301cc5f
+      internalID: 1705760691
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: semiautomatic_d01_reload1
+      rect:
+        serializedVersion: 2
+        x: 768
+        y: 960
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 15c786da17916684ba7a161823923c6f
+      internalID: 1978669936
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: semiautomatic_d01_reload2
+      rect:
+        serializedVersion: 2
+        x: 960
+        y: 960
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: dcf8323b924dd7c49b2e3a96960fe5f6
+      internalID: 660462370
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: semiautomatic_d02_reload0
+      rect:
+        serializedVersion: 2
+        x: 1152
+        y: 960
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 8d79f950adeb7a64da2ca46e4da154d9
+      internalID: 1886501663
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: semiautomatic_d02_reload1
+      rect:
+        serializedVersion: 2
+        x: 1344
+        y: 960
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 30020fde7c62d1149a50bd0d9f4689bd
+      internalID: 850911085
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: semiautomatic_d02_reload2
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 768
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 598e2f2ef7dc25e42b2779326e0dbcc8
+      internalID: -1364669968
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: semiautomatic_d03_reload0
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 768
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a10fb3f51cd07994a85995a43e844858
+      internalID: 1195943511
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: semiautomatic_d03_reload1
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 768
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 68c214fe0fadf2e44b9ce524482c4d24
+      internalID: 1652823410
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: semiautomatic_d03_reload2
+      rect:
+        serializedVersion: 2
+        x: 576
+        y: 768
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 87e5019cc8c7a1b40b27d313174d3899
+      internalID: 1098764886
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: semiautomatic_d04_reload0
+      rect:
+        serializedVersion: 2
+        x: 768
+        y: 768
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 50d0a8a0e36848b4f87a6f5cc7e5b287
+      internalID: -1231176694
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: semiautomatic_d04_reload1
+      rect:
+        serializedVersion: 2
+        x: 960
+        y: 768
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3b1873fbc38df9543b39268b4e97060a
+      internalID: 1438001787
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: semiautomatic_d04_reload2
+      rect:
+        serializedVersion: 2
+        x: 1152
+        y: 768
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5480d03004e3aef45878b402d2ec072f
+      internalID: -1222632047
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: semiautomatic_d05_reload0
+      rect:
+        serializedVersion: 2
+        x: 1344
+        y: 768
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ec634d2284d403147b857089c6c20eb5
+      internalID: -1305652300
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: semiautomatic_d05_reload1
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 576
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c3b50e14b41ff0d47974ce28ab9fd4cf
+      internalID: -1649883960
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: semiautomatic_d05_reload2
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 576
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 99f5f83b3ce9bfd489f902256dda6eb3
+      internalID: -738480817
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: semiautomatic_d06_reload0
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 576
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 60425af95bef2e84ea19371e0d335d99
+      internalID: -1624486531
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: semiautomatic_d06_reload1
+      rect:
+        serializedVersion: 2
+        x: 576
+        y: 576
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 1785ea9f9b9945f44abdd1f821d7f70e
+      internalID: 473868596
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: semiautomatic_d06_reload2
+      rect:
+        serializedVersion: 2
+        x: 768
+        y: 576
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7b46fdcf0928d8b428b4af80efe20b34
+      internalID: 1233382711
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: semiautomatic_d07_reload0
+      rect:
+        serializedVersion: 2
+        x: 960
+        y: 576
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3af97931e9798ae4ca7c2569b69b329d
+      internalID: -1523059421
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: semiautomatic_d07_reload1
+      rect:
+        serializedVersion: 2
+        x: 1152
+        y: 576
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3d38e32c6c7d28a4e85b50902e043467
+      internalID: -920275947
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: semiautomatic_d07_reload2
+      rect:
+        serializedVersion: 2
+        x: 1344
+        y: 576
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 43f43ee33e550cc47b4a65655eef2cd9
+      internalID: 1660431789
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: semiautomatic_d08_reload0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 384
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 982a66e566791a14fbd2d84453b097ae
+      internalID: 1955712249
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: semiautomatic_d08_reload1
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 384
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3eef99193e4a0d344a5cd9f422094f6e
+      internalID: 1016013943
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: semiautomatic_d08_reload2
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 384
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d00d950f7cc2d554c9d534dbe19cdfb5
+      internalID: -2015405823
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: semiautomatic_d09_reload0
+      rect:
+        serializedVersion: 2
+        x: 576
+        y: 384
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: fb56e92e745b27349b9b65ec90820154
+      internalID: 1810483368
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: semiautomatic_d09_reload1
+      rect:
+        serializedVersion: 2
+        x: 768
+        y: 384
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d14320a8e05d5ad428d1deb2b404f001
+      internalID: -1574740275
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: semiautomatic_d09_reload2
+      rect:
+        serializedVersion: 2
+        x: 960
+        y: 384
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 392e87cfc53449541aaaebbf781384bb
+      internalID: -1324482678
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: semiautomatic_d10_reload0
+      rect:
+        serializedVersion: 2
+        x: 1152
+        y: 384
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 051cbd06ca55bff4abb281a6ace4230f
+      internalID: -270021812
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: semiautomatic_d10_reload1
+      rect:
+        serializedVersion: 2
+        x: 1344
+        y: 384
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b9c8e2158884b1c469635b5c13f96861
+      internalID: -49967136
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: semiautomatic_d10_reload2
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 192
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: cd0385a75e4a70a4fbc13cd30f6cfec4
+      internalID: 362899917
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: semiautomatic_d11_reload0
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 192
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 397d37362fb2cef4084fb3bdbd303669
+      internalID: -580337052
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: semiautomatic_d11_reload1
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 192
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e972d172cbf226a49b04f08af0813963
+      internalID: -558406435
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: semiautomatic_d11_reload2
+      rect:
+        serializedVersion: 2
+        x: 576
+        y: 192
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3dd3bdd11177ad14f813087fb7ff9934
+      internalID: -1115637961
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: semiautomatic_d12_reload0
+      rect:
+        serializedVersion: 2
+        x: 768
+        y: 192
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 51715b6f8e6c1f54783764ff7761c9cd
+      internalID: 1385371379
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: semiautomatic_d12_reload1
+      rect:
+        serializedVersion: 2
+        x: 960
+        y: 192
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 78e3be47fd8b4cc4596d98e3ca5a1cad
+      internalID: 1754818389
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: semiautomatic_d12_reload2
+      rect:
+        serializedVersion: 2
+        x: 1152
+        y: 192
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 73ae22c40394037468ab0069519beb0d
+      internalID: 1446880720
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: semiautomatic_d13_reload0
+      rect:
+        serializedVersion: 2
+        x: 1344
+        y: 192
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 2bc762e4d2aa9994fa9ed4db3b0eac2f
+      internalID: -1667566498
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: semiautomatic_d13_reload1
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9a4087a0ba47bc94ebf79c464a6c882d
+      internalID: 1848179572
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: semiautomatic_d13_reload2
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9df4bb1bcf2ed0742bdb8c59b7b4ae08
+      internalID: 1870893347
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: semiautomatic_d14_reload0
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f51b5626b294c714ab56c0db649188de
+      internalID: -1971126530
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: semiautomatic_d14_reload1
+      rect:
+        serializedVersion: 2
+        x: 576
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 45835ace47ce09e47968744e94309b63
+      internalID: 578273350
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: semiautomatic_d14_reload2
+      rect:
+        serializedVersion: 2
+        x: 768
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b0432980f32b3e843b6b4bcd8942b300
+      internalID: 331766909
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: semiautomatic_d15_reload0
+      rect:
+        serializedVersion: 2
+        x: 960
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b4773dc628ddc894796791941e291f73
+      internalID: 890836348
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: semiautomatic_d15_reload1
+      rect:
+        serializedVersion: 2
+        x: 1152
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 2be7c52727693e342943bfbb367e9758
+      internalID: -2064074180
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: semiautomatic_d15_reload2
+      rect:
+        serializedVersion: 2
+        x: 1344
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b3b88aaaad08a5349baf2aa9a4d82d21
+      internalID: 1660854487
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 4d982e123f1b84b4b9f721fe21da3af0
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      semiautomatic_d00_reload0: 679444282
+      semiautomatic_d00_reload1: -1782262694
+      semiautomatic_d00_reload2: -194306567
+      semiautomatic_d01_reload0: 1705760691
+      semiautomatic_d01_reload1: 1978669936
+      semiautomatic_d01_reload2: 660462370
+      semiautomatic_d02_reload0: 1886501663
+      semiautomatic_d02_reload1: 850911085
+      semiautomatic_d02_reload2: -1364669968
+      semiautomatic_d03_reload0: 1195943511
+      semiautomatic_d03_reload1: 1652823410
+      semiautomatic_d03_reload2: 1098764886
+      semiautomatic_d04_reload0: -1231176694
+      semiautomatic_d04_reload1: 1438001787
+      semiautomatic_d04_reload2: -1222632047
+      semiautomatic_d05_reload0: -1305652300
+      semiautomatic_d05_reload1: -1649883960
+      semiautomatic_d05_reload2: -738480817
+      semiautomatic_d06_reload0: -1624486531
+      semiautomatic_d06_reload1: 473868596
+      semiautomatic_d06_reload2: 1233382711
+      semiautomatic_d07_reload0: -1523059421
+      semiautomatic_d07_reload1: -920275947
+      semiautomatic_d07_reload2: 1660431789
+      semiautomatic_d08_reload0: 1955712249
+      semiautomatic_d08_reload1: 1016013943
+      semiautomatic_d08_reload2: -2015405823
+      semiautomatic_d09_reload0: 1810483368
+      semiautomatic_d09_reload1: -1574740275
+      semiautomatic_d09_reload2: -1324482678
+      semiautomatic_d10_reload0: -270021812
+      semiautomatic_d10_reload1: -49967136
+      semiautomatic_d10_reload2: 362899917
+      semiautomatic_d11_reload0: -580337052
+      semiautomatic_d11_reload1: -558406435
+      semiautomatic_d11_reload2: -1115637961
+      semiautomatic_d12_reload0: 1385371379
+      semiautomatic_d12_reload1: 1754818389
+      semiautomatic_d12_reload2: 1446880720
+      semiautomatic_d13_reload0: -1667566498
+      semiautomatic_d13_reload1: 1848179572
+      semiautomatic_d13_reload2: 1870893347
+      semiautomatic_d14_reload0: -1971126530
+      semiautomatic_d14_reload1: 578273350
+      semiautomatic_d14_reload2: 331766909
+      semiautomatic_d15_reload0: 890836348
+      semiautomatic_d15_reload1: -2064074180
+      semiautomatic_d15_reload2: 1660854487
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

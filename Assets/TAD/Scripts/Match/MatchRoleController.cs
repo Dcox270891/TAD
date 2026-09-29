@@ -321,7 +321,8 @@ namespace TAD.Match
                     farmHand.Range,
                     farmHand.Damage * weapon.AttackSpeed,
                     projectile.ProjectileType,
-                    projectile.ProjectileBehavior));
+                    projectile.ProjectileBehavior,
+                    projectile.CanTargetFlying));
             }
         }
 

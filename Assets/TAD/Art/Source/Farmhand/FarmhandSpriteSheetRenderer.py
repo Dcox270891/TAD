@@ -19,6 +19,7 @@ CELL_PIXELS = 192
 DIRECTION_COUNT = 16
 MOVEMENT_FRAME_COUNT = 2
 FIRE_FRAME_COUNT = 3
+RELOAD_FRAME_COUNT = 3
 MOVEMENT_COLUMNS = 8
 FIRE_COLUMNS = 8
 
@@ -50,6 +51,16 @@ PALETTE = {
     "trap_red": (0.42, 0.075, 0.05, 1.0),
     "straw": (0.72, 0.51, 0.12, 1.0),
     "muzzle": (1.0, 0.66, 0.10, 1.0),
+    "stone": (0.33, 0.32, 0.30, 1.0),
+    "stone_light": (0.62, 0.60, 0.55, 1.0),
+    "brass": (0.72, 0.48, 0.12, 1.0),
+    "gunmetal": (0.12, 0.15, 0.18, 1.0),
+    "poison": (0.12, 0.58, 0.12, 1.0),
+    "poison_light": (0.46, 1.0, 0.20, 1.0),
+    "frost": (0.16, 0.64, 0.92, 1.0),
+    "frost_light": (0.62, 0.93, 1.0, 1.0),
+    "soil": (0.22, 0.09, 0.025, 1.0),
+    "bounce": (0.76, 0.12, 0.06, 1.0),
 }
 
 
@@ -249,7 +260,7 @@ def add_torus(name, location, major_radius, minor_radius, material, collection, 
     return obj
 
 
-def create_character(direction_index, phase, materials, weapon_key=None, fire_frame=None):
+def create_character(direction_index, phase, materials, weapon_key=None, fire_frame=None, reload_frame=None):
     body = new_collection("Render_Body")
     hair = new_collection("Render_Hair")
     outfit = new_collection("Render_Outfit")
@@ -284,14 +295,15 @@ def create_character(direction_index, phase, materials, weapon_key=None, fire_fr
     add_cube("RightBoot", (0.23, opposite_step - 0.08, 0.25), (0.22, 0.34, 0.15), materials["boot"], outfit, root)
 
     if weapon_key is not None:
-        build_weapon_layer(weapon_key, phase, fire_frame, materials, weapon, root)
+        build_weapon_layer(weapon_key, phase, fire_frame, reload_frame, materials, weapon, root)
 
     return {"body": body, "hair": hair, "outfit": outfit, "weapon": weapon}
 
 
-def build_weapon_layer(key, phase, fire_frame, materials, collection, root):
-    moving = fire_frame is None
-    progress = 0.0 if moving else fire_frame / max(1, FIRE_FRAME_COUNT - 1)
+def build_weapon_layer(key, phase, fire_frame, reload_frame, materials, collection, root):
+    moving = fire_frame is None and reload_frame is None
+    active_frame = fire_frame if fire_frame is not None else reload_frame
+    progress = 0.0 if moving else active_frame / max(1, FIRE_FRAME_COUNT - 1)
     front = -0.52 - (progress * 0.72 if not moving else 0.0)
 
     if key == "unarmed":
@@ -302,46 +314,143 @@ def build_weapon_layer(key, phase, fire_frame, materials, collection, root):
             add_ico("StrikeImpact", (0.05, front - reach - 0.22, 1.50), (0.16, 0.16, 0.16), materials["straw"], collection, root)
         return
 
-    if key == "pole":
-        swing = -0.45 if moving else -0.75 + (progress * 1.5)
-        start = (0.14, -0.20, 1.60)
-        end = (0.14 + math.sin(swing) * 0.74, -1.15 + math.cos(swing) * 0.45, 1.32)
-        add_cylinder_between("Pole", start, end, 0.07, materials["wood_light"], collection, root, 8)
-        add_cone("PoleTip", end, 0.14, 0.02, 0.30, materials["metal_light"], collection, root, 5)
+    if key in {"stick", "pole"}:
+        swing = -0.28 if moving else -0.72 + (progress * 1.44)
+        start = (0.12, -0.18, 1.56)
+        length = 1.08 if key == "stick" else 1.30
+        end = (0.12 + math.sin(swing) * 0.72, -0.95 + math.cos(swing) * (length - 0.55), 1.34)
+        add_cylinder_between("Stick" if key == "stick" else "Pole", start, end, 0.075 if key == "stick" else 0.07, materials["wood_light"], collection, root, 8)
+        if key == "stick":
+            add_ico("StickKnob", end, (0.13, 0.13, 0.13), materials["wood"], collection, root)
+        else:
+            add_cone("PoleTip", end, 0.14, 0.02, 0.30, materials["metal_light"], collection, root, 5)
         return
 
-    if key == "rolling":
+    if key == "stone":
+        throw_offset = 0.0 if moving else 0.52 + (progress * 0.85)
+        add_ico("ThrownStone", (0.10, -0.38 - throw_offset, 1.55), (0.24, 0.24, 0.20), materials["stone"], collection, root)
+        if not moving and fire_frame == 1:
+            add_ico("StoneTrail", (0.10, -0.04 - throw_offset, 1.55), (0.12, 0.12, 0.10), materials["stone_light"], collection, root)
+        return
+
+    if key in {"rake", "shovel"}:
+        swing = -0.36 if moving else -0.78 + (progress * 1.56)
+        start = (0.12, -0.17, 1.58)
+        end = (0.12 + math.sin(swing) * 0.78, -1.05 + math.cos(swing) * 0.54, 1.25)
+        add_cylinder_between("ToolHandle", start, end, 0.075, materials["wood_light"], collection, root, 8)
+        if key == "rake":
+            add_cube("RakeHead", (end[0], end[1] - 0.06, end[2]), (0.43, 0.07, 0.07), materials["gunmetal"], collection, root)
+            for tooth in (-0.30, -0.15, 0.0, 0.15, 0.30):
+                add_cylinder_between(
+                    "RakeTine",
+                    (end[0] + tooth, end[1] - 0.04, end[2]),
+                    (end[0] + tooth, end[1] - 0.25, end[2] - 0.08),
+                    0.032,
+                    materials["metal_light"],
+                    collection,
+                    root,
+                    5,
+                )
+        else:
+            add_cone("ShovelBlade", (end[0], end[1] - 0.10, end[2] - 0.10), 0.30, 0.13, 0.46, materials["metal_light"], collection, root, 5)
+        return
+
+    if key in {"rolling", "heavyroll", "bounce"}:
+        if key == "heavyroll":
+            radius, depth, band_material = 0.42, 0.72, materials["gunmetal"]
+        elif key == "bounce":
+            radius, depth, band_material = 0.34, 0.64, materials["bounce"]
+        else:
+            radius, depth, band_material = 0.32, 0.58, materials["metal"]
         offset = -0.38 if moving else -0.40 - (progress * 0.58)
-        bpy.ops.mesh.primitive_cylinder_add(vertices=8, radius=0.32, depth=0.58, location=(0.02, offset, 1.10), rotation=(math.radians(90), 0.0, 0.0))
+        bpy.ops.mesh.primitive_cylinder_add(vertices=8, radius=radius, depth=depth, location=(0.02, offset, 1.10), rotation=(math.radians(90), 0.0, 0.0))
         roller = bpy.context.object
         roller.name = "RollingDrum"
         roller.data.materials.append(materials["wood"])
         move_to_collection(roller, collection)
         parent_to(roller, root)
-        add_torus("RollerBandA", (0.02, offset - 0.24, 1.10), 0.24, 0.04, materials["metal"], collection, root, (math.radians(90), 0.0, 0.0))
-        add_torus("RollerBandB", (0.02, offset + 0.24, 1.10), 0.24, 0.04, materials["metal"], collection, root, (math.radians(90), 0.0, 0.0))
+        band_radius = max(0.18, radius - 0.08)
+        add_torus("RollerBandA", (0.02, offset - (depth * 0.40), 1.10), band_radius, 0.045, band_material, collection, root, (math.radians(90), 0.0, 0.0))
+        add_torus("RollerBandB", (0.02, offset + (depth * 0.40), 1.10), band_radius, 0.045, band_material, collection, root, (math.radians(90), 0.0, 0.0))
+        if key == "bounce":
+            add_cone("BounceSpring", (0.02, offset + 0.03, 1.56), 0.16, 0.08, 0.38, materials["bounce"], collection, root, 6)
         return
 
-    if key == "trapper":
+    if key in {"trapper", "poisontrapper", "slowtrapper"}:
         offset = -0.33 if moving else -0.36 - (progress * 0.48)
-        build_trap((0.0, offset, 1.22), 0.40, materials, collection, root, open_jaws=not moving and fire_frame >= 1)
+        jaw_material = materials["trap_red"]
+        accent_material = materials["metal_light"]
+        if key == "poisontrapper":
+            jaw_material = materials["poison"]
+            accent_material = materials["poison_light"]
+        elif key == "slowtrapper":
+            jaw_material = materials["frost"]
+            accent_material = materials["frost_light"]
+        build_trap(
+            (0.0, offset, 1.22),
+            0.40,
+            materials,
+            collection,
+            root,
+            open_jaws=not moving and fire_frame is not None and fire_frame >= 1,
+            jaw_material=jaw_material,
+            accent_material=accent_material,
+        )
         return
 
-    if key == "airrifle":
-        recoil = 0.0 if moving else (0.12 if fire_frame == 1 else 0.0)
-        start = (0.10, -0.19 + recoil, 1.68)
-        end = (0.10, -1.20 + recoil, 1.80)
-        add_cylinder_between("RifleBarrel", start, end, 0.045, materials["metal_light"], collection, root, 8)
-        add_cylinder_between("RifleStock", (0.10, -0.10 + recoil, 1.62), (0.10, 0.26 + recoil, 1.43), 0.095, materials["wood_light"], collection, root, 6)
-        add_ico("RifleReceiver", (0.10, -0.35 + recoil, 1.65), (0.13, 0.18, 0.10), materials["metal"], collection, root)
-        if not moving and fire_frame == 1:
-            add_ico("MuzzleFlash", end, (0.14, 0.14, 0.14), materials["muzzle"], collection, root)
+    if key in {"airrifle", "semiautomatic", "pistol"}:
+        if key == "pistol":
+            build_pistol(progress, moving, fire_frame, reload_frame, materials, collection, root)
+        else:
+            build_rifle(key, progress, moving, fire_frame, reload_frame, materials, collection, root)
         return
 
     raise ValueError("Unknown weapon key: " + key)
 
 
-def build_trap(center, scale, materials, collection, root, open_jaws):
+def build_rifle(key, progress, moving, fire_frame, reload_frame, materials, collection, root):
+    recoil = 0.0 if moving or reload_frame is not None else (0.12 if fire_frame == 1 else 0.0)
+    reload_lift = 0.0 if reload_frame is None else 0.12 + (0.12 * math.sin(progress * math.pi))
+    barrel_length = 1.02 if key == "airrifle" else 0.88
+    start = (0.10, -0.19 + recoil + reload_lift, 1.68)
+    end = (0.10, -0.19 - barrel_length + recoil + reload_lift, 1.80)
+    add_cylinder_between("RifleBarrel", start, end, 0.045, materials["metal_light"], collection, root, 8)
+    add_cylinder_between("RifleStock", (0.10, -0.10 + recoil + reload_lift, 1.62), (0.10, 0.26 + recoil + reload_lift, 1.43), 0.095, materials["wood_light"], collection, root, 6)
+    add_ico("RifleReceiver", (0.10, -0.35 + recoil + reload_lift, 1.65), (0.13, 0.18, 0.10), materials["gunmetal"], collection, root)
+    if key == "semiautomatic":
+        add_cube("Magazine", (0.10, -0.28 + reload_lift, 1.48 - (0.13 if reload_frame is not None else 0.0)), (0.09, 0.11, 0.21), materials["brass"], collection, root)
+    if reload_frame is not None:
+        add_cylinder_between("ReloadLever", (0.10, -0.45 + reload_lift, 1.70), (0.10, -0.22 + reload_lift, 1.92), 0.035, materials["metal"], collection, root, 6)
+    elif not moving and fire_frame == 1:
+        add_ico("MuzzleFlash", end, (0.14, 0.14, 0.14), materials["muzzle"], collection, root)
+
+
+def build_pistol(progress, moving, fire_frame, reload_frame, materials, collection, root):
+    recoil = 0.0 if moving or reload_frame is not None else (0.10 if fire_frame == 1 else 0.0)
+    reload_lift = 0.0 if reload_frame is None else 0.10 + (0.09 * math.sin(progress * math.pi))
+    start = (0.08, -0.24 + recoil + reload_lift, 1.62)
+    end = (0.08, -0.82 + recoil + reload_lift, 1.66)
+    add_cube("PistolSlide", (0.08, -0.50 + recoil + reload_lift, 1.66), (0.11, 0.34, 0.08), materials["gunmetal"], collection, root)
+    add_cylinder_between("PistolBarrel", start, end, 0.042, materials["metal_light"], collection, root, 8)
+    add_cylinder_between("PistolGrip", (0.08, -0.27 + recoil + reload_lift, 1.58), (0.08, -0.06 + recoil + reload_lift, 1.22), 0.105, materials["wood_light"], collection, root, 6)
+    if reload_frame is not None:
+        add_cube("PistolMagazine", (0.08, -0.06 + reload_lift, 1.16 - (0.18 * (1.0 - progress))), (0.07, 0.09, 0.22), materials["brass"], collection, root)
+    elif not moving and fire_frame == 1:
+        add_ico("PistolMuzzleFlash", end, (0.12, 0.12, 0.12), materials["muzzle"], collection, root)
+
+
+def build_trap(
+    center,
+    scale,
+    materials,
+    collection,
+    root,
+    open_jaws,
+    jaw_material=None,
+    accent_material=None,
+):
+    jaw_material = jaw_material or materials["trap_red"]
+    accent_material = accent_material or materials["metal_light"]
     x, y, z = center
     add_cube("TrapBase", (x, y, z), (scale, scale * 0.65, 0.07), materials["metal"], collection, root)
     gap = scale * (0.72 if open_jaws else 0.38)
@@ -351,12 +460,12 @@ def build_trap(center, scale, materials, collection, root, open_jaws):
             (x + sign * gap, y - scale * 0.35, z + 0.08),
             (x + sign * gap * 0.56, y + scale * 0.38, z + (0.36 if open_jaws else 0.17)),
             0.045,
-            materials["trap_red"],
+            jaw_material,
             collection,
             root,
             6,
         )
-    add_ico("TrapTrigger", (x, y, z + 0.13), (0.10, 0.10, 0.07), materials["metal_light"], collection, root)
+    add_ico("TrapTrigger", (x, y, z + 0.13), (0.10, 0.10, 0.07), accent_material, collection, root)
 
 
 def clear_model_collections():
@@ -485,6 +594,85 @@ def render_weapon_sheets(materials):
         save_sheet(fire_image, fire_pixels, os.path.join(DIRECTIONAL_ROOT, "FarmhandWeapon_" + title + "_Fire.png"))
 
 
+def render_upgrade_weapon_sheets(materials):
+    """Render the two free level-two choices and all level-eight weapon evolutions.
+
+    These use the exact same 16-directional sheet convention as the original five weapon
+    types, so the runtime can remain entirely data driven when a defender changes weapon.
+    """
+    weapon_specs = (
+        ("stick", "Stick"),
+        ("stone", "Stone"),
+        ("rake", "Rake"),
+        ("shovel", "Shovel"),
+        ("heavyroll", "HeavyRoll"),
+        ("bounce", "Bounce"),
+        ("semiautomatic", "SemiAutomatic"),
+        ("pistol", "Pistol"),
+        ("poisontrapper", "PoisonTrapper"),
+        ("slowtrapper", "SlowTrapper"),
+    )
+    for key, title in weapon_specs:
+        move_image, move_pixels = create_sheet("Farmhand_" + title + "_Move", MOVEMENT_COLUMNS, 4)
+        for direction in range(DIRECTION_COUNT):
+            for frame in range(MOVEMENT_FRAME_COUNT):
+                clear_model_collections()
+                layers = create_character(direction, frame, materials, key, None)
+                hide_character_layers(layers, "weapon")
+                index = direction * MOVEMENT_FRAME_COUNT + frame
+                blit(
+                    move_pixels,
+                    move_image.size[0],
+                    4,
+                    capture_render_pixels(),
+                    index % MOVEMENT_COLUMNS,
+                    index // MOVEMENT_COLUMNS,
+                )
+        save_sheet(move_image, move_pixels, os.path.join(DIRECTIONAL_ROOT, "FarmhandWeapon_" + title + "_Move.png"))
+
+        fire_image, fire_pixels = create_sheet("Farmhand_" + title + "_Fire", FIRE_COLUMNS, 6)
+        for direction in range(DIRECTION_COUNT):
+            for frame in range(FIRE_FRAME_COUNT):
+                clear_model_collections()
+                layers = create_character(direction, 0, materials, key, frame)
+                hide_character_layers(layers, "weapon")
+                index = direction * FIRE_FRAME_COUNT + frame
+                blit(
+                    fire_pixels,
+                    fire_image.size[0],
+                    6,
+                    capture_render_pixels(),
+                    index % FIRE_COLUMNS,
+                    index // FIRE_COLUMNS,
+                )
+        save_sheet(fire_image, fire_pixels, os.path.join(DIRECTIONAL_ROOT, "FarmhandWeapon_" + title + "_Fire.png"))
+
+    # The base Air Rifle now reloads too, so it shares the same animated reload presentation as
+    # its level-eight rifle descendants.
+    reload_specs = (
+        ("airrifle", "AirRifle"),
+        ("semiautomatic", "SemiAutomatic"),
+        ("pistol", "Pistol"),
+    )
+    for key, title in reload_specs:
+        reload_image, reload_pixels = create_sheet("Farmhand_" + title + "_Reload", FIRE_COLUMNS, 6)
+        for direction in range(DIRECTION_COUNT):
+            for frame in range(RELOAD_FRAME_COUNT):
+                clear_model_collections()
+                layers = create_character(direction, 0, materials, key, None, frame)
+                hide_character_layers(layers, "weapon")
+                index = direction * RELOAD_FRAME_COUNT + frame
+                blit(
+                    reload_pixels,
+                    reload_image.size[0],
+                    6,
+                    capture_render_pixels(),
+                    index % FIRE_COLUMNS,
+                    index // FIRE_COLUMNS,
+                )
+        save_sheet(reload_image, reload_pixels, os.path.join(DIRECTIONAL_ROOT, "FarmhandWeapon_" + title + "_Reload.png"))
+
+
 def create_projectile(kind, materials):
     collection = new_collection("Render_Projectile")
     root = bpy.data.objects.new("Projectile_Root", None)
@@ -527,6 +715,152 @@ def render_projectile_sheet(materials):
     save_sheet(image, pixels, os.path.join(PROJECTILE_ROOT, "FarmhandProjectiles.png"))
 
 
+def create_upgrade_projectile(kind, materials):
+    """Create one isolated low-poly projectile, impact or trap-presentation cell.
+
+    Each object is kept intentionally chunky: these sprites are viewed at gameplay scale on a
+    mobile screen, where a clear silhouette matters more than small surface detail.
+    """
+    collection = new_collection("Render_UpgradeProjectile")
+    root = bpy.data.objects.new("Projectile_Root", None)
+    bpy.context.scene.collection.objects.link(root)
+
+    if kind == "stick":
+        add_cylinder_between("StickProjectile", (0.0, 0.0, 0.20), (0.0, 0.0, 2.45), 0.12, materials["wood_light"], collection, root, 8)
+        add_ico("StickKnob", (0.0, 0.0, 2.62), (0.20, 0.20, 0.20), materials["wood"], collection, root)
+    elif kind == "stone":
+        add_ico("StoneProjectile", (0.0, 0.0, 1.35), (0.68, 0.60, 0.54), materials["stone"], collection, root)
+        add_ico("StoneHighlight", (-0.17, -0.14, 1.58), (0.22, 0.18, 0.16), materials["stone_light"], collection, root)
+    elif kind in {"rake", "shovel"}:
+        add_cylinder_between("ToolHandle", (0.0, 0.0, 0.18), (0.0, 0.0, 2.35), 0.10, materials["wood_light"], collection, root, 8)
+        if kind == "rake":
+            add_cube("RakeHead", (0.0, 0.0, 2.55), (0.62, 0.11, 0.10), materials["gunmetal"], collection, root)
+            for tooth in (-0.44, -0.22, 0.0, 0.22, 0.44):
+                add_cylinder_between(
+                    "RakeTine",
+                    (tooth, 0.0, 2.53),
+                    (tooth, -0.04, 2.92),
+                    0.040,
+                    materials["metal_light"],
+                    collection,
+                    root,
+                    5,
+                )
+        else:
+            add_cone("ShovelBlade", (0.0, 0.0, 2.62), 0.48, 0.16, 0.72, materials["metal_light"], collection, root, 5)
+    elif kind in {"heavyroll", "bounce"}:
+        radius = 0.78 if kind == "heavyroll" else 0.62
+        depth = 0.96 if kind == "heavyroll" else 0.82
+        band_material = materials["gunmetal"] if kind == "heavyroll" else materials["bounce"]
+        bpy.ops.mesh.primitive_cylinder_add(
+            vertices=8,
+            radius=radius,
+            depth=depth,
+            location=(0.0, 0.0, 1.32),
+            rotation=(math.radians(90), 0.0, 0.0),
+        )
+        drum = bpy.context.object
+        drum.name = "HeavyRoll" if kind == "heavyroll" else "BounceRoll"
+        drum.data.materials.append(materials["wood"])
+        move_to_collection(drum, collection)
+        parent_to(drum, root)
+        add_torus("RollBandA", (0.0, -depth * 0.40, 1.32), radius * 0.78, 0.09, band_material, collection, root, (math.radians(90), 0.0, 0.0))
+        add_torus("RollBandB", (0.0, depth * 0.40, 1.32), radius * 0.78, 0.09, band_material, collection, root, (math.radians(90), 0.0, 0.0))
+        if kind == "bounce":
+            add_cone("BounceSpring", (0.0, 0.0, 2.12), 0.26, 0.12, 0.60, materials["bounce"], collection, root, 6)
+    elif kind in {"semiautomatic_bullet", "pistol_bullet"}:
+        length = 2.72 if kind == "semiautomatic_bullet" else 2.16
+        body_material = materials["brass"] if kind == "semiautomatic_bullet" else materials["metal_light"]
+        add_cylinder_between("Bullet", (0.0, 0.0, 0.25), (0.0, 0.0, length), 0.13, body_material, collection, root, 8)
+        add_cone("BulletTip", (0.0, 0.0, length + 0.23), 0.23, 0.02, 0.48, materials["muzzle"], collection, root, 8)
+    elif kind in {"poison_closed", "poison_armed", "slow_closed", "slow_armed"}:
+        is_poison = kind.startswith("poison")
+        jaw_material = materials["poison"] if is_poison else materials["frost"]
+        accent_material = materials["poison_light"] if is_poison else materials["frost_light"]
+        build_trap(
+            (0.0, 0.0, 1.20),
+            0.76,
+            materials,
+            collection,
+            root,
+            open_jaws=kind.endswith("armed"),
+            jaw_material=jaw_material,
+            accent_material=accent_material,
+        )
+        add_ico("TrapVial", (0.0, 0.0, 1.54), (0.20, 0.20, 0.28), accent_material, collection, root)
+    elif kind.startswith("poison_explosion") or kind.startswith("slow_explosion"):
+        is_poison = kind.startswith("poison")
+        frame = int(kind[-1])
+        base_material = materials["poison"] if is_poison else materials["frost"]
+        accent_material = materials["poison_light"] if is_poison else materials["frost_light"]
+        radius = 0.40 + (frame * 0.28)
+        add_uv("DetonationCore", (0.0, 0.0, 0.22), (radius, radius, 0.10), base_material, collection, root)
+        for index in range(6 + frame * 2):
+            angle = (math.tau * index) / (6 + frame * 2)
+            distance = radius * (0.72 + frame * 0.14)
+            add_ico(
+                "DetonationShard",
+                (math.cos(angle) * distance, math.sin(angle) * distance, 0.26),
+                (0.15 + frame * 0.04, 0.15 + frame * 0.04, 0.11),
+                accent_material,
+                collection,
+                root,
+            )
+    elif kind.startswith("bounce_impact"):
+        frame = int(kind[-1])
+        radius = 0.48 + (frame * 0.34)
+        add_uv("BounceImpact", (0.0, 0.0, 0.16), (radius, radius, 0.075), materials["bounce"], collection, root)
+        for index in range(4 + frame * 3):
+            angle = (math.tau * index) / (4 + frame * 3)
+            distance = radius * (0.66 + frame * 0.18)
+            add_ico(
+                "BounceSpark",
+                (math.cos(angle) * distance, math.sin(angle) * distance, 0.22),
+                (0.10 + frame * 0.05, 0.10 + frame * 0.05, 0.08),
+                materials["muzzle"],
+                collection,
+                root,
+            )
+    else:
+        raise ValueError("Unknown upgrade projectile: " + kind)
+    return collection
+
+
+def render_upgrade_projectile_sheet(materials):
+    """Render all dedicated level-two/final projectile and effect frames in one compact atlas."""
+    projectile_specs = (
+        ("stick", "upgrade_projectile_stick"),
+        ("stone", "upgrade_projectile_stone"),
+        ("rake", "upgrade_projectile_rake"),
+        ("shovel", "upgrade_projectile_shovel"),
+        ("heavyroll", "upgrade_projectile_heavy_roll"),
+        ("bounce", "upgrade_projectile_bounce"),
+        ("semiautomatic_bullet", "upgrade_projectile_semi_automatic"),
+        ("pistol_bullet", "upgrade_projectile_pistol"),
+        ("poison_closed", "upgrade_projectile_poison_closed"),
+        ("poison_armed", "upgrade_projectile_poison_armed"),
+        ("slow_closed", "upgrade_projectile_slow_closed"),
+        ("slow_armed", "upgrade_projectile_slow_armed"),
+        ("poison_explosion0", "upgrade_projectile_poison_explosion0"),
+        ("poison_explosion1", "upgrade_projectile_poison_explosion1"),
+        ("poison_explosion2", "upgrade_projectile_poison_explosion2"),
+        ("slow_explosion0", "upgrade_projectile_slow_explosion0"),
+        ("slow_explosion1", "upgrade_projectile_slow_explosion1"),
+        ("slow_explosion2", "upgrade_projectile_slow_explosion2"),
+        ("bounce_impact0", "upgrade_projectile_bounce_impact0"),
+        ("bounce_impact1", "upgrade_projectile_bounce_impact1"),
+        ("bounce_impact2", "upgrade_projectile_bounce_impact2"),
+    )
+    columns = 6
+    rows = 4
+    image, pixels = create_sheet("Farmhand_UpgradeProjectiles", columns, rows)
+    for index, (projectile, _) in enumerate(projectile_specs):
+        clear_model_collections()
+        create_upgrade_projectile(projectile, materials)
+        blit(pixels, image.size[0], rows, capture_render_pixels(), index % columns, index // columns)
+    save_sheet(image, pixels, os.path.join(PROJECTILE_ROOT, "DefenderUpgradeProjectiles.png"))
+
+
 def save_editable_source(materials):
     clear_model_collections()
     layers = create_character(0, 0, materials, "airrifle", 1)
@@ -547,12 +881,19 @@ def main():
     clear_scene()
     setup_scene()
     materials = make_materials()
-    print("TAD farmhand render: body, hair and outfit frames", flush=True)
-    render_directional_move_layers(materials)
-    print("TAD farmhand render: weapon animations", flush=True)
-    render_weapon_sheets(materials)
-    print("TAD farmhand render: projectile artwork", flush=True)
-    render_projectile_sheet(materials)
+    upgrade_only = os.environ.get("TAD_RENDER_UPGRADES_ONLY") == "1"
+    if upgrade_only:
+        print("TAD farmhand render: level-two and final-upgrade weapon animations", flush=True)
+        render_upgrade_weapon_sheets(materials)
+        print("TAD farmhand render: upgrade projectile artwork and effect frames", flush=True)
+        render_upgrade_projectile_sheet(materials)
+    else:
+        print("TAD farmhand render: body, hair and outfit frames", flush=True)
+        render_directional_move_layers(materials)
+        print("TAD farmhand render: base weapon animations", flush=True)
+        render_weapon_sheets(materials)
+        print("TAD farmhand render: base projectile artwork", flush=True)
+        render_projectile_sheet(materials)
     print("TAD farmhand render: saving editable source", flush=True)
     save_editable_source(materials)
     if os.path.exists(RENDER_BUFFER_PATH):

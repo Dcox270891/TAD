@@ -266,6 +266,8 @@ MonoBehaviour:
   weaponDefinition: {fileID: 11400000, guid: 256372cb0ee064c4f9b81bb054aa7920, type: 2}
   rangeCollider: {fileID: 7503971524455403412}
   rangeBody: {fileID: 35709057752819855}
+  placementCollider: {fileID: 0}
+  relocationSpeed: 1
   rangeVisual: {fileID: 5043079244291360440}
   expMax: 10
   maxLevel: 10
@@ -316,7 +318,7 @@ CircleCollider2D:
   m_CompositeOperation: 0
   m_CompositeOrder: 0
   m_Offset: {x: 0, y: 0}
-  m_Radius: 10
+  m_Radius: 12.5
 --- !u!50 &35709057752819855
 Rigidbody2D:
   serializedVersion: 5
@@ -367,7 +369,17 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 1056931dde20ca84e954a14c8b0ef8a1, type: 2}
   - {fileID: 11400000, guid: 7668856a47f9d364bb4f3a80b5f75c3e, type: 2}
   - {fileID: 11400000, guid: 3a0c8d5ef29d74f4dbc4d00c6ba5ab5a, type: 2}
-  fallbackMovementFrameDuration: 0.16
+  - {fileID: 11400000, guid: 1679c982441f41f419fc7cc094506a0e, type: 2}
+  - {fileID: 11400000, guid: 8ff04dc614cceca4a8dd514014853f17, type: 2}
+  - {fileID: 11400000, guid: ade4202d4a942b74a9997a28e087fe97, type: 2}
+  - {fileID: 11400000, guid: 045ce682c30e23446ae2fbceb5fcd53b, type: 2}
+  - {fileID: 11400000, guid: 966096967d4da5345b7da543d9b47cb3, type: 2}
+  - {fileID: 11400000, guid: e4ded43665e71a14797e73844f2d8145, type: 2}
+  - {fileID: 11400000, guid: 661d1e1486ce0ca42874d22a9702fd6c, type: 2}
+  - {fileID: 11400000, guid: d32d2afd0d5aa484ea8f2e08552536a8, type: 2}
+  - {fileID: 11400000, guid: a0549787ed494334bbc86a56e16b1da8, type: 2}
+  - {fileID: 11400000, guid: 11525543435da894f83e4cfa109a6f22, type: 2}
+  aimTransitionDuration: 0.16
 --- !u!1 &1961148835843387005
 GameObject:
   m_ObjectHideFlags: 0

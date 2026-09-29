@@ -100,6 +100,13 @@ namespace TAD.Defenders
                 isFiring = false;
             }
 
+            var reloadingWeaponVisual = GetWeaponVisual(farmHand.WeaponDefinition);
+            if (farmHand.IsReloading && reloadingWeaponVisual != null && reloadingWeaponVisual.HasReloadSprites)
+            {
+                SetSprite(weaponRenderer, reloadingWeaponVisual.GetReloadSprite(directionIndex, farmHand.ReloadProgress));
+                return;
+            }
+
             RefreshHeldWeapon();
         }
 

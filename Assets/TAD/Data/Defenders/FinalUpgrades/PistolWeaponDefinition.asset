@@ -22,4 +22,4 @@ MonoBehaviour:
   damage: 28
   shotsPerMagazine: 8
   reloadDuration: 1.1
-  projectileDefinition: {fileID: 11400000, guid: c418a0ff5bf785f4da28322bd33b336f, type: 2}
+  projectileDefinition: {fileID: 11400000, guid: a96eabfebf6b5624fb885dc9524b96de, type: 2}

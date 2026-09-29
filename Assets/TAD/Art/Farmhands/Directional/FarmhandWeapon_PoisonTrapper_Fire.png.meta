@@ -1,0 +1,1466 @@
+fileFormatVersion: 2
+guid: 938682a1feda7bc4194eb7762d9d47e6
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -881512912724125573
+    second: FarmhandWeapon_PoisonTrapper_Fire_0
+  - first:
+      213: 4350921947034843648
+    second: FarmhandWeapon_PoisonTrapper_Fire_1
+  - first:
+      213: -7986090880066371973
+    second: FarmhandWeapon_PoisonTrapper_Fire_2
+  - first:
+      213: -3749063478807069741
+    second: FarmhandWeapon_PoisonTrapper_Fire_3
+  - first:
+      213: -5410155976865425193
+    second: FarmhandWeapon_PoisonTrapper_Fire_4
+  - first:
+      213: 1967202173480582864
+    second: FarmhandWeapon_PoisonTrapper_Fire_5
+  - first:
+      213: -2888099960201599519
+    second: FarmhandWeapon_PoisonTrapper_Fire_6
+  - first:
+      213: -219124674805451122
+    second: FarmhandWeapon_PoisonTrapper_Fire_7
+  - first:
+      213: 4579276926207462129
+    second: FarmhandWeapon_PoisonTrapper_Fire_8
+  - first:
+      213: 4399272713853139533
+    second: FarmhandWeapon_PoisonTrapper_Fire_9
+  - first:
+      213: 3157283737661918278
+    second: FarmhandWeapon_PoisonTrapper_Fire_10
+  - first:
+      213: 5492068727730850043
+    second: FarmhandWeapon_PoisonTrapper_Fire_11
+  - first:
+      213: 6497888347482421196
+    second: FarmhandWeapon_PoisonTrapper_Fire_12
+  - first:
+      213: -5469445299360088243
+    second: FarmhandWeapon_PoisonTrapper_Fire_13
+  - first:
+      213: 7483872355847841113
+    second: FarmhandWeapon_PoisonTrapper_Fire_14
+  - first:
+      213: 7791174551281534512
+    second: FarmhandWeapon_PoisonTrapper_Fire_15
+  - first:
+      213: -7471247321466721375
+    second: FarmhandWeapon_PoisonTrapper_Fire_16
+  - first:
+      213: -5482318460299447291
+    second: FarmhandWeapon_PoisonTrapper_Fire_17
+  - first:
+      213: 7377923055911739922
+    second: FarmhandWeapon_PoisonTrapper_Fire_18
+  - first:
+      213: -7603250884190112140
+    second: FarmhandWeapon_PoisonTrapper_Fire_19
+  - first:
+      213: -5904307098025529398
+    second: FarmhandWeapon_PoisonTrapper_Fire_20
+  - first:
+      213: 3555219488290420188
+    second: FarmhandWeapon_PoisonTrapper_Fire_21
+  - first:
+      213: -312903183104993163
+    second: FarmhandWeapon_PoisonTrapper_Fire_22
+  - first:
+      213: -843510252679401059
+    second: FarmhandWeapon_PoisonTrapper_Fire_23
+  - first:
+      213: -3251483650946590294
+    second: FarmhandWeapon_PoisonTrapper_Fire_24
+  - first:
+      213: 8124013070253814701
+    second: FarmhandWeapon_PoisonTrapper_Fire_25
+  - first:
+      213: 4831496765938194263
+    second: FarmhandWeapon_PoisonTrapper_Fire_26
+  - first:
+      213: 7736860450925847584
+    second: FarmhandWeapon_PoisonTrapper_Fire_27
+  - first:
+      213: 1752824821768158410
+    second: FarmhandWeapon_PoisonTrapper_Fire_28
+  - first:
+      213: 6548487507755752705
+    second: FarmhandWeapon_PoisonTrapper_Fire_29
+  - first:
+      213: -5282799021682708487
+    second: FarmhandWeapon_PoisonTrapper_Fire_30
+  - first:
+      213: -6649708584114890237
+    second: FarmhandWeapon_PoisonTrapper_Fire_31
+  - first:
+      213: -125368481838318787
+    second: FarmhandWeapon_PoisonTrapper_Fire_32
+  - first:
+      213: 2184381958763567609
+    second: FarmhandWeapon_PoisonTrapper_Fire_33
+  - first:
+      213: -6000762746917120728
+    second: FarmhandWeapon_PoisonTrapper_Fire_34
+  - first:
+      213: -4328383674284791609
+    second: FarmhandWeapon_PoisonTrapper_Fire_35
+  - first:
+      213: -6793543439897161211
+    second: FarmhandWeapon_PoisonTrapper_Fire_36
+  - first:
+      213: 2827637978979530439
+    second: FarmhandWeapon_PoisonTrapper_Fire_37
+  - first:
+      213: -1775115978762863328
+    second: FarmhandWeapon_PoisonTrapper_Fire_38
+  - first:
+      213: -171036974109217726
+    second: FarmhandWeapon_PoisonTrapper_Fire_39
+  - first:
+      213: 4237855711946001711
+    second: FarmhandWeapon_PoisonTrapper_Fire_40
+  - first:
+      213: 7533512141064163102
+    second: FarmhandWeapon_PoisonTrapper_Fire_41
+  - first:
+      213: 3775480078370312357
+    second: FarmhandWeapon_PoisonTrapper_Fire_42
+  - first:
+      213: 7274187205087838492
+    second: FarmhandWeapon_PoisonTrapper_Fire_43
+  - first:
+      213: 3168835515512208883
+    second: FarmhandWeapon_PoisonTrapper_Fire_44
+  - first:
+      213: 5445362103586396873
+    second: FarmhandWeapon_PoisonTrapper_Fire_45
+  - first:
+      213: 1248008124883956253
+    second: FarmhandWeapon_PoisonTrapper_Fire_46
+  - first:
+      213: 6133321081021639587
+    second: FarmhandWeapon_PoisonTrapper_Fire_47
+  - first:
+      213: -4483943993105483532
+    second: FarmhandWeapon_PoisonTrapper_Fire_48
+  - first:
+      213: -7302306662578091872
+    second: FarmhandWeapon_PoisonTrapper_Fire_49
+  - first:
+      213: 4370929741071138765
+    second: FarmhandWeapon_PoisonTrapper_Fire_50
+  - first:
+      213: -3095715285163811793
+    second: FarmhandWeapon_PoisonTrapper_Fire_51
+  - first:
+      213: -8943751737110573506
+    second: FarmhandWeapon_PoisonTrapper_Fire_52
+  - first:
+      213: -8864315075769278324
+    second: FarmhandWeapon_PoisonTrapper_Fire_53
+  - first:
+      213: -8203055022649387357
+    second: FarmhandWeapon_PoisonTrapper_Fire_54
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 24
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationMethod: 0
+  spriteTessellationDetail: -1
+  spriteGeometrySubdivision: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 75
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: iOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: VisionOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: tvOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WindowsStoreApps
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: poisontrapper_d00_fire0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 960
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 15106d6d0b1a87d49a6dbdacad068b2e
+      internalID: -1461126660
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: poisontrapper_d00_fire1
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 960
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 784fedef8d5dd034d8496730074029fd
+      internalID: -1132353132
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: poisontrapper_d00_fire2
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 960
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5243274bd7af2c9438f7bc982666e3dc
+      internalID: 1711036262
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: poisontrapper_d01_fire0
+      rect:
+        serializedVersion: 2
+        x: 576
+        y: 960
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 59289e803138b574ca984264b71045c3
+      internalID: 327404537
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: poisontrapper_d01_fire1
+      rect:
+        serializedVersion: 2
+        x: 768
+        y: 960
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 0d1a480fcfb7e76428f8d548f8aae207
+      internalID: -1170433441
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: poisontrapper_d01_fire2
+      rect:
+        serializedVersion: 2
+        x: 960
+        y: 960
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9a2fdc2c1ecc08e4f9ec6290c67f4e0d
+      internalID: -1643119716
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: poisontrapper_d02_fire0
+      rect:
+        serializedVersion: 2
+        x: 1152
+        y: 960
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7e9e815687e56bd458017c27d8e460f4
+      internalID: -171334343
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: poisontrapper_d02_fire1
+      rect:
+        serializedVersion: 2
+        x: 1344
+        y: 960
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 4e02f9547b34e574d8b5086f83a375b9
+      internalID: -913371487
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: poisontrapper_d02_fire2
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 768
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 833f263ce4cd60d49bfe729edb3026ad
+      internalID: 1483037962
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: poisontrapper_d03_fire0
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 768
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 8bd385926e4a3754581c495fde702875
+      internalID: -1184039265
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: poisontrapper_d03_fire1
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 768
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 2c54920a8edcb8441a67c027da10da0b
+      internalID: 1334674971
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: poisontrapper_d03_fire2
+      rect:
+        serializedVersion: 2
+        x: 576
+        y: 768
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7e73112b4e111994caec470329b72eea
+      internalID: -1816345637
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: poisontrapper_d04_fire0
+      rect:
+        serializedVersion: 2
+        x: 768
+        y: 768
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: dd15c6f8846220744b2fdff4a602b998
+      internalID: -481849191
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: poisontrapper_d04_fire1
+      rect:
+        serializedVersion: 2
+        x: 960
+        y: 768
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 818e8d851fe89d649b2cb73c5465ae92
+      internalID: -1402446642
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: poisontrapper_d04_fire2
+      rect:
+        serializedVersion: 2
+        x: 1152
+        y: 768
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 952bbd55e10e67d408436d59f3fad46d
+      internalID: 409514082
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: poisontrapper_d05_fire0
+      rect:
+        serializedVersion: 2
+        x: 1344
+        y: 768
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 66ab1f9e72d77b04aaf5b0603238252c
+      internalID: 1635563346
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: poisontrapper_d05_fire1
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 576
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a01c1724550d91844a55131173086d39
+      internalID: -1558432617
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: poisontrapper_d05_fire2
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 576
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 39cdf0233db77f54d973b06a559470aa
+      internalID: 640157039
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: poisontrapper_d06_fire0
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 576
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c5b26d0be3e5f274f8047c99ecfd21d6
+      internalID: -1103028467
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: poisontrapper_d06_fire1
+      rect:
+        serializedVersion: 2
+        x: 576
+        y: 576
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b7ded72e11bb3774eb3fbabf0b925de3
+      internalID: -1541395989
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: poisontrapper_d06_fire2
+      rect:
+        serializedVersion: 2
+        x: 768
+        y: 576
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e959c885550a99e4abc5dd5f22380ff3
+      internalID: 1022991045
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: poisontrapper_d07_fire0
+      rect:
+        serializedVersion: 2
+        x: 960
+        y: 576
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7d9668e7ef804e741b19da7a8a40f55c
+      internalID: -400622274
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: poisontrapper_d07_fire1
+      rect:
+        serializedVersion: 2
+        x: 1152
+        y: 576
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 036867d657fad074a8ff64d26875c062
+      internalID: 1251771483
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: poisontrapper_d07_fire2
+      rect:
+        serializedVersion: 2
+        x: 1344
+        y: 576
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c29c14e02a931b74786b0009b3ce0a4f
+      internalID: -2129536668
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: poisontrapper_d08_fire0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 384
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 2f33d605db8db954f85f9a8ebd378631
+      internalID: 2137174303
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: poisontrapper_d08_fire1
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 384
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e69c82f63fecaa44e9621b1ec76bd397
+      internalID: -1806017948
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: poisontrapper_d08_fire2
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 384
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e3bd083410394214488f06b51b4f329b
+      internalID: -2102755338
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: poisontrapper_d09_fire0
+      rect:
+        serializedVersion: 2
+        x: 576
+        y: 384
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 883fe385df8bd434697b5490a2e112f4
+      internalID: -455366480
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: poisontrapper_d09_fire1
+      rect:
+        serializedVersion: 2
+        x: 768
+        y: 384
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 2c22a0eb823fe2443bc5643ec757d3dd
+      internalID: 708080988
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: poisontrapper_d09_fire2
+      rect:
+        serializedVersion: 2
+        x: 960
+        y: 384
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c19f637004ef3744c9e930586f6f4164
+      internalID: 2041731777
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: poisontrapper_d10_fire0
+      rect:
+        serializedVersion: 2
+        x: 1152
+        y: 384
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 53197440531e172439b00d6512798e86
+      internalID: -1017339866
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: poisontrapper_d10_fire1
+      rect:
+        serializedVersion: 2
+        x: 1344
+        y: 384
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c19a4164c59e0cf45a0a01be0310ab52
+      internalID: -2083837754
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: poisontrapper_d10_fire2
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 192
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 4908d0c1bec8f30428bad4b5dc2b3d74
+      internalID: 2116002224
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: poisontrapper_d11_fire0
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 192
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: cfff90e3f4bd2bc45891f44e45b5eac5
+      internalID: -1333807904
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: poisontrapper_d11_fire1
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 192
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 560e82dde4a837743a7d33fbdc569fc6
+      internalID: -755034164
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: poisontrapper_d11_fire2
+      rect:
+        serializedVersion: 2
+        x: 576
+        y: 192
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5f8b679ce2d13cd4b9303bb77d6e3f3d
+      internalID: 114645218
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: poisontrapper_d12_fire0
+      rect:
+        serializedVersion: 2
+        x: 768
+        y: 192
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 4ffef6e82ff9ea341bbcd461e1b1fb1d
+      internalID: 1632684722
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: poisontrapper_d12_fire1
+      rect:
+        serializedVersion: 2
+        x: 960
+        y: 192
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e0f487a590754c64b886def9e5edbb3a
+      internalID: -911271231
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: poisontrapper_d12_fire2
+      rect:
+        serializedVersion: 2
+        x: 1152
+        y: 192
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 08c0ce790fd7079458a07f9cb4eb162e
+      internalID: -320211754
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: poisontrapper_d13_fire0
+      rect:
+        serializedVersion: 2
+        x: 1344
+        y: 192
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9459a591293c66049acb9af4d8bd521d
+      internalID: 412691274
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: poisontrapper_d13_fire1
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c4c650a80a52b65458b1e776b9eb3032
+      internalID: 1522094140
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: poisontrapper_d13_fire2
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c10c918daadf29a468ae8b467b189c62
+      internalID: 1434420547
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: poisontrapper_d14_fire0
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: db83a56ff72aa894b8eafff399a8be49
+      internalID: 1440211397
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: poisontrapper_d14_fire1
+      rect:
+        serializedVersion: 2
+        x: 576
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 0b71080f18da6f64f84ed1933c789f3c
+      internalID: -750987967
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: poisontrapper_d14_fire2
+      rect:
+        serializedVersion: 2
+        x: 768
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: bc26939d01558c54ead23655cbe19de1
+      internalID: 1289156332
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: poisontrapper_d15_fire0
+      rect:
+        serializedVersion: 2
+        x: 960
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: bd216e325f4636a44ac8178a0fc46d0d
+      internalID: 1163646624
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: poisontrapper_d15_fire1
+      rect:
+        serializedVersion: 2
+        x: 1152
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a2e8c94e7ddd412428eab4999b4de04f
+      internalID: -1965596465
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: poisontrapper_d15_fire2
+      rect:
+        serializedVersion: 2
+        x: 1344
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: eed592e0c860d454c8c3dc6d6e5c9386
+      internalID: 340953962
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: f7e8ff1f21b88e746ac7dec64b4f8a72
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      poisontrapper_d00_fire0: -1461126660
+      poisontrapper_d00_fire1: -1132353132
+      poisontrapper_d00_fire2: 1711036262
+      poisontrapper_d01_fire0: 327404537
+      poisontrapper_d01_fire1: -1170433441
+      poisontrapper_d01_fire2: -1643119716
+      poisontrapper_d02_fire0: -171334343
+      poisontrapper_d02_fire1: -913371487
+      poisontrapper_d02_fire2: 1483037962
+      poisontrapper_d03_fire0: -1184039265
+      poisontrapper_d03_fire1: 1334674971
+      poisontrapper_d03_fire2: -1816345637
+      poisontrapper_d04_fire0: -481849191
+      poisontrapper_d04_fire1: -1402446642
+      poisontrapper_d04_fire2: 409514082
+      poisontrapper_d05_fire0: 1635563346
+      poisontrapper_d05_fire1: -1558432617
+      poisontrapper_d05_fire2: 640157039
+      poisontrapper_d06_fire0: -1103028467
+      poisontrapper_d06_fire1: -1541395989
+      poisontrapper_d06_fire2: 1022991045
+      poisontrapper_d07_fire0: -400622274
+      poisontrapper_d07_fire1: 1251771483
+      poisontrapper_d07_fire2: -2129536668
+      poisontrapper_d08_fire0: 2137174303
+      poisontrapper_d08_fire1: -1806017948
+      poisontrapper_d08_fire2: -2102755338
+      poisontrapper_d09_fire0: -455366480
+      poisontrapper_d09_fire1: 708080988
+      poisontrapper_d09_fire2: 2041731777
+      poisontrapper_d10_fire0: -1017339866
+      poisontrapper_d10_fire1: -2083837754
+      poisontrapper_d10_fire2: 2116002224
+      poisontrapper_d11_fire0: -1333807904
+      poisontrapper_d11_fire1: -755034164
+      poisontrapper_d11_fire2: 114645218
+      poisontrapper_d12_fire0: 1632684722
+      poisontrapper_d12_fire1: -911271231
+      poisontrapper_d12_fire2: -320211754
+      poisontrapper_d13_fire0: 412691274
+      poisontrapper_d13_fire1: 1522094140
+      poisontrapper_d13_fire2: 1434420547
+      poisontrapper_d14_fire0: 1440211397
+      poisontrapper_d14_fire1: -750987967
+      poisontrapper_d14_fire2: 1289156332
+      poisontrapper_d15_fire0: 1163646624
+      poisontrapper_d15_fire1: -1965596465
+      poisontrapper_d15_fire2: 340953962
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

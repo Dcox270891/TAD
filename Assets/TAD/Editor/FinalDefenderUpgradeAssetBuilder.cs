@@ -17,6 +17,7 @@ namespace TAD.Editor
         private const string ProjectileDataDirectory = DefenderDataDirectory + "/Projectiles";
         private const string FinalDataDirectory = DefenderDataDirectory + "/FinalUpgrades";
         private const string FinalProjectileDataDirectory = FinalDataDirectory + "/Projectiles";
+        private const string UpgradeProjectilePrefabDirectory = "Assets/TAD/Prefabs/Projectiles/Upgrades";
 
         private const string PoleWeaponPath = DefenderDataDirectory + "/PoleWeaponDefinition.asset";
         private const string RollingWeaponPath = DefenderDataDirectory + "/RollingWeaponDefinition.asset";
@@ -94,7 +95,7 @@ namespace TAD.Editor
                 ProjectileType.Melee,
                 ProjectileBehavior.PoleSweep,
                 ProjectileLifetimeMode.Timed,
-                poleProjectile.ProjectilePrefab,
+                ResolveUpgradeProjectilePrefab("RakeProjectile", poleProjectile.ProjectilePrefab),
                 7f,
                 0.90f,
                 1,
@@ -109,7 +110,7 @@ namespace TAD.Editor
                 ProjectileType.Melee,
                 ProjectileBehavior.PoleSweep,
                 ProjectileLifetimeMode.Timed,
-                poleProjectile.ProjectilePrefab,
+                ResolveUpgradeProjectilePrefab("ShovelProjectile", poleProjectile.ProjectilePrefab),
                 6.5f,
                 0.95f,
                 1,
@@ -123,7 +124,7 @@ namespace TAD.Editor
                 ProjectileType.Melee,
                 ProjectileBehavior.Rolling,
                 ProjectileLifetimeMode.Timed,
-                rollingProjectile.ProjectilePrefab,
+                ResolveUpgradeProjectilePrefab("HeavyRollProjectile", rollingProjectile.ProjectilePrefab),
                 4.5f,
                 4.75f,
                 2,
@@ -136,7 +137,7 @@ namespace TAD.Editor
                 ProjectileType.Melee,
                 ProjectileBehavior.Bouncing,
                 ProjectileLifetimeMode.Timed,
-                rollingProjectile.ProjectilePrefab,
+                ResolveUpgradeProjectilePrefab("BounceProjectile", rollingProjectile.ProjectilePrefab),
                 3.1f,
                 4.5f,
                 1,
@@ -154,7 +155,7 @@ namespace TAD.Editor
                 ProjectileType.Ranged,
                 ProjectileBehavior.Trap,
                 ProjectileLifetimeMode.UntilActivated,
-                trapProjectile.ProjectilePrefab,
+                ResolveUpgradeProjectilePrefab("PoisonTrapProjectile", trapProjectile.ProjectilePrefab),
                 13f,
                 0f,
                 3,
@@ -170,7 +171,7 @@ namespace TAD.Editor
                 ProjectileType.Ranged,
                 ProjectileBehavior.Trap,
                 ProjectileLifetimeMode.UntilActivated,
-                trapProjectile.ProjectilePrefab,
+                ResolveUpgradeProjectilePrefab("SlowTrapProjectile", trapProjectile.ProjectilePrefab),
                 13f,
                 0f,
                 3,
@@ -182,6 +183,33 @@ namespace TAD.Editor
                 slowMultiplier: 0.55f,
                 slowDuration: 2.5f,
                 projectileScale: 1f);
+
+            var semiAutomaticProjectile = ConfigureProjectile(
+                "SemiAutomaticBulletProjectileDefinition",
+                ProjectileType.Ranged,
+                ProjectileBehavior.Direct,
+                ProjectileLifetimeMode.Timed,
+                ResolveUpgradeProjectilePrefab("SemiAutomaticBulletProjectile", airRifleProjectile.ProjectilePrefab),
+                26f,
+                0.42f,
+                0,
+                1f,
+                0f,
+                180f,
+                projectileScale: 0.9f);
+            var pistolProjectile = ConfigureProjectile(
+                "PistolBulletProjectileDefinition",
+                ProjectileType.Ranged,
+                ProjectileBehavior.Direct,
+                ProjectileLifetimeMode.Timed,
+                ResolveUpgradeProjectilePrefab("PistolBulletProjectile", airRifleProjectile.ProjectilePrefab),
+                24f,
+                0.38f,
+                0,
+                1f,
+                0f,
+                180f,
+                projectileScale: 0.85f);
 
             var rake = ConfigureWeapon(
                 "RakeWeaponDefinition",
@@ -231,7 +259,7 @@ namespace TAD.Editor
                 8f,
                 5.5f,
                 20f,
-                airRifleProjectile,
+                semiAutomaticProjectile,
                 airRifleWeapon,
                 shotsPerMagazine: 5,
                 reloadDuration: 3f);
@@ -243,7 +271,7 @@ namespace TAD.Editor
                 7.25f,
                 2.75f,
                 28f,
-                airRifleProjectile,
+                pistolProjectile,
                 airRifleWeapon,
                 shotsPerMagazine: 8,
                 reloadDuration: 1.1f);
@@ -309,6 +337,19 @@ namespace TAD.Editor
             foreach (var name in finalWeaponNames)
             {
                 if (AssetDatabase.LoadAssetAtPath<WeaponDefinition>(FinalDataDirectory + "/" + name + ".asset") == null)
+                {
+                    return true;
+                }
+            }
+
+            var finalProjectileNames = new[]
+            {
+                "SemiAutomaticBulletProjectileDefinition",
+                "PistolBulletProjectileDefinition"
+            };
+            foreach (var name in finalProjectileNames)
+            {
+                if (AssetDatabase.LoadAssetAtPath<ProjectileDefinition>(FinalProjectileDataDirectory + "/" + name + ".asset") == null)
                 {
                     return true;
                 }
@@ -569,6 +610,18 @@ namespace TAD.Editor
             }
 
             return asset;
+        }
+
+        /// <summary>
+        /// Visual variants are built after their gameplay data exists. A final-data rebuild therefore
+        /// preserves a bespoke projectile prefab when it has been authored, while still working on a
+        /// clean checkout that only has the reusable base projectile prefabs.
+        /// </summary>
+        private static GameObject ResolveUpgradeProjectilePrefab(string prefabName, GameObject fallback)
+        {
+            var visualVariant = AssetDatabase.LoadAssetAtPath<GameObject>(
+                UpgradeProjectilePrefabDirectory + "/" + prefabName + ".prefab");
+            return visualVariant != null ? visualVariant : fallback;
         }
 
         private static T LoadOrCreateAsset<T>(string assetPath) where T : ScriptableObject

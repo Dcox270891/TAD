@@ -13,10 +13,12 @@ namespace TAD.Defenders
         public const int DirectionCount = 16;
         public const int MovementFrameCount = 2;
         public const int FiringFrameCount = 3;
+        public const int ReloadFrameCount = 3;
 
         [SerializeField] private WeaponDefinition weapon;
         [SerializeField] private Sprite[] movementSprites = new Sprite[DirectionCount * MovementFrameCount];
         [SerializeField] private Sprite[] firingSprites = new Sprite[DirectionCount * FiringFrameCount];
+        [SerializeField] private Sprite[] reloadSprites = new Sprite[DirectionCount * ReloadFrameCount];
         [SerializeField, Min(0.01f)] private float firingFrameDuration = 0.09f;
 
         public WeaponDefinition Weapon => weapon;
@@ -42,6 +44,17 @@ namespace TAD.Defenders
             }
         }
 
+        /// <summary>True when this weapon has an authored directional reload sequence.</summary>
+        public bool HasReloadSprites
+        {
+            get
+            {
+                return reloadSprites != null &&
+                       reloadSprites.Length >= DirectionCount * ReloadFrameCount &&
+                       reloadSprites[0] != null;
+            }
+        }
+
         public Sprite GetMovementSprite(int directionIndex, int frameIndex)
         {
             return GetSprite(movementSprites, directionIndex, frameIndex, MovementFrameCount);
@@ -50,6 +63,16 @@ namespace TAD.Defenders
         public Sprite GetFiringSprite(int directionIndex, int frameIndex)
         {
             return GetSprite(firingSprites, directionIndex, frameIndex, FiringFrameCount);
+        }
+
+        /// <summary>Returns a directional reload frame selected from a farmhand's normalized reload progress.</summary>
+        public Sprite GetReloadSprite(int directionIndex, float normalizedProgress)
+        {
+            var frameIndex = Mathf.Clamp(
+                Mathf.FloorToInt(Mathf.Clamp01(normalizedProgress) * ReloadFrameCount),
+                0,
+                ReloadFrameCount - 1);
+            return GetSprite(reloadSprites, directionIndex, frameIndex, ReloadFrameCount);
         }
 
         private static Sprite GetSprite(Sprite[] sprites, int directionIndex, int frameIndex, int frameCount)
@@ -76,6 +99,11 @@ namespace TAD.Defenders
             if (firingSprites == null || firingSprites.Length != DirectionCount * FiringFrameCount)
             {
                 Array.Resize(ref firingSprites, DirectionCount * FiringFrameCount);
+            }
+
+            if (reloadSprites == null || reloadSprites.Length != DirectionCount * ReloadFrameCount)
+            {
+                Array.Resize(ref reloadSprites, DirectionCount * ReloadFrameCount);
             }
 
             firingFrameDuration = Mathf.Max(0.01f, firingFrameDuration);

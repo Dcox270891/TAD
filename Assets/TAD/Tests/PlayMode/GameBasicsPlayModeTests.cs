@@ -685,12 +685,25 @@ namespace TAD.Tests.PlayMode
             Assert.That(farmHand.CurrentTarget, Is.EqualTo(firstGreyhound));
 
             // The default sensor weapon has no projectile definition, so it uses the safe melee fallback.
-            // Flying animals remain tracked in range but must never be selected by any melee targeting mode.
+            // Flying animals remain tracked in range, but the fallback can only select grounded targets.
             farmHand.SetTargetingMode(DefenderTargetingMode.HighestKillGain);
             Assert.That(farmHand.CurrentTarget, Is.EqualTo(firstBull));
 
             farmHand.SetTargetingMode(DefenderTargetingMode.LastEnemyInRange);
             Assert.That(farmHand.CurrentTarget, Is.EqualTo(secondGreyhound));
+
+            var unarmed = Resources.Load<WeaponDefinition>("TADTests/UnarmedWeaponDefinition");
+            Assert.That(unarmed, Is.Not.Null);
+            farmHand.SetWeapon(unarmed);
+            Physics2D.SyncTransforms();
+            yield return new WaitForFixedUpdate();
+
+            // Unarmed is the deliberate melee exception: it can acquire airborne attackers without
+            // inheriting ranged wall-piercing behaviour.
+            farmHand.SetTargetingMode(DefenderTargetingMode.HighestKillGain);
+            Assert.That(farmHand.CurrentTarget, Is.EqualTo(firstEagle));
+            farmHand.SetTargetingMode(DefenderTargetingMode.LastEnemyInRange);
+            Assert.That(farmHand.CurrentTarget, Is.EqualTo(secondEagle));
 
             var airRifle = Resources.Load<WeaponDefinition>("TADTests/AirRifleWeaponDefinition");
             Assert.That(airRifle, Is.Not.Null);
@@ -715,7 +728,7 @@ namespace TAD.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator ProjectileTargetingRules_AllowOnlyRangedProjectilesToTargetFlyingAnimals()
+        public IEnumerator ProjectileTargetingRules_AllowRangedAndExplicitlyConfiguredMeleeProjectilesToTargetFlyingAnimals()
         {
             var bull = Resources.Load<AttackerDefinition>("TADTests/BullDefinition");
             var eagle = Resources.Load<AttackerDefinition>("TADTests/EagleDefinition");
@@ -731,6 +744,10 @@ namespace TAD.Tests.PlayMode
             Assert.That(ProjectileDefinition.CanTarget(ProjectileType.Melee, groundAttacker), Is.True);
             Assert.That(ProjectileDefinition.CanTarget(ProjectileType.Melee, flyingAttacker), Is.False);
             Assert.That(ProjectileDefinition.CanTarget(ProjectileType.Ranged, flyingAttacker), Is.True);
+
+            var unarmed = Resources.Load<WeaponDefinition>("TADTests/UnarmedWeaponDefinition");
+            Assert.That(unarmed, Is.Not.Null);
+            Assert.That(unarmed.ProjectileDefinition.CanTarget(flyingAttacker), Is.True);
         }
 
         [UnityTest]

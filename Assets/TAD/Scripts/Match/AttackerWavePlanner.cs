@@ -52,13 +52,17 @@ namespace TAD.Match
             float range,
             float damagePerSecond,
             ProjectileType projectileType,
-            ProjectileBehavior projectileBehavior)
+            ProjectileBehavior projectileBehavior,
+            bool canTargetFlying = false)
         {
             Position = position;
             Range = Mathf.Max(0f, range);
             DamagePerSecond = Mathf.Max(0f, damagePerSecond);
             ProjectileType = projectileType;
             ProjectileBehavior = projectileBehavior;
+            // Ranged remains air-capable by default. The explicit flag preserves the exceptional
+            // melee capability authored on the Unarmed projectile without changing other melee weapons.
+            CanTargetFlying = projectileType == ProjectileType.Ranged || canTargetFlying;
         }
 
         public Vector2 Position { get; }
@@ -66,6 +70,7 @@ namespace TAD.Match
         public float DamagePerSecond { get; }
         public ProjectileType ProjectileType { get; }
         public ProjectileBehavior ProjectileBehavior { get; }
+        public bool CanTargetFlying { get; }
     }
 
     /// <summary>The one group selected by the attacker AI for the normal queue API.</summary>
@@ -244,11 +249,11 @@ namespace TAD.Match
             AttackerDefinition attackerDefinition,
             AttackerAiDefenderThreat threat)
         {
-            // Flight is a hard counter to melee, not merely a reduced damage expectation. This mirrors
-            // FarmHand target selection and projectile collision handling so the attacker AI does not
-            // underestimate a flying group against an all-melee defense.
+            // Flight is a hard counter only to melee threats without an authored airborne-targeting
+            // exception. This mirrors FarmHand target selection and projectile collision handling so
+            // the attacker AI does not underestimate an Unarmed defender facing a flying group.
             if (attackerDefinition != null && attackerDefinition.Archetype == AttackerArchetype.Flying &&
-                threat.ProjectileType == ProjectileType.Melee)
+                !threat.CanTargetFlying)
             {
                 return 0f;
             }

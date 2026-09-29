@@ -110,7 +110,7 @@ namespace TAD.Attackers
         public int ExpGiven => definition != null ? definition.ExpGiven : 0;
         public int KillGain => definition != null ? definition.KillGain : 0;
         public int SendSize => definition != null ? definition.SendSize : 0;
-        /// <summary>True when this animal is airborne and therefore requires a ranged defender projectile.</summary>
+        /// <summary>True when this animal is airborne and therefore requires a defender projectile that can target airborne animals.</summary>
         public bool IsFlying => definition != null && definition.Archetype == AttackerArchetype.Flying;
         public AttackerTraversalProfile TraversalProfile => definition != null
             ? definition.TraversalProfile

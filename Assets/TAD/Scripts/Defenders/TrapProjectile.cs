@@ -12,18 +12,44 @@ namespace TAD.Defenders
         private Vector2 placementPosition;
         private float travelSpeed;
         private bool isArmed;
+        [SerializeField, Min(0f)]
+        [Tooltip("Short presentation-only delay that keeps a triggered trap visible for its detonation animation.")]
+        private float detonationVisualDuration;
+        private bool isDetonating;
+        private float detonationCompleteTime;
 
         /// <summary>True once this pooled trap reaches its destination and can damage attackers.</summary>
         public bool IsArmed => isArmed;
 
+        /// <summary>True during the short post-trigger visual window before the pooled trap is recycled.</summary>
+        public bool IsDetonating => isDetonating;
+
         /// <summary>Raised when the trap changes between its travelling and armed visual states.</summary>
         public event System.Action<bool> ArmedStateChanged;
+
+        /// <summary>Raised after the trap's gameplay impact has resolved so presentation can show an explosion.</summary>
+        public event System.Action Detonated;
 
         protected override ProjectileBehavior ExpectedProjectileBehavior => ProjectileBehavior.Trap;
 
         private void FixedUpdate()
         {
-            if (!IsLaunched || Body == null || isArmed)
+            if (!IsLaunched || Body == null)
+            {
+                return;
+            }
+
+            if (isDetonating)
+            {
+                if (Time.time >= detonationCompleteTime)
+                {
+                    ReturnToPool();
+                }
+
+                return;
+            }
+
+            if (isArmed)
             {
                 return;
             }
@@ -56,6 +82,8 @@ namespace TAD.Defenders
             placementPosition = target.CurrentPosition;
             travelSpeed = Definition.ProjectileSpeed;
             isArmed = false;
+            isDetonating = false;
+            detonationCompleteTime = 0f;
             SetHitColliderEnabled(false);
             ArmedStateChanged?.Invoke(false);
 
@@ -100,7 +128,7 @@ namespace TAD.Defenders
 
         private void TryActivate(Collider2D other)
         {
-            if (!isArmed)
+            if (!isArmed || isDetonating)
             {
                 return;
             }
@@ -108,8 +136,34 @@ namespace TAD.Defenders
             var attacker = GetValidAttacker(other);
             if (attacker != null && TryApplyImpactEffects(attacker, placementPosition, applyPrimaryDamage: true))
             {
-                ReturnToPool();
+                BeginDetonation();
             }
+        }
+
+        private void BeginDetonation()
+        {
+            if (isDetonating)
+            {
+                return;
+            }
+
+            isArmed = false;
+            isDetonating = true;
+            SetHitColliderEnabled(false);
+            if (Body != null)
+            {
+                Body.linearVelocity = Vector2.zero;
+                Body.angularVelocity = 0f;
+            }
+
+            Detonated?.Invoke();
+            if (detonationVisualDuration <= 0f)
+            {
+                ReturnToPool();
+                return;
+            }
+
+            detonationCompleteTime = Time.time + detonationVisualDuration;
         }
 
         protected override void ResetSpecializedState()
@@ -117,6 +171,8 @@ namespace TAD.Defenders
             placementPosition = Vector2.zero;
             travelSpeed = 0f;
             isArmed = false;
+            isDetonating = false;
+            detonationCompleteTime = 0f;
         }
     }
 }

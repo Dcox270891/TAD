@@ -174,3 +174,4 @@ MonoBehaviour:
   hitCollider: {fileID: 2901332022660853781}
   body: {fileID: 4039881592821443614}
   hitRadius: 0.28
+  finalBounceVisualDuration: 0

@@ -19,6 +19,14 @@ namespace TAD.Defenders
         private float remainingDistanceToBounce;
         private int completedBounceCount;
         private bool usesBounceBehaviour;
+        [SerializeField, Min(0f)]
+        [Tooltip("Presentation-only delay that lets the final ground-impact animation finish before this projectile returns to its pool.")]
+        private float finalBounceVisualDuration;
+        private bool isWaitingForFinalBounceVisual;
+        private float finalBounceCompleteTime;
+
+        /// <summary>Raised whenever a bouncing roller makes one of its configured ground impacts.</summary>
+        public event System.Action<Vector2, int> Bounced;
 
         protected override ProjectileBehavior ExpectedProjectileBehavior => ProjectileBehavior.Rolling;
 
@@ -32,6 +40,16 @@ namespace TAD.Defenders
         {
             if (!IsLaunched || Body == null)
             {
+                return;
+            }
+
+            if (isWaitingForFinalBounceVisual)
+            {
+                if (Time.time >= finalBounceCompleteTime)
+                {
+                    ReturnToPool();
+                }
+
                 return;
             }
 
@@ -84,6 +102,8 @@ namespace TAD.Defenders
             usesBounceBehaviour = Definition.ProjectileBehavior == ProjectileBehavior.Bouncing;
             remainingDistanceToBounce = Definition.BounceDistance;
             completedBounceCount = 0;
+            isWaitingForFinalBounceVisual = false;
+            finalBounceCompleteTime = 0f;
             SetFacing(travelDirection);
             // Bounce damage occurs when the projectile hits the ground. A trigger hit between
             // ground impacts must not make it disappear or apply an unintended direct hit.
@@ -123,9 +143,19 @@ namespace TAD.Defenders
             {
                 TryApplyAreaImpact(impactPosition);
                 completedBounceCount++;
+                Bounced?.Invoke(impactPosition, completedBounceCount);
                 if (completedBounceCount >= Definition.MaximumBounceCount)
                 {
-                    ReturnToPool();
+                    if (finalBounceVisualDuration > 0f)
+                    {
+                        isWaitingForFinalBounceVisual = true;
+                        finalBounceCompleteTime = Time.time + finalBounceVisualDuration;
+                    }
+                    else
+                    {
+                        ReturnToPool();
+                    }
+
                     return false;
                 }
 
@@ -158,6 +188,8 @@ namespace TAD.Defenders
             remainingDistanceToBounce = 0f;
             completedBounceCount = 0;
             usesBounceBehaviour = false;
+            isWaitingForFinalBounceVisual = false;
+            finalBounceCompleteTime = 0f;
         }
     }
 }

@@ -495,16 +495,15 @@ namespace TAD.Match
                 return 0f;
             }
 
-            var projectileType = projectile != null ? projectile.ProjectileType : ProjectileType.Melee;
             return definition.Archetype switch
             {
                 AttackerArchetype.Fast => 1f + Mathf.Clamp(weapon.AttackSpeed * 0.08f, 0f, 0.25f) +
                                         GetControlMultiplier(projectile),
                 AttackerArchetype.Strong => 1f + Mathf.Clamp(weapon.Damage * 0.02f, 0f, 0.35f) +
                                           GetDamageOverTimeMultiplier(projectile),
-                // Flying animals cannot be targeted by melee at all, so never recommend a melee
-                // weapon as a response to a route containing only flying enemies.
-                AttackerArchetype.Flying => projectileType == ProjectileType.Ranged ? 1.20f : 0f,
+                // Most melee weapons cannot attack flying animals, but a projectile definition can
+                // deliberately opt in (currently Unarmed). Keep the policy in sync with live targeting.
+                AttackerArchetype.Flying => projectile != null && projectile.CanTargetFlying ? 1.20f : 0f,
                 _ => 1f
             };
         }
@@ -660,9 +659,11 @@ namespace TAD.Match
             }
 
             var projectile = weapon != null ? weapon.ProjectileDefinition : null;
-            if (hasFlying && projectile != null && projectile.ProjectileType == ProjectileType.Ranged)
+            if (hasFlying && projectile != null && projectile.CanTargetFlying)
             {
-                return "ranged coverage best answers the queued flying route";
+                return projectile.ProjectileType == ProjectileType.Ranged
+                    ? "ranged coverage best answers the queued flying route"
+                    : "airborne-capable coverage best answers the queued flying route";
             }
 
             if (hasStrong && weapon != null && weapon.Damage >= 15f)
