@@ -49,7 +49,9 @@ namespace TAD.Editor
                                 waveController.SpawnPosition,
                                 route.AttackerSize,
                                 route.TraversalProfile,
-                                RoutePoints))
+                                route.IgnoresTerrainEffects,
+                                RoutePoints,
+                                out _))
                         {
                             continue;
                         }
@@ -62,9 +64,10 @@ namespace TAD.Editor
                             var profileLabel = route.TraversalProfile == AttackerTraversalProfile.IgnoresHalfCover
                                 ? "flying"
                                 : "ground";
+                            var terrainLabel = route.IgnoresTerrainEffects ? "terrain immune" : "terrain aware";
                             Handles.Label(
                                 RoutePoints[0] + (Vector3.up * (0.2f + (routeIndex * 0.15f))),
-                                $"Fastest route - {profileLabel}, size {route.AttackerSize:0.##}");
+                                $"Fastest route - {profileLabel}, {terrainLabel}, size {route.AttackerSize:0.##}");
                         }
                     }
                 }

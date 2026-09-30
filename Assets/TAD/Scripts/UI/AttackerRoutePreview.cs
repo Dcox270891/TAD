@@ -57,11 +57,7 @@ namespace TAD.UI
         {
             routePoints.Clear();
             if (routeMapper == null || definition == null ||
-                !routeMapper.TryGetFastestRoute(
-                    spawnPosition,
-                    definition.Size,
-                    definition.TraversalProfile,
-                    routePoints) ||
+                !routeMapper.TryGetFastestRoute(spawnPosition, definition, routePoints) ||
                 routePoints.Count < 2)
             {
                 Hide();

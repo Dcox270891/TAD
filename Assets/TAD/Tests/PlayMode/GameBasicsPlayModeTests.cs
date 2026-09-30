@@ -7,6 +7,7 @@ using TAD.Defenders;
 using TAD.Economy;
 using TAD.Environment;
 using TAD.Match;
+using TAD.Navigation;
 using TAD.Pooling;
 using TAD.UI;
 using TAD.Waves;
@@ -408,6 +409,135 @@ namespace TAD.Tests.PlayMode
             Assert.That(reusedAttacker.IsStunned, Is.False);
             Assert.That(reusedAttacker.IsSlowed, Is.False);
             Assert.That(reusedAttacker.EffectiveMovementSpeed, Is.EqualTo(reusedAttacker.MovementSpeed));
+        }
+
+        [UnityTest]
+        public IEnumerator TerrainSpeedModifiers_AffectGroundAttackersButNotFlyingAttackers()
+        {
+            var chicken = Resources.Load<AttackerDefinition>("TADTests/ChickenDefinition");
+            var eagle = Resources.Load<AttackerDefinition>("TADTests/EagleDefinition");
+            Assert.That(chicken, Is.Not.Null);
+            Assert.That(eagle, Is.Not.Null);
+
+            var mud = CreateTerrainSpeedModifier("Mud", TerrainSpeedEffect.Mud, new Vector2(-3f, 0f));
+            var ice = CreateTerrainSpeedModifier("Ice", TerrainSpeedEffect.Ice, new Vector2(3f, 0f));
+            var groundAttacker = GameBasicsTestSupport.CreateAttacker(chicken);
+            var flyingAttacker = GameBasicsTestSupport.CreateAttacker(eagle);
+            groundAttacker.GetComponent<Rigidbody2D>().gravityScale = 0f;
+            flyingAttacker.GetComponent<Rigidbody2D>().gravityScale = 0f;
+
+            groundAttacker.transform.position = mud.transform.position;
+            Physics2D.SyncTransforms();
+            yield return new WaitForFixedUpdate();
+            yield return new WaitForFixedUpdate();
+            Assert.That(groundAttacker.TerrainMovementMultiplier, Is.EqualTo(0.75f).Within(0.0001f));
+            Assert.That(
+                groundAttacker.EffectiveMovementSpeed,
+                Is.EqualTo(groundAttacker.MovementSpeed * 0.75f).Within(0.0001f));
+            Assert.That(groundAttacker.IsSlowed, Is.True);
+
+            groundAttacker.transform.position = ice.transform.position;
+            Physics2D.SyncTransforms();
+            yield return new WaitForFixedUpdate();
+            yield return new WaitForFixedUpdate();
+            Assert.That(groundAttacker.TerrainMovementMultiplier, Is.EqualTo(1.1f).Within(0.0001f));
+            Assert.That(groundAttacker.IsSpeedBoosted, Is.True);
+
+            groundAttacker.transform.position = new Vector2(8f, 0f);
+            Physics2D.SyncTransforms();
+            yield return new WaitForFixedUpdate();
+            Assert.That(groundAttacker.TerrainMovementMultiplier, Is.EqualTo(1f).Within(0.0001f));
+            Assert.That(groundAttacker.EffectiveMovementSpeed, Is.EqualTo(groundAttacker.MovementSpeed));
+
+            flyingAttacker.transform.position = mud.transform.position;
+            Physics2D.SyncTransforms();
+            yield return new WaitForFixedUpdate();
+            yield return new WaitForFixedUpdate();
+            Assert.That(flyingAttacker.IsFlying, Is.True);
+            Assert.That(flyingAttacker.TerrainMovementMultiplier, Is.EqualTo(1f).Within(0.0001f));
+            Assert.That(flyingAttacker.EffectiveMovementSpeed, Is.EqualTo(flyingAttacker.MovementSpeed));
+        }
+
+        [UnityTest]
+        public IEnumerator Pool_ReusedAttackerClearsTerrainSpeedState()
+        {
+            var pool = GameBasicsTestSupport.CreateSpawnPool();
+            Assert.That(pool, Is.Not.Null);
+            var mud = CreateTerrainSpeedModifier("Pool Mud", TerrainSpeedEffect.Mud, Vector2.zero);
+            yield return null;
+
+            var firstObject = pool.Spawn(PooledObjectType.Attacker, Vector3.zero, Quaternion.identity);
+            var firstAttacker = firstObject.GetComponent<BasicAttacker>();
+            var firstInstance = firstObject.GetComponent<PooledInstance>();
+            firstAttacker.GetComponent<Rigidbody2D>().gravityScale = 0f;
+            Physics2D.SyncTransforms();
+            yield return new WaitForFixedUpdate();
+            yield return new WaitForFixedUpdate();
+            Assert.That(firstAttacker.TerrainMovementMultiplier, Is.EqualTo(mud.MovementSpeedMultiplier).Within(0.0001f));
+
+            firstInstance.ReturnToPool();
+            var reusedAttacker = pool.Spawn(PooledObjectType.Attacker, new Vector3(8f, 0f), Quaternion.identity)
+                .GetComponent<BasicAttacker>();
+            Assert.That(reusedAttacker.TerrainMovementMultiplier, Is.EqualTo(1f).Within(0.0001f));
+            Assert.That(reusedAttacker.EffectiveMovementSpeed, Is.EqualTo(reusedAttacker.MovementSpeed));
+        }
+
+        [UnityTest]
+        public IEnumerator FarmRouteMapper_UsesBeneficialIceForGroundButKeepsFlyingTerrainNeutral()
+        {
+            var chicken = Resources.Load<AttackerDefinition>("TADTests/ChickenDefinition");
+            var eagle = Resources.Load<AttackerDefinition>("TADTests/EagleDefinition");
+            Assert.That(chicken, Is.Not.Null);
+            Assert.That(eagle, Is.Not.Null);
+
+            GameBasicsTestSupport.CreateMainCamera();
+            GameBasicsTestSupport.CreateFoodStore(new Vector2(5f, 0f));
+            var helpfulIce = CreateTerrainSpeedModifier(
+                "Helpful Ice",
+                TerrainSpeedEffect.Ice,
+                new Vector2(0f, 1f),
+                new Vector2(9f, 2f));
+
+            var mapperObject = new GameObject("TAD Test Terrain-Aware Route Mapper");
+            mapperObject.SetActive(false);
+            var mapper = mapperObject.AddComponent<FarmRouteMapper>();
+            SetPrivateField(mapper, "attackerDefinitionsToPrecompute", new[] { chicken, eagle });
+            mapperObject.SetActive(true);
+            yield return null;
+
+            Assert.That(mapper.RebuildRoutes(), Is.True);
+            var groundRoute = new List<Vector3>();
+            var flyingRoute = new List<Vector3>();
+            Assert.That(
+                mapper.TryGetFastestRoute(new Vector3(-5f, 0f), chicken, groundRoute, out var groundTiming),
+                Is.True);
+            Assert.That(
+                mapper.TryGetFastestRoute(new Vector3(-5f, 0f), eagle, flyingRoute, out var flyingTiming),
+                Is.True);
+
+            Assert.That(groundTiming.UnitSpeedTravelCost, Is.LessThan(groundTiming.Distance),
+                "A ground route should only lean into Ice when its faster movement repays the detour.");
+            Assert.That(groundTiming.UnitSpeedTravelCost, Is.LessThan(flyingTiming.UnitSpeedTravelCost),
+                "The ground attacker should receive the useful Ice time benefit.");
+            Assert.That(flyingTiming.UnitSpeedTravelCost, Is.EqualTo(flyingTiming.Distance).Within(0.02f),
+                "Flying attackers must ignore Ice entirely when mapping their path.");
+
+            Object.Destroy(helpfulIce.gameObject);
+            yield return null;
+            CreateTerrainSpeedModifier(
+                "Distant Ice",
+                TerrainSpeedEffect.Ice,
+                new Vector2(0f, 4f),
+                new Vector2(8f, 1f));
+
+            Assert.That(mapper.RebuildRoutes(), Is.True);
+            groundRoute.Clear();
+            Assert.That(
+                mapper.TryGetFastestRoute(new Vector3(-5f, 0f), chicken, groundRoute, out var distantIceTiming),
+                Is.True);
+
+            Assert.That(distantIceTiming.UnitSpeedTravelCost, Is.EqualTo(distantIceTiming.Distance).Within(0.02f),
+                "The ground route should remain dry when a distant Ice detour would be slower overall.");
         }
 
         [UnityTest]
@@ -1174,6 +1304,24 @@ namespace TAD.Tests.PlayMode
             }
 
             return defender.CurrentLevel == targetLevel;
+        }
+
+        private static TerrainSpeedModifier CreateTerrainSpeedModifier(
+            string name,
+            TerrainSpeedEffect effect,
+            Vector2 position,
+            Vector2? size = null)
+        {
+            var terrainObject = new GameObject("TAD Test " + name + " Terrain");
+            terrainObject.layer = LayerMask.NameToLayer("Environment");
+            terrainObject.transform.position = position;
+            terrainObject.SetActive(false);
+            var terrainCollider = terrainObject.AddComponent<BoxCollider2D>();
+            terrainCollider.size = size ?? new Vector2(2f, 2f);
+            var modifier = terrainObject.AddComponent<TerrainSpeedModifier>();
+            modifier.Configure(effect);
+            terrainObject.SetActive(true);
+            return modifier;
         }
 
         private static WeaponDefinition CreateTestWeapon(

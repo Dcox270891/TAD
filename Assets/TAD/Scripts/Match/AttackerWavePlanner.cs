@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using TAD.Attackers;
 using TAD.Defenders;
+using TAD.Navigation;
 using UnityEngine;
 
 namespace TAD.Match
@@ -14,8 +15,17 @@ namespace TAD.Match
     public readonly struct AttackerAiCandidate
     {
         public AttackerAiCandidate(AttackerDefinition definition, IReadOnlyList<Vector3> routePoints)
+            : this(definition, routePoints, default)
+        {
+        }
+
+        public AttackerAiCandidate(
+            AttackerDefinition definition,
+            IReadOnlyList<Vector3> routePoints,
+            FarmRouteTiming routeTiming)
         {
             Definition = definition;
+            RouteTiming = routeTiming;
             if (routePoints == null || routePoints.Count < 2)
             {
                 RoutePoints = Array.Empty<Vector2>();
@@ -41,7 +51,73 @@ namespace TAD.Match
         public AttackerDefinition Definition { get; }
         public IReadOnlyList<Vector2> RoutePoints { get; }
         public float RouteLength { get; }
+        /// <summary>Terrain-aware travel timing copied from the shared map for this definition.</summary>
+        public FarmRouteTiming RouteTiming { get; }
         public bool HasUsableRoute => Definition != null && RoutePoints != null && RoutePoints.Count >= 2 && RouteLength > 0.001f;
+
+        public float GetTravelTimeInsideRange(Vector2 centre, float range)
+        {
+            if (RouteTiming.IsValid)
+            {
+                return RouteTiming.GetTravelTimeInsideCircle(
+                    centre,
+                    range,
+                    Definition != null ? Definition.MovementSpeed : 0f);
+            }
+
+            return GetGeometricDistanceInsideRange(centre, range) /
+                   Mathf.Max(0.01f, Definition != null ? Definition.MovementSpeed : 0f);
+        }
+
+        public float GetTotalTravelTime()
+        {
+            if (RouteTiming.IsValid)
+            {
+                return RouteTiming.GetTravelTime(Definition != null ? Definition.MovementSpeed : 0f);
+            }
+
+            return RouteLength / Mathf.Max(0.01f, Definition != null ? Definition.MovementSpeed : 0f);
+        }
+
+        private float GetGeometricDistanceInsideRange(Vector2 centre, float range)
+        {
+            if (RoutePoints == null || RoutePoints.Count < 2 || range <= 0f)
+            {
+                return 0f;
+            }
+
+            var distance = 0f;
+            for (var index = 1; index < RoutePoints.Count; index++)
+            {
+                distance += GetSegmentLengthInsideRange(RoutePoints[index - 1], RoutePoints[index], centre, range);
+            }
+
+            return distance;
+        }
+
+        private static float GetSegmentLengthInsideRange(Vector2 start, Vector2 end, Vector2 centre, float radius)
+        {
+            var segment = end - start;
+            var segmentLengthSquared = segment.sqrMagnitude;
+            if (segmentLengthSquared <= 0.000001f || radius <= 0f)
+            {
+                return 0f;
+            }
+
+            var closestT = Mathf.Clamp01(Vector2.Dot(centre - start, segment) / segmentLengthSquared);
+            var closestPoint = start + (segment * closestT);
+            var radiusSquared = radius * radius;
+            var closestDistanceSquared = (centre - closestPoint).sqrMagnitude;
+            if (closestDistanceSquared >= radiusSquared)
+            {
+                return 0f;
+            }
+
+            var halfSpan = Mathf.Sqrt((radiusSquared - closestDistanceSquared) / segmentLengthSquared);
+            var enterT = Mathf.Clamp01(closestT - halfSpan);
+            var exitT = Mathf.Clamp01(closestT + halfSpan);
+            return segment.magnitude * Mathf.Max(0f, exitT - enterT);
+        }
     }
 
     /// <summary>Snapshot of one active farmhand's practical damage threat for one planned wave.</summary>
@@ -193,8 +269,6 @@ namespace TAD.Match
             }
 
             var totalDamage = 0f;
-            var routePoints = candidate.RoutePoints;
-            var speed = Mathf.Max(0.01f, candidate.Definition.MovementSpeed);
             for (var threatIndex = 0; threatIndex < defenderThreats.Count; threatIndex++)
             {
                 var threat = defenderThreats[threatIndex];
@@ -203,46 +277,12 @@ namespace TAD.Match
                     continue;
                 }
 
-                var distanceInRange = 0f;
-                for (var pointIndex = 1; pointIndex < routePoints.Count; pointIndex++)
-                {
-                    distanceInRange += GetSegmentLengthInsideRange(
-                        routePoints[pointIndex - 1],
-                        routePoints[pointIndex],
-                        threat.Position,
-                        threat.Range);
-                }
-
-                var timeInRange = distanceInRange / speed;
+                var timeInRange = candidate.GetTravelTimeInsideRange(threat.Position, threat.Range);
                 totalDamage += threat.DamagePerSecond * timeInRange *
                                GetThreatReliability(candidate.Definition, threat);
             }
 
             return totalDamage;
-        }
-
-        private static float GetSegmentLengthInsideRange(Vector2 start, Vector2 end, Vector2 centre, float radius)
-        {
-            var segment = end - start;
-            var segmentLengthSquared = segment.sqrMagnitude;
-            if (segmentLengthSquared <= 0.000001f || radius <= 0f)
-            {
-                return 0f;
-            }
-
-            var closestT = Mathf.Clamp01(Vector2.Dot(centre - start, segment) / segmentLengthSquared);
-            var closestPoint = start + (segment * closestT);
-            var radiusSquared = radius * radius;
-            var closestDistanceSquared = (centre - closestPoint).sqrMagnitude;
-            if (closestDistanceSquared >= radiusSquared)
-            {
-                return 0f;
-            }
-
-            var halfSpan = Mathf.Sqrt((radiusSquared - closestDistanceSquared) / segmentLengthSquared);
-            var enterT = Mathf.Clamp01(closestT - halfSpan);
-            var exitT = Mathf.Clamp01(closestT + halfSpan);
-            return (end - start).magnitude * Mathf.Max(0f, exitT - enterT);
         }
 
         private static float GetThreatReliability(
@@ -381,6 +421,21 @@ namespace TAD.Match
 
         private static string BuildReason(AttackerAiCandidate candidate, IReadOnlyList<AttackerAiDefenderThreat> defenderThreats)
         {
+            if (candidate.RouteTiming.IsValid && candidate.RouteTiming.Distance > 0.001f)
+            {
+                var terrainSpeedMultiplier = candidate.RouteTiming.Distance /
+                                             Mathf.Max(0.001f, candidate.RouteTiming.UnitSpeedTravelCost);
+                if (terrainSpeedMultiplier > 1.01f)
+                {
+                    return "fastest terrain-aware route uses ice to shorten the trip to the food store";
+                }
+
+                if (terrainSpeedMultiplier < 0.99f)
+                {
+                    return "terrain-aware route minimizes slower ground where the detour is worthwhile";
+                }
+            }
+
             if (defenderThreats == null || defenderThreats.Count == 0)
             {
                 return "best affordable food pressure with no active farmhand threat";

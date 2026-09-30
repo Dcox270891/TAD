@@ -2,7 +2,9 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using TAD.Attackers;
 using TAD.Defenders;
+using TAD.Environment;
 using TAD.Match;
+using TAD.Navigation;
 using TAD.Progression;
 using UnityEditor;
 using UnityEngine;
@@ -167,6 +169,88 @@ namespace TAD.Tests.Editor
             Assert.That(stick.ProjectileDefinition.CanTargetFlying, Is.False);
             Assert.That(pole.ProjectileDefinition.ProjectileType, Is.EqualTo(ProjectileType.Melee));
             Assert.That(pole.ProjectileDefinition.CanTargetFlying, Is.False);
+        }
+
+        [Test]
+        public void TerrainSpeedPrefabs_AreEnvironmentTriggersWithExpectedModifiers()
+        {
+            var mudPrefab = LoadAsset<GameObject>("Assets/TAD/Prefabs/Environment/Mud.prefab");
+            var icePrefab = LoadAsset<GameObject>("Assets/TAD/Prefabs/Environment/Ice.prefab");
+            var environmentLayer = LayerMask.NameToLayer("Environment");
+
+            Assert.That(environmentLayer, Is.GreaterThanOrEqualTo(0));
+            Assert.That(mudPrefab.layer, Is.EqualTo(environmentLayer));
+            Assert.That(icePrefab.layer, Is.EqualTo(environmentLayer));
+
+            var mud = mudPrefab.GetComponent<TerrainSpeedModifier>();
+            var ice = icePrefab.GetComponent<TerrainSpeedModifier>();
+            Assert.That(mud, Is.Not.Null);
+            Assert.That(ice, Is.Not.Null);
+            Assert.That(mudPrefab.GetComponent<BoxCollider2D>().isTrigger, Is.True);
+            Assert.That(icePrefab.GetComponent<BoxCollider2D>().isTrigger, Is.True);
+            Assert.That(mud.TerrainType, Is.EqualTo(TerrainSpeedEffect.Mud));
+            Assert.That(mud.MovementSpeedMultiplier, Is.EqualTo(0.75f).Within(0.0001f));
+            Assert.That(ice.TerrainType, Is.EqualTo(TerrainSpeedEffect.Ice));
+            Assert.That(ice.MovementSpeedMultiplier, Is.EqualTo(1.1f).Within(0.0001f));
+        }
+
+        [Test]
+        public void DefenderAiPlanner_PrefersAPlacedFarmhandCoveringTheQueuedMudCrossing()
+        {
+            var chicken = Load<AttackerDefinition>("ChickenDefinition");
+            var route = new[]
+            {
+                new Vector3(-5f, 0f),
+                new Vector3(-3f, 0f),
+                new Vector3(-1f, 0f),
+                new Vector3(1f, 0f),
+                new Vector3(3f, 0f),
+                new Vector3(5f, 0f)
+            };
+            // The middle two world units represent a 75%-speed Mud crossing. The geometry is
+            // intentionally symmetric, so the centre can only win when the planner uses time in range.
+            var timing = new FarmRouteTiming(route, new[] { 2f, 2f, 2f / 0.75f, 2f, 2f });
+            var plans = new List<DefenderAiRoutePlan>
+            {
+                new(chicken, attackerCount: 5, route, timing)
+            };
+
+            Assert.That(
+                DefenderAiPlanner.TryChoosePlacement(
+                    plans,
+                    new List<Vector2> { new(-4f, 0f), Vector2.zero },
+                    new List<DefenderAiCoverage>(),
+                    farmHandRange: 0.75f,
+                    out var decision),
+                Is.True);
+
+            Assert.That(decision.Position, Is.EqualTo(Vector2.zero),
+                "A Mud-covered route segment should be worth more defender coverage time than an equal dry segment.");
+        }
+
+        [Test]
+        public void AttackerAiCandidate_UsesTerrainTimingForDefenderExposure()
+        {
+            var chicken = Load<AttackerDefinition>("ChickenDefinition");
+            var route = new[]
+            {
+                new Vector3(-2f, 0f),
+                new Vector3(0f, 0f),
+                new Vector3(2f, 0f)
+            };
+            var dryCandidate = new AttackerAiCandidate(
+                chicken,
+                route,
+                new FarmRouteTiming(route, new[] { 2f, 2f }));
+            var iceCandidate = new AttackerAiCandidate(
+                chicken,
+                route,
+                new FarmRouteTiming(route, new[] { 2f / 1.1f, 2f / 1.1f }));
+
+            Assert.That(
+                iceCandidate.GetTravelTimeInsideRange(Vector2.zero, 5f),
+                Is.LessThan(dryCandidate.GetTravelTimeInsideRange(Vector2.zero, 5f)),
+                "The attacker planner must see the reduced defender exposure created by an Ice route.");
         }
 
         [Test]

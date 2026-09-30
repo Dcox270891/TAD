@@ -67,6 +67,9 @@ namespace TAD.Attackers
         private readonly List<Collider2D> ignoredFarmHandColliders = new();
         // Animals follow shared routes and should never physically queue or push one another.
         private readonly List<Collider2D> ignoredAttackerColliders = new();
+        // Terrain owns its authored values; the attacker owns the transient overlap state so pooled
+        // instances cannot retain a modifier from the location where they were last used.
+        private readonly List<TerrainSpeedModifier> activeTerrainSpeedModifiers = new();
 
         private Rigidbody2D body;
         private PolygonCollider2D bodyCollider;
@@ -97,7 +100,11 @@ namespace TAD.Attackers
         public float MaximumHealth => definition != null ? definition.MaximumHealth : 0f;
         public float MovementSpeed => definition != null ? definition.MovementSpeed : 0f;
         /// <summary>Current movement speed after active stun and slow effects are applied.</summary>
-        public float EffectiveMovementSpeed => IsStunned ? 0f : MovementSpeed * GetSlowMultiplier();
+        public float EffectiveMovementSpeed => IsStunned
+            ? 0f
+            : MovementSpeed * GetSlowMultiplier() * TerrainMovementMultiplier;
+        /// <summary>Combined multiplier from the floor terrain currently beneath this ground attacker.</summary>
+        public float TerrainMovementMultiplier => GetTerrainMovementMultiplier();
         public bool HasReachedFoodStore => hasReachedFoodStore;
 
         /// <summary>Raised whenever this pooled attacker's health is reset or changed.</summary>
@@ -131,8 +138,11 @@ namespace TAD.Attackers
         /// <summary>True while a poison trap's poison effect is active.</summary>
         public bool IsPoisoned => poisonEffect.IsActive;
 
-        /// <summary>True while one or more slow effects reduce this attacker's movement speed.</summary>
-        public bool IsSlowed => GetSlowMultiplier() < 0.999f;
+        /// <summary>True while one or more combat or terrain effects reduce this attacker's movement speed.</summary>
+        public bool IsSlowed => GetSlowMultiplier() < 0.999f || TerrainMovementMultiplier < 0.999f;
+
+        /// <summary>True while an ice or future terrain effect increases this attacker's movement speed.</summary>
+        public bool IsSpeedBoosted => TerrainMovementMultiplier > 1.001f;
 
         private void Awake()
         {
@@ -154,6 +164,7 @@ namespace TAD.Attackers
         {
             FarmHand.FarmHandEnabled -= HandleFarmHandEnabled;
             RestoreTraversalCollisions();
+            activeTerrainSpeedModifiers.Clear();
         }
 
         private void OnCollisionEnter2D(Collision2D collision)
@@ -167,6 +178,32 @@ namespace TAD.Attackers
             // Covers a farmhand or another attacker created after this attacker has already begun moving.
             IgnoreFarmHandCollision(collision);
             IgnoreAttackerCollision(collision);
+        }
+
+        private void OnTriggerEnter2D(Collider2D other)
+        {
+            RegisterTerrainSpeedModifier(other);
+        }
+
+        private void OnTriggerStay2D(Collider2D other)
+        {
+            // A pooled attacker can be activated while already overlapping terrain. Staying in the
+            // trigger therefore re-registers the terrain after the pool lifecycle clears old state.
+            RegisterTerrainSpeedModifier(other);
+        }
+
+        private void OnTriggerExit2D(Collider2D other)
+        {
+            if (other == null)
+            {
+                return;
+            }
+
+            var terrainModifier = other.GetComponentInParent<TerrainSpeedModifier>();
+            if (terrainModifier != null)
+            {
+                activeTerrainSpeedModifiers.Remove(terrainModifier);
+            }
         }
 
         private void FixedUpdate()
@@ -490,6 +527,7 @@ namespace TAD.Attackers
             routePoints.Clear();
             helpedToKillDefenders.Clear();
             helpedToKillActivationSessions.Clear();
+            activeTerrainSpeedModifiers.Clear();
             ResetStatusEffects();
             nextRoutePointIndex = 0;
 
@@ -524,7 +562,7 @@ namespace TAD.Attackers
             nextRoutePointIndex = 0;
 
             if (body == null || routeMapper == null ||
-                !routeMapper.TryGetFastestRoute(body.position, Size, TraversalProfile, routePoints) ||
+                !routeMapper.TryGetFastestRoute(body.position, definition, routePoints) ||
                 routePoints.Count < 2)
             {
                 return false;
@@ -560,8 +598,7 @@ namespace TAD.Attackers
             // Keeping it preserves movement when a route ends immediately beside a small target collider.
             return routeMapper != null && routeMapper.TryGetNextDirection(
                 currentPosition,
-                Size,
-                TraversalProfile,
+                definition,
                 out direction);
         }
 
@@ -900,6 +937,46 @@ namespace TAD.Attackers
             }
 
             return multiplier;
+        }
+
+        private void RegisterTerrainSpeedModifier(Collider2D other)
+        {
+            if (other == null || IsFlying)
+            {
+                return;
+            }
+
+            var terrainModifier = other.GetComponentInParent<TerrainSpeedModifier>();
+            if (terrainModifier != null && terrainModifier.isActiveAndEnabled &&
+                !activeTerrainSpeedModifiers.Contains(terrainModifier))
+            {
+                activeTerrainSpeedModifiers.Add(terrainModifier);
+            }
+        }
+
+        private float GetTerrainMovementMultiplier()
+        {
+            if (IsFlying)
+            {
+                return 1f;
+            }
+
+            var multiplier = 1f;
+            for (var index = activeTerrainSpeedModifiers.Count - 1; index >= 0; index--)
+            {
+                var terrainModifier = activeTerrainSpeedModifiers[index];
+                if (terrainModifier == null || !terrainModifier.isActiveAndEnabled)
+                {
+                    activeTerrainSpeedModifiers.RemoveAt(index);
+                    continue;
+                }
+
+                multiplier *= terrainModifier.MovementSpeedMultiplier;
+            }
+
+            // Stacked floor patches are unusual but supported. Clamp only the extreme authoring cases
+            // so a misconfigured tile cannot permanently halt or launch an attacker off its route.
+            return Mathf.Clamp(multiplier, 0.05f, 3f);
         }
 
         private void ResetStatusEffects()

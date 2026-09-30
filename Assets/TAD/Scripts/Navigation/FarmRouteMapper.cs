@@ -7,14 +7,138 @@ namespace TAD.Navigation
 {
 public readonly struct AttackerRouteDescriptor
 {
-    public AttackerRouteDescriptor(float attackerSize, AttackerTraversalProfile traversalProfile)
+    public AttackerRouteDescriptor(
+        float attackerSize,
+        AttackerTraversalProfile traversalProfile,
+        bool ignoresTerrainEffects = false)
     {
         AttackerSize = attackerSize;
         TraversalProfile = traversalProfile;
+        IgnoresTerrainEffects = ignoresTerrainEffects;
     }
     public float AttackerSize { get; }
     public AttackerTraversalProfile TraversalProfile { get; }
+    /// <summary>True for flying attackers, whose movement is never changed by mud or ice.</summary>
+    public bool IgnoresTerrainEffects { get; }
 }
+
+/// <summary>
+/// Immutable timing snapshot for one already-mapped route. Costs are expressed as travel seconds at
+/// movement speed one, so both AIs can reason about the same mud/ice exposure without performing
+/// physics queries or independently recreating the route mapper's terrain rules.
+/// </summary>
+public readonly struct FarmRouteTiming
+{
+    private const float MinimumMovementSpeed = 0.01f;
+    private const float MinimumSegmentLengthSquared = 0.000001f;
+
+    private readonly Vector2[] segmentStarts;
+    private readonly Vector2[] segmentEnds;
+    private readonly float[] segmentUnitSpeedCosts;
+
+    /// <summary>
+    /// Builds timing from route samples. Each unit-speed cost describes the matching segment between
+    /// consecutive points; callers normally receive this from <see cref="FarmRouteMapper"/>.
+    /// </summary>
+    public FarmRouteTiming(
+        IReadOnlyList<Vector3> routePoints,
+        IReadOnlyList<float> segmentCostsAtSpeedOne)
+    {
+        if (routePoints == null || routePoints.Count < 2 ||
+            segmentCostsAtSpeedOne == null || segmentCostsAtSpeedOne.Count != routePoints.Count - 1)
+        {
+            segmentStarts = Array.Empty<Vector2>();
+            segmentEnds = Array.Empty<Vector2>();
+            segmentUnitSpeedCosts = Array.Empty<float>();
+            Distance = 0f;
+            UnitSpeedTravelCost = 0f;
+            return;
+        }
+
+        var segmentCount = routePoints.Count - 1;
+        segmentStarts = new Vector2[segmentCount];
+        segmentEnds = new Vector2[segmentCount];
+        segmentUnitSpeedCosts = new float[segmentCount];
+        var totalDistance = 0f;
+        var totalCost = 0f;
+        for (var index = 0; index < segmentCount; index++)
+        {
+            var start = (Vector2)routePoints[index];
+            var end = (Vector2)routePoints[index + 1];
+            var cost = Mathf.Max(0f, segmentCostsAtSpeedOne[index]);
+            segmentStarts[index] = start;
+            segmentEnds[index] = end;
+            segmentUnitSpeedCosts[index] = cost;
+            totalDistance += Vector2.Distance(start, end);
+            totalCost += cost;
+        }
+
+        Distance = totalDistance;
+        UnitSpeedTravelCost = totalCost;
+    }
+
+    /// <summary>Geometric length of the sampled route.</summary>
+    public float Distance { get; }
+
+    /// <summary>Travel time for this route when movement speed is exactly one world unit per second.</summary>
+    public float UnitSpeedTravelCost { get; }
+
+    public bool IsValid => segmentStarts != null && segmentStarts.Length > 0 && UnitSpeedTravelCost > 0.0001f;
+
+    public float GetTravelTime(float movementSpeed)
+    {
+        return IsValid ? UnitSpeedTravelCost / Mathf.Max(MinimumMovementSpeed, movementSpeed) : 0f;
+    }
+
+    /// <summary>
+    /// Calculates the amount of route travel time spent inside a circular defender range. The route
+    /// mapper splits its timing samples at sub-cell intervals, which keeps mud and ice exposure local
+    /// even when the visible path has a smoothed corner.
+    /// </summary>
+    public float GetTravelTimeInsideCircle(Vector2 centre, float radius, float movementSpeed)
+    {
+        if (!IsValid || radius <= 0f)
+        {
+            return 0f;
+        }
+
+        var costInsideCircle = 0f;
+        for (var index = 0; index < segmentStarts.Length; index++)
+        {
+            var fractionInsideCircle = GetSegmentFractionInsideCircle(
+                segmentStarts[index],
+                segmentEnds[index],
+                centre,
+                radius);
+            costInsideCircle += segmentUnitSpeedCosts[index] * fractionInsideCircle;
+        }
+
+        return costInsideCircle / Mathf.Max(MinimumMovementSpeed, movementSpeed);
+    }
+
+    private static float GetSegmentFractionInsideCircle(Vector2 start, Vector2 end, Vector2 centre, float radius)
+    {
+        var segment = end - start;
+        var segmentLengthSquared = segment.sqrMagnitude;
+        if (segmentLengthSquared <= MinimumSegmentLengthSquared || radius <= 0f)
+        {
+            return 0f;
+        }
+
+        var closestT = Mathf.Clamp01(Vector2.Dot(centre - start, segment) / segmentLengthSquared);
+        var closestPoint = start + (segment * closestT);
+        var radiusSquared = radius * radius;
+        var closestDistanceSquared = (centre - closestPoint).sqrMagnitude;
+        if (closestDistanceSquared >= radiusSquared)
+        {
+            return 0f;
+        }
+
+        var halfSpan = Mathf.Sqrt((radiusSquared - closestDistanceSquared) / segmentLengthSquared);
+        return Mathf.Max(0f, Mathf.Clamp01(closestT + halfSpan) - Mathf.Clamp01(closestT - halfSpan));
+    }
+}
+
 [DisallowMultipleComponent]
 public sealed class FarmRouteMapper : MonoBehaviour
 {
@@ -45,6 +169,10 @@ public sealed class FarmRouteMapper : MonoBehaviour
     private readonly Dictionary<RouteKey, RouteField> routeFields = new();
     private readonly List<RouteKey> precomputedRouteKeys = new();
     private FarmWall[] walls = Array.Empty<FarmWall>();
+    // Terrain is discovered once with the rest of the static level geometry. Runtime movement still
+    // uses trigger overlaps on BasicAttacker; this cache exists only for startup path weighting and
+    // the low-frequency AI preparation decisions.
+    private TerrainSpeedModifier[] terrainSpeedModifiers = Array.Empty<TerrainSpeedModifier>();
     private int columns;
     private int rows;
     private Vector2 gridMinimum;
@@ -58,6 +186,26 @@ public sealed class FarmRouteMapper : MonoBehaviour
         : new Rect((Vector2)transform.position - (mapSize * 0.5f), mapSize);
     public int CachedRouteFieldCount => routeFields.Count;
     public int PrecomputedAttackerSizeCount => precomputedRouteKeys.Count;
+
+    /// <summary>Copies the static terrain tiles captured by the most recent map rebuild.</summary>
+    public int CopyTerrainSpeedModifiers(List<TerrainSpeedModifier> results)
+    {
+        if (results == null)
+        {
+            throw new ArgumentNullException(nameof(results));
+        }
+
+        results.Clear();
+        foreach (var terrainModifier in terrainSpeedModifiers)
+        {
+            if (terrainModifier != null && terrainModifier.isActiveAndEnabled)
+            {
+                results.Add(terrainModifier);
+            }
+        }
+
+        return results.Count;
+    }
     public int CopyPrecomputedAttackerSizes(List<float> results)
     {
         if (results == null)
@@ -84,31 +232,103 @@ public sealed class FarmRouteMapper : MonoBehaviour
         results.Clear();
         foreach (var routeKey in precomputedRouteKeys)
         {
-            results.Add(new AttackerRouteDescriptor(GetSizeFromKey(routeKey.SizeKey), routeKey.TraversalProfile));
+            results.Add(new AttackerRouteDescriptor(
+                GetSizeFromKey(routeKey.SizeKey),
+                routeKey.TraversalProfile,
+                routeKey.IgnoresTerrainEffects));
         }
         return results.Count;
     }
     public bool TryGetFastestRoute(Vector3 startingPosition, float attackerSize, List<Vector3> routePoints)
     {
-        return TryGetFastestRoute(startingPosition, attackerSize, AttackerTraversalProfile.Ground, routePoints);
+        return TryGetFastestRoute(
+            startingPosition,
+            attackerSize,
+            AttackerTraversalProfile.Ground,
+            ignoresTerrainEffects: false,
+            routePoints,
+            out _);
     }
+
+    /// <summary>
+    /// Returns the fastest terrain-aware route for a concrete attacker definition. Flying attackers
+    /// deliberately receive a terrain-immune field so ice and mud never change their route or timing.
+    /// </summary>
+    public bool TryGetFastestRoute(
+        Vector3 startingPosition,
+        AttackerDefinition definition,
+        List<Vector3> routePoints)
+    {
+        return TryGetFastestRoute(startingPosition, definition, routePoints, out _);
+    }
+
+    /// <summary>Returns a terrain-aware route and the timing data consumed by both AI planners.</summary>
+    public bool TryGetFastestRoute(
+        Vector3 startingPosition,
+        AttackerDefinition definition,
+        List<Vector3> routePoints,
+        out FarmRouteTiming timing)
+    {
+        if (definition == null)
+        {
+            if (routePoints == null)
+            {
+                throw new ArgumentNullException(nameof(routePoints));
+            }
+
+            routePoints.Clear();
+            timing = default;
+            return false;
+        }
+
+        return TryGetFastestRoute(
+            startingPosition,
+            definition.Size,
+            definition.TraversalProfile,
+            definition.Archetype == AttackerArchetype.Flying,
+            routePoints,
+            out timing);
+    }
+
     public bool TryGetFastestRoute(
         Vector3 startingPosition,
         float attackerSize,
         AttackerTraversalProfile traversalProfile,
         List<Vector3> routePoints)
     {
+        return TryGetFastestRoute(
+            startingPosition,
+            attackerSize,
+            traversalProfile,
+            ignoresTerrainEffects: false,
+            routePoints,
+            out _);
+    }
+
+    /// <summary>
+    /// Returns the cached fastest route for a size/profile pair. The terrain immunity flag is part of
+    /// the cache key, because flight is an attacker archetype rather than a cover traversal profile.
+    /// </summary>
+    public bool TryGetFastestRoute(
+        Vector3 startingPosition,
+        float attackerSize,
+        AttackerTraversalProfile traversalProfile,
+        bool ignoresTerrainEffects,
+        List<Vector3> routePoints,
+        out FarmRouteTiming timing)
+    {
         if (routePoints == null)
         {
             throw new ArgumentNullException(nameof(routePoints));
         }
         routePoints.Clear();
+        timing = default;
         if (!hasBuiltMap || foodStore == null)
         {
             return false;
         }
         var safeAttackerSize = Mathf.Max(0.01f, attackerSize);
-        var routeKey = new RouteKey(GetSizeKey(safeAttackerSize), traversalProfile);
+        var routeKey = new RouteKey(GetSizeKey(safeAttackerSize), traversalProfile, ignoresTerrainEffects);
         var radius = (safeAttackerSize * 0.5f) + obstaclePadding;
         var startPosition2D = (Vector2)startingPosition;
         var destination = foodStore.transform.position;
@@ -120,7 +340,8 @@ public sealed class FarmRouteMapper : MonoBehaviour
             }
             routePoints.Add(startingPosition);
             routePoints.Add(destination);
-            return true;
+            timing = BuildRouteTiming(routePoints, ignoresTerrainEffects);
+            return timing.IsValid;
         }
         if (!routeFields.TryGetValue(routeKey, out var field) || !field.Walkable[currentIndex] || field.GoalIndex < 0)
         {
@@ -171,7 +392,8 @@ public sealed class FarmRouteMapper : MonoBehaviour
         {
             routePoints.Add(destination);
         }
-        return routePoints.Count >= 2;
+        timing = BuildRouteTiming(routePoints, ignoresTerrainEffects);
+        return routePoints.Count >= 2 && timing.IsValid;
     }
     private void Start()
     {
@@ -206,6 +428,7 @@ public sealed class FarmRouteMapper : MonoBehaviour
         }
         actualCellSize = new Vector2(runtimeMapSize.x / columns, runtimeMapSize.y / rows);
         walls = UnityEngine.Object.FindObjectsByType<FarmWall>(FindObjectsInactive.Exclude);
+        terrainSpeedModifiers = UnityEngine.Object.FindObjectsByType<TerrainSpeedModifier>(FindObjectsInactive.Exclude);
         routeFields.Clear();
         CollectStartupRouteData();
         hasBuiltMap = true;
@@ -227,12 +450,53 @@ public sealed class FarmRouteMapper : MonoBehaviour
     }
     public bool TryGetNextDirection(Vector2 currentPosition, float attackerSize, out Vector2 direction)
     {
-        return TryGetNextDirection(currentPosition, attackerSize, AttackerTraversalProfile.Ground, out direction);
+        return TryGetNextDirection(
+            currentPosition,
+            attackerSize,
+            AttackerTraversalProfile.Ground,
+            ignoresTerrainEffects: false,
+            out direction);
     }
+
+    /// <summary>Returns a flow-field direction using the concrete attacker's terrain immunity.</summary>
+    public bool TryGetNextDirection(
+        Vector2 currentPosition,
+        AttackerDefinition definition,
+        out Vector2 direction)
+    {
+        if (definition == null)
+        {
+            direction = Vector2.zero;
+            return false;
+        }
+
+        return TryGetNextDirection(
+            currentPosition,
+            definition.Size,
+            definition.TraversalProfile,
+            definition.Archetype == AttackerArchetype.Flying,
+            out direction);
+    }
+
     public bool TryGetNextDirection(
         Vector2 currentPosition,
         float attackerSize,
         AttackerTraversalProfile traversalProfile,
+        out Vector2 direction)
+    {
+        return TryGetNextDirection(
+            currentPosition,
+            attackerSize,
+            traversalProfile,
+            ignoresTerrainEffects: false,
+            out direction);
+    }
+
+    public bool TryGetNextDirection(
+        Vector2 currentPosition,
+        float attackerSize,
+        AttackerTraversalProfile traversalProfile,
+        bool ignoresTerrainEffects,
         out Vector2 direction)
     {
         direction = Vector2.zero;
@@ -241,7 +505,7 @@ public sealed class FarmRouteMapper : MonoBehaviour
             return false;
         }
         var safeAttackerSize = Mathf.Max(0.01f, attackerSize);
-        var routeKey = new RouteKey(GetSizeKey(safeAttackerSize), traversalProfile);
+        var routeKey = new RouteKey(GetSizeKey(safeAttackerSize), traversalProfile, ignoresTerrainEffects);
         var radius = (safeAttackerSize * 0.5f) + obstaclePadding;
         if (!TryGetCellIndex(currentPosition, out var currentIndex))
         {
@@ -273,14 +537,20 @@ public sealed class FarmRouteMapper : MonoBehaviour
     private void CollectStartupRouteData()
     {
         precomputedRouteKeys.Clear();
-        AddUniqueKey(new RouteKey(GetSizeKey(defaultAttackerSize), AttackerTraversalProfile.Ground));
+        AddUniqueKey(new RouteKey(
+            GetSizeKey(defaultAttackerSize),
+            AttackerTraversalProfile.Ground,
+            ignoresTerrainEffects: false));
         if (attackerDefinitionsToPrecompute != null)
         {
             foreach (var definition in attackerDefinitionsToPrecompute)
             {
                 if (definition != null)
                 {
-                    AddUniqueKey(new RouteKey(GetSizeKey(definition.Size), definition.TraversalProfile));
+                    AddUniqueKey(new RouteKey(
+                        GetSizeKey(definition.Size),
+                        definition.TraversalProfile,
+                        definition.Archetype == AttackerArchetype.Flying));
                 }
             }
         }
@@ -291,7 +561,10 @@ public sealed class FarmRouteMapper : MonoBehaviour
         {
             if (attacker != null && attacker.Definition != null)
             {
-                AddUniqueKey(new RouteKey(GetSizeKey(attacker.Size), attacker.TraversalProfile));
+                AddUniqueKey(new RouteKey(
+                    GetSizeKey(attacker.Size),
+                    attacker.TraversalProfile,
+                    attacker.IsFlying));
             }
         }
         precomputedRouteKeys.Sort();
@@ -307,12 +580,18 @@ public sealed class FarmRouteMapper : MonoBehaviour
     {
         if (!routeFields.TryGetValue(routeKey, out var field))
         {
-            field = BuildRouteField(GetSizeFromKey(routeKey.SizeKey), routeKey.TraversalProfile);
+            field = BuildRouteField(
+                GetSizeFromKey(routeKey.SizeKey),
+                routeKey.TraversalProfile,
+                routeKey.IgnoresTerrainEffects);
             routeFields.Add(routeKey, field);
         }
         return field;
     }
-    private RouteField BuildRouteField(float attackerSize, AttackerTraversalProfile traversalProfile)
+    private RouteField BuildRouteField(
+        float attackerSize,
+        AttackerTraversalProfile traversalProfile,
+        bool ignoresTerrainEffects)
     {
         var field = new RouteField(columns * rows);
         var radius = (attackerSize * 0.5f) + obstaclePadding;
@@ -350,8 +629,10 @@ public sealed class FarmRouteMapper : MonoBehaviour
                     {
                         continue;
                     }
-                    var cost = distances[current.Index] +
-                               Vector2.Distance(GetCellCenter(current.Index), GetCellCenter(neighbour));
+                    var cost = distances[current.Index] + CalculateUnitSpeedTravelCost(
+                        GetCellCenter(current.Index),
+                        GetCellCenter(neighbour),
+                        ignoresTerrainEffects);
                     if (cost >= distances[neighbour])
                     {
                         continue;
@@ -362,10 +643,15 @@ public sealed class FarmRouteMapper : MonoBehaviour
                 }
             }
         }
-        BuildSmoothedNextIndices(field, radius, traversalProfile);
+        field.TravelCosts = distances;
+        BuildSmoothedNextIndices(field, radius, traversalProfile, ignoresTerrainEffects);
         return field;
     }
-    private void BuildSmoothedNextIndices(RouteField field, float radius, AttackerTraversalProfile traversalProfile)
+    private void BuildSmoothedNextIndices(
+        RouteField field,
+        float radius,
+        AttackerTraversalProfile traversalProfile,
+        bool ignoresTerrainEffects)
     {
         for (var index = 0; index < field.NextIndices.Length; index++)
         {
@@ -384,12 +670,136 @@ public sealed class FarmRouteMapper : MonoBehaviour
                 {
                     break;
                 }
+
+                // The normal path is terrain-time optimal. A visual smoothing shortcut is accepted
+                // only when it is no slower than the cells it replaces; this prevents a corner line
+                // from silently cutting through mud after Dijkstra deliberately chose an ice lane.
+                var preservedTravelCost = field.TravelCosts[index] - field.TravelCosts[candidateIndex];
+                var shortcutTravelCost = CalculateUnitSpeedTravelCost(
+                    origin,
+                    GetCellCenter(candidateIndex),
+                    ignoresTerrainEffects);
+                if (shortcutTravelCost > preservedTravelCost + 0.0001f)
+                {
+                    break;
+                }
+
                 bestIndex = candidateIndex;
                 currentIndex = candidateIndex;
             }
             field.SmoothedNextIndices[index] = bestIndex;
         }
     }
+
+    /// <summary>
+    /// Splits the sparse movement path into short timing samples. Keeping the presentation route sparse
+    /// preserves smooth attacker movement, while the timing snapshot can still distinguish a defender
+    /// covering the muddy half of a long straight segment from one covering its dry half.
+    /// </summary>
+    private FarmRouteTiming BuildRouteTiming(IReadOnlyList<Vector3> routePoints, bool ignoresTerrainEffects)
+    {
+        if (routePoints == null || routePoints.Count < 2)
+        {
+            return default;
+        }
+
+        var timingPoints = new List<Vector3> { routePoints[0] };
+        var segmentCosts = new List<float>();
+        var sampleSpacing = GetTerrainTimingSampleSpacing();
+        for (var routeIndex = 1; routeIndex < routePoints.Count; routeIndex++)
+        {
+            var start = routePoints[routeIndex - 1];
+            var end = routePoints[routeIndex];
+            var segmentLength = Vector2.Distance(start, end);
+            var sampleCount = Mathf.Max(1, Mathf.CeilToInt(segmentLength / sampleSpacing));
+            for (var sampleIndex = 1; sampleIndex <= sampleCount; sampleIndex++)
+            {
+                var sampleStart = Vector3.Lerp(start, end, (sampleIndex - 1) / (float)sampleCount);
+                var sampleEnd = Vector3.Lerp(start, end, sampleIndex / (float)sampleCount);
+                if ((sampleEnd - sampleStart).sqrMagnitude <= 0.000001f)
+                {
+                    continue;
+                }
+
+                timingPoints.Add(sampleEnd);
+                segmentCosts.Add(CalculateUnitSpeedTravelCost(
+                    sampleStart,
+                    sampleEnd,
+                    ignoresTerrainEffects));
+            }
+        }
+
+        return new FarmRouteTiming(timingPoints, segmentCosts);
+    }
+
+    /// <summary>Calculates travel seconds at speed one for a terrain-aware line segment.</summary>
+    private float CalculateUnitSpeedTravelCost(
+        Vector2 startPosition,
+        Vector2 destination,
+        bool ignoresTerrainEffects)
+    {
+        var delta = destination - startPosition;
+        var distance = delta.magnitude;
+        if (distance <= 0.0001f)
+        {
+            return 0f;
+        }
+
+        if (ignoresTerrainEffects || terrainSpeedModifiers == null || terrainSpeedModifiers.Length == 0)
+        {
+            return distance;
+        }
+
+        var sampleCount = Mathf.Max(1, Mathf.CeilToInt(distance / GetTerrainTimingSampleSpacing()));
+        var sampleDistance = distance / sampleCount;
+        var travelCost = 0f;
+        for (var sampleIndex = 0; sampleIndex < sampleCount; sampleIndex++)
+        {
+            var sampleMidpoint = Vector2.Lerp(
+                startPosition,
+                destination,
+                (sampleIndex + 0.5f) / sampleCount);
+            travelCost += sampleDistance / GetTerrainMovementMultiplierAt(
+                sampleMidpoint,
+                ignoresTerrainEffects);
+        }
+
+        return travelCost;
+    }
+
+    private float GetTerrainTimingSampleSpacing()
+    {
+        var smallestCellDimension = Mathf.Min(actualCellSize.x, actualCellSize.y);
+        if (smallestCellDimension <= 0.0001f)
+        {
+            smallestCellDimension = cellSize;
+        }
+
+        // Half a route cell keeps a tile boundary local in the resulting AI timing without making
+        // startup mapping costly on the mobile target maps.
+        return Mathf.Max(0.01f, smallestCellDimension * 0.5f);
+    }
+
+    private float GetTerrainMovementMultiplierAt(Vector2 worldPosition, bool ignoresTerrainEffects)
+    {
+        if (ignoresTerrainEffects || terrainSpeedModifiers == null || terrainSpeedModifiers.Length == 0)
+        {
+            return 1f;
+        }
+
+        var multiplier = 1f;
+        foreach (var terrainModifier in terrainSpeedModifiers)
+        {
+            if (terrainModifier != null && terrainModifier.ContainsWorldPoint(worldPosition))
+            {
+                multiplier *= terrainModifier.MovementSpeedMultiplier;
+            }
+        }
+
+        // Mirrors BasicAttacker's safety clamp for the unusual case of overlapping authored terrain.
+        return Mathf.Clamp(multiplier, 0.05f, 3f);
+    }
+
     private bool CanTraverse(
         int fromIndex,
         int toIndex,
@@ -661,16 +1071,23 @@ public sealed class FarmRouteMapper : MonoBehaviour
     }
     private readonly struct RouteKey : IEquatable<RouteKey>, IComparable<RouteKey>
     {
-        public RouteKey(int sizeKey, AttackerTraversalProfile traversalProfile)
+        public RouteKey(
+            int sizeKey,
+            AttackerTraversalProfile traversalProfile,
+            bool ignoresTerrainEffects)
         {
             SizeKey = sizeKey;
             TraversalProfile = traversalProfile;
+            IgnoresTerrainEffects = ignoresTerrainEffects;
         }
         public int SizeKey { get; }
         public AttackerTraversalProfile TraversalProfile { get; }
+        public bool IgnoresTerrainEffects { get; }
         public bool Equals(RouteKey other)
         {
-            return SizeKey == other.SizeKey && TraversalProfile == other.TraversalProfile;
+            return SizeKey == other.SizeKey &&
+                   TraversalProfile == other.TraversalProfile &&
+                   IgnoresTerrainEffects == other.IgnoresTerrainEffects;
         }
         public override bool Equals(object obj)
         {
@@ -678,12 +1095,20 @@ public sealed class FarmRouteMapper : MonoBehaviour
         }
         public override int GetHashCode()
         {
-            return HashCode.Combine(SizeKey, (int)TraversalProfile);
+            return HashCode.Combine(SizeKey, (int)TraversalProfile, IgnoresTerrainEffects);
         }
         public int CompareTo(RouteKey other)
         {
             var sizeComparison = SizeKey.CompareTo(other.SizeKey);
-            return sizeComparison != 0 ? sizeComparison : TraversalProfile.CompareTo(other.TraversalProfile);
+            if (sizeComparison != 0)
+            {
+                return sizeComparison;
+            }
+
+            var profileComparison = TraversalProfile.CompareTo(other.TraversalProfile);
+            return profileComparison != 0
+                ? profileComparison
+                : IgnoresTerrainEffects.CompareTo(other.IgnoresTerrainEffects);
         }
     }
     private sealed class RouteField
@@ -699,6 +1124,8 @@ public sealed class FarmRouteMapper : MonoBehaviour
         public bool[] Walkable { get; }
         public int[] NextIndices { get; }
         public int[] SmoothedNextIndices { get; }
+        /// <summary>Unit-speed travel cost from each cell to the Food Store.</summary>
+        public float[] TravelCosts { get; set; } = Array.Empty<float>();
         public int GoalIndex { get; set; } = -1;
     }
     private readonly struct HeapNode

@@ -557,7 +557,7 @@ namespace TAD.Waves
 
             attacker.SetRouteMapper(routeMapper);
             if (!attacker.TryClampToVisibleMap() ||
-                !routeMapper.TryGetNextDirection(attacker.CurrentPosition, attacker.Size, attacker.TraversalProfile, out _))
+                !routeMapper.TryGetNextDirection(attacker.CurrentPosition, attacker.Definition, out _))
             {
                 Debug.LogWarning(attackerObject.name + " was returned to the pool because the visible spawn area has no route to the Food Store for size " + attacker.Size + " and profile " + attacker.TraversalProfile + ".", this);
                 ReturnSpawnedAttacker(attackerObject);

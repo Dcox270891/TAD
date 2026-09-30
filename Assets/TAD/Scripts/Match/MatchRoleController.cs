@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using TAD.Attackers;
 using TAD.Defenders;
 using TAD.Economy;
+using TAD.Environment;
 using TAD.Navigation;
 using TAD.Pooling;
 using TAD.UI;
@@ -62,6 +63,7 @@ namespace TAD.Match
         private readonly List<Vector2> defenderAiRelocationCandidates = new();
         private readonly List<DefenderAiCoverage> defenderAiExistingCoverage = new();
         private readonly List<WeaponDefinition> defenderAiAffordableUpgradeOptions = new();
+        private readonly List<TerrainSpeedModifier> defenderAiTerrainModifiers = new();
 
         private WaveController waveController;
         private AttackerWaveQueue attackerWaveQueue;
@@ -281,14 +283,14 @@ namespace TAD.Match
                 attackerAiRoutePoints.Clear();
                 if (!routeMapper.TryGetFastestRoute(
                         waveController.SpawnPosition,
-                        definition.Size,
-                        definition.TraversalProfile,
-                        attackerAiRoutePoints))
+                        definition,
+                        attackerAiRoutePoints,
+                        out var routeTiming))
                 {
                     continue;
                 }
 
-                var candidate = new AttackerAiCandidate(definition, attackerAiRoutePoints);
+                var candidate = new AttackerAiCandidate(definition, attackerAiRoutePoints, routeTiming);
                 if (candidate.HasUsableRoute)
                 {
                     attackerAiCandidates.Add(candidate);
@@ -479,9 +481,9 @@ namespace TAD.Match
                 defenderAiRoutePoints.Clear();
                 if (!routeMapper.TryGetFastestRoute(
                         waveController.SpawnPosition,
-                        definition.Size,
-                        definition.TraversalProfile,
-                        defenderAiRoutePoints))
+                        definition,
+                        defenderAiRoutePoints,
+                        out var routeTiming))
                 {
                     continue;
                 }
@@ -489,7 +491,8 @@ namespace TAD.Match
                 var routePlan = new DefenderAiRoutePlan(
                     definition,
                     group.TotalCount,
-                    defenderAiRoutePoints);
+                    defenderAiRoutePoints,
+                    routeTiming);
                 if (routePlan.HasUsableRoute)
                 {
                     defenderAiRoutePlans.Add(routePlan);
@@ -637,6 +640,12 @@ namespace TAD.Match
             var maximumSegmentsPerRoute = Mathf.Max(
                 1,
                 MaximumDefenderAiPlacementCandidates / Mathf.Max(1, plannedRoutes.Count * 4));
+
+            // Mud makes a queued ground route spend longer inside a defender's range. Add legal
+            // perimeter positions before general route samples so the time-aware scorer can choose
+            // that advantage instead of missing a small muddy crossing in a long smoothed segment.
+            AddDefenderAiMudPerimeterCandidates(routeMapper, plannedRoutes);
+
             for (var routeIndex = 0;
                  routeIndex < plannedRoutes.Count &&
                  defenderAiPlacementCandidates.Count < MaximumDefenderAiPlacementCandidates;
@@ -677,6 +686,93 @@ namespace TAD.Match
                     TryAddDefenderAiPlacementCandidate(routeMapper, midpoint - (normal * sideOffset));
                 }
             }
+        }
+
+        private void AddDefenderAiMudPerimeterCandidates(
+            FarmRouteMapper routeMapper,
+            IReadOnlyList<DefenderAiRoutePlan> plannedRoutes)
+        {
+            if (routeMapper == null || plannedRoutes == null ||
+                defenderAiPlacementCandidates.Count >= MaximumDefenderAiPlacementCandidates)
+            {
+                return;
+            }
+
+            routeMapper.CopyTerrainSpeedModifiers(defenderAiTerrainModifiers);
+            for (var terrainIndex = 0;
+                 terrainIndex < defenderAiTerrainModifiers.Count &&
+                 defenderAiPlacementCandidates.Count < MaximumDefenderAiPlacementCandidates;
+                 terrainIndex++)
+            {
+                var terrainModifier = defenderAiTerrainModifiers[terrainIndex];
+                if (terrainModifier == null || !terrainModifier.isActiveAndEnabled ||
+                    terrainModifier.TerrainType != TerrainSpeedEffect.Mud)
+                {
+                    continue;
+                }
+
+                var isUsedByQueuedGroundRoute = false;
+                for (var routeIndex = 0; routeIndex < plannedRoutes.Count; routeIndex++)
+                {
+                    var route = plannedRoutes[routeIndex];
+                    if (route.HasUsableRoute && route.Definition != null &&
+                        route.Definition.Archetype != AttackerArchetype.Flying &&
+                        RoutePassesAcrossTerrain(route.RoutePoints, terrainModifier))
+                    {
+                        isUsedByQueuedGroundRoute = true;
+                        break;
+                    }
+                }
+
+                if (!isUsedByQueuedGroundRoute)
+                {
+                    continue;
+                }
+
+                var bounds = terrainModifier.WorldBounds;
+                if (bounds.size.x <= 0.001f || bounds.size.y <= 0.001f)
+                {
+                    continue;
+                }
+
+                // Keep the farmhand beside the floor trigger, not on it. The small clearance also
+                // respects its placement hitbox while retaining the shortest possible firing angle.
+                const float perimeterClearance = 0.25f;
+                var centre = (Vector2)bounds.center;
+                var horizontalOffset = bounds.extents.x + perimeterClearance;
+                var verticalOffset = bounds.extents.y + perimeterClearance;
+                TryAddDefenderAiPlacementCandidate(routeMapper, centre + (Vector2.left * horizontalOffset));
+                TryAddDefenderAiPlacementCandidate(routeMapper, centre + (Vector2.right * horizontalOffset));
+                TryAddDefenderAiPlacementCandidate(routeMapper, centre + (Vector2.up * verticalOffset));
+                TryAddDefenderAiPlacementCandidate(routeMapper, centre + (Vector2.down * verticalOffset));
+            }
+        }
+
+        private static bool RoutePassesAcrossTerrain(
+            IReadOnlyList<Vector2> routePoints,
+            TerrainSpeedModifier terrainModifier)
+        {
+            if (routePoints == null || routePoints.Count < 2 || terrainModifier == null)
+            {
+                return false;
+            }
+
+            for (var routePointIndex = 1; routePointIndex < routePoints.Count; routePointIndex++)
+            {
+                var start = routePoints[routePointIndex - 1];
+                var end = routePoints[routePointIndex];
+                var sampleCount = Mathf.Max(1, Mathf.CeilToInt(Vector2.Distance(start, end) / 0.08f));
+                for (var sampleIndex = 0; sampleIndex <= sampleCount; sampleIndex++)
+                {
+                    if (terrainModifier.ContainsWorldPoint(
+                            Vector2.Lerp(start, end, sampleIndex / (float)sampleCount)))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
 
         private void TryAddDefenderAiPlacementCandidate(
