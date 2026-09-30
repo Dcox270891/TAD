@@ -79,6 +79,28 @@ namespace TAD.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator DayCycle_TracksCombinedDefenderExperienceFromFarmHandCombat()
+        {
+            GameBasicsTestSupport.CreateFoodStore();
+            var dayCycle = GameBasicsTestSupport.CreateDayCycle();
+            yield return null;
+
+            GameBasicsTestSupport.CreateBank(BankSide.Defender);
+            var defender = GameBasicsTestSupport.CreateFarmHand();
+            var attackerDefinition = ScriptableObject.CreateInstance<AttackerDefinition>();
+            var attacker = GameBasicsTestSupport.CreateAttacker(attackerDefinition);
+
+            Assert.That(defender.TryDamageAttacker(attacker, attacker.RemainingHealth), Is.True);
+            yield return null;
+
+            Assert.That(defender.TotalExperience, Is.GreaterThan(0f));
+            Assert.That(dayCycle.DefenderExperienceEarned, Is.EqualTo(defender.TotalExperience));
+            Assert.That(dayCycle.PlayerMatchExperience, Is.EqualTo(defender.TotalExperience));
+
+            Object.Destroy(attackerDefinition);
+        }
+
+        [UnityTest]
         public IEnumerator Defenders_UseProgressiveExperienceChooseAtLevelTwoAndStopAtLevelTen()
         {
             var defenderBank = GameBasicsTestSupport.CreateBank(BankSide.Defender);

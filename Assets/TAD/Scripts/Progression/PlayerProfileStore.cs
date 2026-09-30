@@ -13,6 +13,14 @@ namespace TAD.Progression
         public string lastPlayedLevelId = string.Empty;
         public int metaCurrency;
 
+        [Header("Player Progression")]
+        [Tooltip("Experience currently held toward the next account-level reward.")]
+        public float playerExp;
+        [Tooltip("Account level earned from completed-match experience.")]
+        public int playerLevel = PlayerLevelProgression.StartingLevel;
+        [Tooltip("Lifetime account experience, retained independently from current level progress.")]
+        public float totalPlayerExperience;
+
         // Kept for backward compatibility with the first menu-profile format.
         public bool musicEnabled = true;
         public float musicVolume = 1f;
@@ -37,7 +45,7 @@ namespace TAD.Progression
     /// </summary>
     public static class PlayerProfileStore
     {
-        public const int CurrentVersion = 2;
+        public const int CurrentVersion = 3;
 
         private const string ProfileKey = "TAD.PlayerProfile";
 
@@ -87,25 +95,31 @@ namespace TAD.Progression
 
         private static void Migrate(PlayerProfileData profile)
         {
-            if (profile.version >= CurrentVersion)
+            if (profile.version < 2)
             {
-                return;
+                // Version 1 only had a single music slider. It becomes the master setting so an
+                // established player's audio preference is preserved on the first upgrade.
+                profile.masterVolume = profile.musicEnabled ? Mathf.Clamp01(profile.musicVolume) : 0f;
+                profile.attackerVolume = 1f;
+                profile.defenderVolume = 1f;
+                profile.projectileVolume = 1f;
+                profile.ambientGameVolume = 1f;
+                profile.showAttackerHealthBars = true;
+                profile.showDefenderExperience = true;
+
+                // The previous profile exposed this field but never applied it. Preserve the
+                // project's current quality level rather than unexpectedly changing an existing
+                // player's rendering quality on their first launch with real settings support.
+                profile.videoQuality = GetSafeQualityIndex(QualitySettings.GetQualityLevel());
             }
 
-            // Version 1 only had a single music slider. It becomes the master setting so an
-            // established player's audio preference is preserved on the first upgrade.
-            profile.masterVolume = profile.musicEnabled ? Mathf.Clamp01(profile.musicVolume) : 0f;
-            profile.attackerVolume = 1f;
-            profile.defenderVolume = 1f;
-            profile.projectileVolume = 1f;
-            profile.ambientGameVolume = 1f;
-            profile.showAttackerHealthBars = true;
-            profile.showDefenderExperience = true;
-
-            // The previous profile exposed this field but never applied it. Preserve the
-            // project's current quality level rather than unexpectedly changing an existing
-            // player's rendering quality on their first launch with real settings support.
-            profile.videoQuality = GetSafeQualityIndex(QualitySettings.GetQualityLevel());
+            if (profile.version < 3)
+            {
+                // Account progression begins cleanly for profiles written before match rewards.
+                profile.playerExp = 0f;
+                profile.playerLevel = PlayerLevelProgression.StartingLevel;
+                profile.totalPlayerExperience = 0f;
+            }
         }
 
         private static void Sanitize(PlayerProfileData profile)
@@ -113,6 +127,10 @@ namespace TAD.Progression
             profile.version = CurrentVersion;
             profile.lastPlayedLevelId ??= string.Empty;
             profile.metaCurrency = Mathf.Max(0, profile.metaCurrency);
+            profile.playerExp = PlayerLevelProgression.RoundToNearestTenth(Mathf.Max(0f, profile.playerExp));
+            profile.playerLevel = Mathf.Max(PlayerLevelProgression.StartingLevel, profile.playerLevel);
+            profile.totalPlayerExperience = PlayerLevelProgression.RoundToNearestTenth(
+                Mathf.Max(profile.playerExp, profile.totalPlayerExperience));
             profile.musicVolume = Mathf.Clamp01(profile.musicVolume);
             profile.masterVolume = Mathf.Clamp01(profile.masterVolume);
             profile.attackerVolume = Mathf.Clamp01(profile.attackerVolume);

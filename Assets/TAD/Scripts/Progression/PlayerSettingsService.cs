@@ -138,6 +138,19 @@ namespace TAD.Progression
             UpdateProfile(data => data.videoQuality = qualityIndex);
         }
 
+        /// <summary>
+        /// Applies one completed match's account experience, immediately persists it, and notifies
+        /// profile observers so a future level/progression view can refresh without reloading.
+        /// </summary>
+        public PlayerMatchExperienceReward AwardMatchExperience(float matchExperience, bool playerWon)
+        {
+            EnsureProfile();
+            var reward = PlayerLevelProgression.AwardMatchExperience(profile, matchExperience, playerWon);
+            PlayerProfileStore.Save(profile);
+            SettingsChanged?.Invoke(profile);
+            return reward;
+        }
+
         /// <summary>Returns an authored category multiplier; master volume is applied by AudioListener.</summary>
         public float GetChannelVolume(TadAudioChannelType channel)
         {

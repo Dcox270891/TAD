@@ -1,6 +1,11 @@
 using System;
+using System.Collections.Generic;
+using TAD.Attackers;
+using TAD.Defenders;
 using TAD.Economy;
 using TAD.Environment;
+using TAD.Match;
+using TAD.Progression;
 using TAD.UI;
 using UnityEngine;
 
@@ -52,6 +57,9 @@ namespace TAD.Waves
 
         private WaveController waveController;
         private AttackerWaveQueue attackerWaveQueue;
+        private readonly MatchExperienceLedger matchExperienceLedger = new();
+        private readonly Dictionary<FarmHand, float> defenderExperienceSnapshots = new();
+        private readonly Dictionary<FarmHand, Action> defenderProgressionHandlers = new();
         private DayCycleHud spawnedHud;
         private DefenderWinOverlay spawnedDefenderWinOverlay;
         private bool ownsSpawnedHud;
@@ -64,6 +72,11 @@ namespace TAD.Waves
         private int lastPublishedPreparationSecond = -1;
         private int lastPublishedEmptyDaySecond = -1;
         private int initializedPlaySessionGeneration = -1;
+        private PlayerRole playerRole;
+        private bool isSubscribedToAttackerQueue;
+        private bool isSubscribedToFarmHands;
+        private bool hasAwardedPlayerExperience;
+        private PlayerMatchExperienceReward lastPlayerExperienceReward;
 
         /// <summary>The current completed-day count, beginning at zero when the level loads.</summary>
         public int CurrentDay => currentDay;
@@ -88,16 +101,35 @@ namespace TAD.Waves
                                                   attackerWaveQueue.HasQueuedAttackers &&
                                                   !attackerWaveQueue.IsSending;
 
+        /// <summary>Combat XP represented by animals that were actually dispatched this level.</summary>
+        public float AttackerExperienceSent => matchExperienceLedger.AttackerExperienceSent;
+
+        /// <summary>Combined combat XP earned by all FarmHands this level.</summary>
+        public float DefenderExperienceEarned => matchExperienceLedger.DefenderExperienceEarned;
+
+        /// <summary>Match XP that belongs to the side currently controlled by the player.</summary>
+        public float PlayerMatchExperience => matchExperienceLedger.GetExperienceFor(playerRole);
+
+        /// <summary>True after the terminal match result has been persisted to the player profile.</summary>
+        public bool HasAwardedPlayerExperience => hasAwardedPlayerExperience;
+
+        /// <summary>The immutable profile-reward result for this completed match.</summary>
+        public PlayerMatchExperienceReward LastPlayerExperienceReward => lastPlayerExperienceReward;
+
         /// <summary>Raised when day, phase, or the displayed preparation second changes.</summary>
         public event Action CycleChanged;
 
         /// <summary>Raised after the tenth completed day when the Food Store remains intact.</summary>
         public event Action DefendersWon;
 
+        /// <summary>Raised after the terminal match result has been added to the saved player profile.</summary>
+        public event Action<PlayerMatchExperienceReward> PlayerExperienceAwarded;
+
         private void Awake()
         {
             waveController = GetComponent<WaveController>();
             attackerWaveQueue = GetComponent<AttackerWaveQueue>();
+            playerRole = MatchRoleSelection.SelectedRole;
             ResolveFoodStore();
         }
 
@@ -106,6 +138,8 @@ namespace TAD.Waves
             if (Application.isPlaying)
             {
                 SubscribeToFoodStore();
+                SubscribeToAttackerQueue();
+                SubscribeToFarmHands();
             }
         }
 
@@ -163,12 +197,17 @@ namespace TAD.Waves
         private void InitializeForNewLevelSession()
         {
             initializedPlaySessionGeneration = playSessionGeneration;
+            playerRole = MatchRoleSelection.SelectedRole;
             currentDay = 0;
             phase = CyclePhase.Inactive;
             preparationRemaining = 0f;
             emptyDayRemaining = 0f;
             lastPublishedPreparationSecond = -1;
             lastPublishedEmptyDaySecond = -1;
+            hasAwardedPlayerExperience = false;
+            lastPlayerExperienceReward = default;
+            matchExperienceLedger.Reset();
+            ResetDefenderExperienceTracking();
 
             // Clear the queue before stopping its wave, so a cancellation callback from an old session
             // cannot advance a newly reset day cycle.
@@ -213,11 +252,15 @@ namespace TAD.Waves
         private void OnDisable()
         {
             UnsubscribeFromFoodStore();
+            UnsubscribeFromAttackerQueue();
+            UnsubscribeFromFarmHands();
         }
 
         private void OnDestroy()
         {
             UnsubscribeFromFoodStore();
+            UnsubscribeFromAttackerQueue();
+            UnsubscribeFromFarmHands();
 
             if (ownsSpawnedHud && spawnedHud != null)
             {
@@ -296,6 +339,7 @@ namespace TAD.Waves
                 preparationRemaining = 0f;
                 emptyDayRemaining = 0f;
                 PublishCycleChanged();
+                AwardPlayerExperienceForMatch(playerWon: playerRole == PlayerRole.Defender);
                 DefendersWon?.Invoke();
                 return;
             }
@@ -370,6 +414,7 @@ namespace TAD.Waves
             preparationRemaining = 0f;
             emptyDayRemaining = 0f;
             PublishCycleChanged();
+            AwardPlayerExperienceForMatch(playerWon: playerRole == PlayerRole.Attacker);
             attackerWaveQueue?.CancelAllOrders();
         }
 
@@ -419,6 +464,148 @@ namespace TAD.Waves
 
             foodStore.FoodDepleted -= HandleFoodDepleted;
             isSubscribedToFoodStore = false;
+        }
+
+        private void SubscribeToAttackerQueue()
+        {
+            if (isSubscribedToAttackerQueue || attackerWaveQueue == null)
+            {
+                return;
+            }
+
+            attackerWaveQueue.AttackerDispatched += HandleAttackerDispatched;
+            isSubscribedToAttackerQueue = true;
+        }
+
+        private void UnsubscribeFromAttackerQueue()
+        {
+            if (!isSubscribedToAttackerQueue || attackerWaveQueue == null)
+            {
+                return;
+            }
+
+            attackerWaveQueue.AttackerDispatched -= HandleAttackerDispatched;
+            isSubscribedToAttackerQueue = false;
+        }
+
+        private void HandleAttackerDispatched(AttackerDefinition definition)
+        {
+            if (!IsComplete)
+            {
+                matchExperienceLedger.RecordAttackerDispatched(definition);
+            }
+        }
+
+        private void SubscribeToFarmHands()
+        {
+            if (isSubscribedToFarmHands)
+            {
+                return;
+            }
+
+            FarmHand.FarmHandEnabled += RegisterFarmHandForExperienceTracking;
+            isSubscribedToFarmHands = true;
+            RegisterExistingFarmHandsForExperienceTracking();
+        }
+
+        private void UnsubscribeFromFarmHands()
+        {
+            if (isSubscribedToFarmHands)
+            {
+                FarmHand.FarmHandEnabled -= RegisterFarmHandForExperienceTracking;
+                isSubscribedToFarmHands = false;
+            }
+
+            foreach (var pair in defenderProgressionHandlers)
+            {
+                if (pair.Key != null)
+                {
+                    pair.Key.ProgressionChanged -= pair.Value;
+                }
+            }
+
+            defenderProgressionHandlers.Clear();
+            defenderExperienceSnapshots.Clear();
+        }
+
+        private void ResetDefenderExperienceTracking()
+        {
+            foreach (var pair in defenderProgressionHandlers)
+            {
+                if (pair.Key != null)
+                {
+                    pair.Key.ProgressionChanged -= pair.Value;
+                }
+            }
+
+            defenderProgressionHandlers.Clear();
+            defenderExperienceSnapshots.Clear();
+            RegisterExistingFarmHandsForExperienceTracking();
+        }
+
+        private void RegisterExistingFarmHandsForExperienceTracking()
+        {
+            foreach (var farmHand in FindObjectsByType<FarmHand>(
+                         FindObjectsInactive.Include,
+                         FindObjectsSortMode.None))
+            {
+                RegisterFarmHandForExperienceTracking(farmHand);
+            }
+        }
+
+        private void RegisterFarmHandForExperienceTracking(FarmHand farmHand)
+        {
+            if (farmHand == null)
+            {
+                return;
+            }
+
+            if (!defenderProgressionHandlers.ContainsKey(farmHand))
+            {
+                Action handler = () => HandleFarmHandProgressionChanged(farmHand);
+                defenderProgressionHandlers.Add(farmHand, handler);
+                farmHand.ProgressionChanged += handler;
+            }
+
+            // A pooled farmhand resets its total before it raises FarmHandEnabled. Re-baselining here
+            // retains XP already earned by an earlier activation while starting the new one at zero.
+            defenderExperienceSnapshots[farmHand] = Mathf.Max(0f, farmHand.TotalExperience);
+        }
+
+        private void HandleFarmHandProgressionChanged(FarmHand farmHand)
+        {
+            if (farmHand == null || hasAwardedPlayerExperience)
+            {
+                return;
+            }
+
+            var currentExperience = Mathf.Max(0f, farmHand.TotalExperience);
+            defenderExperienceSnapshots.TryGetValue(farmHand, out var previousExperience);
+            if (currentExperience > previousExperience)
+            {
+                matchExperienceLedger.RecordDefenderExperience(currentExperience - previousExperience);
+            }
+
+            defenderExperienceSnapshots[farmHand] = currentExperience;
+        }
+
+        private void AwardPlayerExperienceForMatch(bool playerWon)
+        {
+            if (hasAwardedPlayerExperience)
+            {
+                return;
+            }
+
+            hasAwardedPlayerExperience = true;
+            lastPlayerExperienceReward = PlayerSettingsService.Instance.AwardMatchExperience(
+                PlayerMatchExperience,
+                playerWon);
+            PlayerExperienceAwarded?.Invoke(lastPlayerExperienceReward);
+            Debug.Log(
+                $"Player match experience awarded: {lastPlayerExperienceReward.AwardedExperience:0.#} " +
+                $"from {lastPlayerExperienceReward.MatchExperience:0.#} " +
+                $"({(playerWon ? "win" : "loss")}, level {lastPlayerExperienceReward.ResultingLevel}).",
+                this);
         }
 
         private void PublishCycleChanged()

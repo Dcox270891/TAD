@@ -393,9 +393,39 @@ namespace TAD.Tests.Editor
                 Assert.That(profile.ambientGameVolume, Is.EqualTo(1f));
                 Assert.That(profile.showAttackerHealthBars, Is.True);
                 Assert.That(profile.showDefenderExperience, Is.True);
+                Assert.That(profile.playerLevel, Is.EqualTo(PlayerLevelProgression.StartingLevel));
+                Assert.That(profile.playerExp, Is.EqualTo(0f));
+                Assert.That(profile.totalPlayerExperience, Is.EqualTo(0f));
                 Assert.That(profile.notificationsEnabled, Is.False);
                 Assert.That(profile.controlHintsEnabled, Is.False);
                 Assert.That(profile.videoQuality, Is.InRange(0, Mathf.Max(0, QualitySettings.names.Length - 1)));
+            }
+            finally
+            {
+                RestoreProfileBackup(backup);
+            }
+        }
+
+        [Test]
+        public void PlayerProfileStore_MigratesVersionTwoProfilesToAccountProgressionDefaults()
+        {
+            var backup = CaptureProfileBackup();
+            try
+            {
+                PlayerPrefs.SetString(
+                    PlayerProfileKey,
+                    "{\"version\":2,\"masterVolume\":0.4,\"attackerVolume\":0.6,\"showAttackerHealthBars\":false}");
+                PlayerPrefs.Save();
+
+                var profile = PlayerProfileStore.Load();
+
+                Assert.That(profile.version, Is.EqualTo(PlayerProfileStore.CurrentVersion));
+                Assert.That(profile.masterVolume, Is.EqualTo(0.4f).Within(0.001f));
+                Assert.That(profile.attackerVolume, Is.EqualTo(0.6f).Within(0.001f));
+                Assert.That(profile.showAttackerHealthBars, Is.False);
+                Assert.That(profile.playerLevel, Is.EqualTo(PlayerLevelProgression.StartingLevel));
+                Assert.That(profile.playerExp, Is.EqualTo(0f));
+                Assert.That(profile.totalPlayerExperience, Is.EqualTo(0f));
             }
             finally
             {
@@ -416,6 +446,9 @@ namespace TAD.Tests.Editor
                     defenderVolume = 0.25f,
                     projectileVolume = 1.5f,
                     ambientGameVolume = 0.6f,
+                    playerExp = 24.56f,
+                    playerLevel = 4,
+                    totalPlayerExperience = 456.78f,
                     showAttackerHealthBars = false,
                     showDefenderExperience = false,
                     notificationsEnabled = false,
@@ -430,6 +463,9 @@ namespace TAD.Tests.Editor
                 Assert.That(profile.defenderVolume, Is.EqualTo(0.25f));
                 Assert.That(profile.projectileVolume, Is.EqualTo(1f));
                 Assert.That(profile.ambientGameVolume, Is.EqualTo(0.6f));
+                Assert.That(profile.playerExp, Is.EqualTo(24.6f));
+                Assert.That(profile.playerLevel, Is.EqualTo(4));
+                Assert.That(profile.totalPlayerExperience, Is.EqualTo(456.8f));
                 Assert.That(profile.showAttackerHealthBars, Is.False);
                 Assert.That(profile.showDefenderExperience, Is.False);
                 Assert.That(profile.notificationsEnabled, Is.False);

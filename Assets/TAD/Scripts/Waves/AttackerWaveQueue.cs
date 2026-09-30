@@ -105,6 +105,13 @@ namespace TAD.Waves
         /// <summary>Raised whenever displayed group data or its ready state changes.</summary>
         public event Action QueueChanged;
 
+        /// <summary>
+        /// Raised once for each attacker successfully dispatched into the level. Match progression
+        /// uses this rather than queue intent, so refunded, removed, and failed-to-dispatch groups
+        /// never contribute attacker-side experience.
+        /// </summary>
+        public event Action<AttackerDefinition> AttackerDispatched;
+
         private void Awake()
         {
             waveController = GetComponent<WaveController>();
@@ -389,6 +396,9 @@ namespace TAD.Waves
         {
             if (isSending && group != null && group.RegisterSpawned(attacker))
             {
+                AttackerDispatched?.Invoke(attacker != null && attacker.Definition != null
+                    ? attacker.Definition
+                    : group.Definition);
                 RaiseQueueChanged();
             }
         }
