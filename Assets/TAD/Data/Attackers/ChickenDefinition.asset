@@ -25,4 +25,4 @@ MonoBehaviour:
   archetype: 0
   challengeTier: 1
   traversalProfile: 0
-  visualDefinition: {fileID: 0}
+  visualDefinition: {fileID: 11400000, guid: ec151d6bb6c7ee5439771e72d564513f, type: 2}

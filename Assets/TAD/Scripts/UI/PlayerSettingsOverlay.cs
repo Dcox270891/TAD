@@ -63,6 +63,7 @@ namespace TAD.UI
                 existing.gameObject.SetActive(true);
                 existing.transform.SetAsLastSibling();
                 existing.ShowPage(SettingsPage.Gameplay, selectFirstControl: true);
+                FarmUiSkin.ApplyFromCanvas(canvasRoot, existing.transform);
                 return existing;
             }
 
@@ -89,6 +90,7 @@ namespace TAD.UI
             overlay.Configure(template, returnSelectionTarget);
             overlay.Build();
             overlay.ShowPage(SettingsPage.Gameplay, selectFirstControl: true);
+            FarmUiSkin.ApplyFromCanvas(canvasRoot, root.transform);
             root.transform.SetAsLastSibling();
             return overlay;
         }
@@ -290,9 +292,10 @@ namespace TAD.UI
             layout.childForceExpandWidth = false;
             layout.childForceExpandHeight = false;
 
-            var closeButton = CreateButton(header.transform, "CloseButton", "SAVE & CLOSE", 190f, 62f);
+            var closeButton = CreateButton(header.transform, "CloseButton", "CLOSE", 190f, 62f);
             if (closeButton != null)
             {
+                SetButtonLabelSize(closeButton, 24);
                 closeButton.onClick.AddListener(Close);
             }
 
@@ -340,7 +343,7 @@ namespace TAD.UI
 
             AddTab(tabs.transform, SettingsPage.Gameplay, "GAMEPLAY");
             AddTab(tabs.transform, SettingsPage.Audio, "AUDIO");
-            AddTab(tabs.transform, SettingsPage.Notifications, "NOTIFICATIONS");
+            AddTab(tabs.transform, SettingsPage.Notifications, "ALERTS");
             AddTab(tabs.transform, SettingsPage.Video, "VIDEO");
             AddTab(tabs.transform, SettingsPage.Controls, "CONTROLS");
         }
@@ -427,6 +430,7 @@ namespace TAD.UI
                 return;
             }
 
+            SetButtonLabelSize(button, 24);
             button.GetComponent<UnityEngine.UI.LayoutElement>().flexibleWidth = 1f;
             button.onClick.AddListener(() => ShowPage(page, selectFirstControl: true));
             tabButtons.Add(button);
@@ -1026,6 +1030,20 @@ namespace TAD.UI
             {
                 SetLayerRecursively(child.gameObject, layer);
             }
+        }
+
+        private static void SetButtonLabelSize(UnityEngine.UI.Button button, int fontSize)
+        {
+            var label = button != null ? button.GetComponentInChildren<UnityEngine.UI.Text>(true) : null;
+            if (label == null)
+            {
+                return;
+            }
+
+            label.resizeTextForBestFit = false;
+            label.fontSize = fontSize;
+            label.horizontalOverflow = HorizontalWrapMode.Overflow;
+            label.verticalOverflow = VerticalWrapMode.Truncate;
         }
 
         private static void Select(GameObject target)

@@ -276,6 +276,8 @@ namespace TAD.Attackers
         {
             definition = attackerDefinition;
             ResetRuntimeState();
+            visualController ??= GetComponentInChildren<AttackerVisualController>(true);
+            visualController?.RefreshFromAttackerDefinition();
             BuildCachedRoute();
         }
 
@@ -297,6 +299,23 @@ namespace TAD.Attackers
 
         /// <summary>The position currently used by this attacker's physics body.</summary>
         public Vector2 CurrentPosition => body != null ? body.position : (Vector2)transform.position;
+
+        /// <summary>
+        /// Fits this attacker's hit collider to its currently displayed sprite outline. The visual
+        /// controller calls this when the animal changes facing or display scale, so the collision
+        /// footprint follows the visible body rather than the old shared egg placeholder.
+        /// </summary>
+        public void SynchronizeHitColliderToVisual(SpriteRenderer visual)
+        {
+            bodyCollider ??= GetComponent<PolygonCollider2D>();
+            if (bodyCollider == null || visual == null || visual.sprite == null)
+            {
+                return;
+            }
+
+            SpritePhysicsFootprint2D.SynchronizePolygonCollider(bodyCollider, visual);
+            bodyCollider.isTrigger = false;
+        }
 
         /// <summary>Sets the current path direction. A zero vector stops the attacker.</summary>
         public void SetMoveDirection(Vector2 direction)

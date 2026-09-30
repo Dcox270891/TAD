@@ -13,7 +13,8 @@ namespace TAD.Attackers
     {
         private const float MovementDirectionThreshold = 0.0001f;
         private const float MinimumDisplaySize = 0.01f;
-        // The map is intentionally broad; enlarge visuals without changing navigation or hitboxes.
+        // The map is intentionally broad; display scale follows attacker data while navigation
+        // remains route-driven and the hit outline is rebuilt alongside the visible sprite.
         private const float VisualScaleMultiplier = 4f;
 
         [SerializeField] private SpriteRenderer spriteRenderer;
@@ -132,7 +133,23 @@ namespace TAD.Attackers
 
             var frameIndex = Mathf.FloorToInt(movementElapsed / visuals.MovementFrameDuration) %
                              AttackerVisualDefinition.MovementFrameCount;
-            SetSprite(visuals.GetMovementSprite(lastDirectionIndex, frameIndex));
+            if (SetSprite(visuals.GetMovementSprite(lastDirectionIndex, frameIndex)))
+            {
+                SynchronizeHitColliderToVisibleSprite();
+            }
+        }
+
+        /// <summary>
+        /// Refreshes this attacker's visual presentation after its shared definition changes.
+        /// The pool can assign a different animal definition after this child component has been
+        /// reactivated, so its scale, sprite, and collision footprint must be refreshed together.
+        /// </summary>
+        public void RefreshFromAttackerDefinition()
+        {
+            ResolveComponents();
+            RefreshDisplayScale();
+            RefreshMovementSprite();
+            SynchronizeHitColliderToVisibleSprite();
         }
 
         private AttackerVisualDefinition GetVisualDefinition()
@@ -156,7 +173,15 @@ namespace TAD.Attackers
             }
 
             CacheBaseLocalScale();
-            transform.localScale = baseLocalScale * (VisualScaleMultiplier * Mathf.Max(MinimumDisplaySize, attacker.Size));
+            var displayScale = baseLocalScale *
+                               (VisualScaleMultiplier * Mathf.Max(MinimumDisplaySize, attacker.Size));
+            if (transform.localScale == displayScale)
+            {
+                return;
+            }
+
+            transform.localScale = displayScale;
+            SynchronizeHitColliderToVisibleSprite();
         }
 
         private void CacheBaseLocalScale()
@@ -179,12 +204,26 @@ namespace TAD.Attackers
             }
         }
 
-        private void SetSprite(Sprite sprite)
+        private void SynchronizeHitColliderToVisibleSprite()
+        {
+            if (isPlayingDeath || attacker == null || attacker.IsDefeated || spriteRenderer == null ||
+                spriteRenderer.sprite == null)
+            {
+                return;
+            }
+
+            attacker.SynchronizeHitColliderToVisual(spriteRenderer);
+        }
+
+        private bool SetSprite(Sprite sprite)
         {
             if (spriteRenderer != null && sprite != null && spriteRenderer.sprite != sprite)
             {
                 spriteRenderer.sprite = sprite;
+                return true;
             }
+
+            return false;
         }
 
         private static int ToDirectionIndex(Vector2 direction)

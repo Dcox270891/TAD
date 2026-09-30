@@ -32,5 +32,10 @@ ExportedObj/
 sysinfo.txt
 *.stacktrace
 
+# Local authoring and Unity conversion by-products
+*.blend1
+UpgradeLog.htm
+Assets/Temp.meta
+
 # Unity Asset Store tools
 /[Aa]ssets/AssetStoreTools*

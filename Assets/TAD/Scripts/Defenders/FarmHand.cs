@@ -54,7 +54,7 @@ namespace TAD.Defenders
         [SerializeField] private WeaponDefinition weaponDefinition;
         [SerializeField] private CircleCollider2D rangeCollider;
         [SerializeField] private Rigidbody2D rangeBody;
-        [SerializeField] private BoxCollider2D placementCollider;
+        [SerializeField] private PolygonCollider2D placementCollider;
         [SerializeField, Min(0.01f)] private float relocationSpeed = 1f;
         [SerializeField] private DefenderRangeVisual rangeVisual;
         [SerializeField, Min(1)] private int expMax = 10;
@@ -74,6 +74,8 @@ namespace TAD.Defenders
         [System.NonSerialized] private bool isRelocating;
         [System.NonSerialized] private Vector2 relocationDestination;
         [System.NonSerialized] private Sprite placementFootprintSprite;
+        [System.NonSerialized] private Vector3 placementFootprintVisualLocalScale;
+        [System.NonSerialized] private bool hasPlacementFootprintVisualScale;
         [System.NonSerialized] private Vector2 facingDirection = Vector2.right;
         [System.NonSerialized] private DefenderTargetingMode targetingMode = DefenderTargetingMode.FirstEnemyInRange;
         [System.NonSerialized] private FarmHandUpgradeIndicator upgradeIndicator;
@@ -119,8 +121,22 @@ namespace TAD.Defenders
             ? (Vector2)(placementCollider.bounds.center - transform.position)
             : GetSpriteFootprintCenterOffset();
 
-        /// <summary>Dedicated trigger used only to prevent overlapping farmhand placement.</summary>
-        public BoxCollider2D PlacementCollider => placementCollider;
+        /// <summary>
+        /// Dedicated trigger used only to prevent overlapping farmhand placement. Its paths mirror
+        /// the visible body sprite, while the combat range remains on the root circle collider.
+        /// </summary>
+        public PolygonCollider2D PlacementCollider => placementCollider;
+
+        /// <summary>
+        /// Rebuilds the dedicated placement trigger from the current body artwork. Cosmetic and
+        /// level-scale changes can call this safely; it never changes the combat range or turns a
+        /// farmhand into a physical obstacle for animals or projectiles.
+        /// </summary>
+        public void SynchronizePlacementFootprint()
+        {
+            ResolveComponents();
+            EnsurePlacementCollider();
+        }
 
         /// <summary>
         /// Returns whether the Defender can apply the supplied pending weapon choice. The level-two
@@ -142,10 +158,6 @@ namespace TAD.Defenders
             return bank != null && bank.CanAfford(definition.Cost);
         }
 
-        /// <summary>Legacy API retained for custom scripts; the permanent weapon choice now occurs at level 2.</summary>
-        [System.Obsolete("Use CanAffordWeaponUpgrade. The weapon choice now occurs at level 2.")]
-        public bool CanAffordLevelThreeUpgrade(WeaponDefinition definition) => CanAffordWeaponUpgrade(definition);
-
         /// <summary>True while this farmhand has reached an upgrade level and is waiting for a player or AI choice.</summary>
         public bool IsAwaitingWeaponUpgrade => pendingWeaponUpgradeLevel > 0;
 
@@ -164,10 +176,6 @@ namespace TAD.Defenders
         /// Pending farmhands remain in combat, but their rewards are paused until their upgrade choice has been made.
         /// </summary>
         public bool CanEarnExperience => !IsAwaitingWeaponUpgrade;
-
-        /// <summary>Legacy API retained for custom scripts; the permanent weapon choice now occurs at level 2.</summary>
-        [System.Obsolete("Use IsAwaitingWeaponUpgrade. The weapon choice now occurs at level 2.")]
-        public bool IsAwaitingLevelThreeUpgrade => IsAwaitingWeaponUpgrade;
 
         /// <summary>True after this farmhand has completed its free level-two Stick-or-Stone weapon choice.</summary>
         public bool HasSelectedWeaponUpgrade => hasSelectedFirstWeaponUpgrade;
@@ -200,10 +208,6 @@ namespace TAD.Defenders
 
         /// <summary>Shots that can be fired before the current weapon next reloads.</summary>
         public int ShotsRemainingInMagazine => Mathf.Max(0, shotsRemainingInMagazine);
-
-        /// <summary>Legacy API retained for custom scripts; the permanent weapon choice now occurs at level 2.</summary>
-        [System.Obsolete("Use HasSelectedWeaponUpgrade. The weapon choice now occurs at level 2.")]
-        public bool HasSelectedLevelThreeUpgrade => HasSelectedWeaponUpgrade;
 
         /// <summary>
         /// Session-unique identity assigned by the pool when this defender is created.
@@ -291,14 +295,6 @@ namespace TAD.Defenders
 
         /// <summary>Raised when an active farmhand reaches a weapon-upgrade level and needs a choice.</summary>
         public static event System.Action<FarmHand> WeaponUpgradeChoiceRequested;
-
-        /// <summary>Legacy event retained for custom scripts; the permanent weapon choice now occurs at level 2.</summary>
-        [System.Obsolete("Use WeaponUpgradeChoiceRequested. The weapon choice now occurs at level 2.")]
-        public static event System.Action<FarmHand> LevelThreeUpgradeChoiceRequested
-        {
-            add => WeaponUpgradeChoiceRequested += value;
-            remove => WeaponUpgradeChoiceRequested -= value;
-        }
 
         /// <summary>World-space attack range supplied by the currently assigned weapon.</summary>
         public float Range => weaponDefinition != null
@@ -520,10 +516,6 @@ namespace TAD.Defenders
                    definition.RequiredPreviousWeapon == weaponDefinition;
         }
 
-        /// <summary>Legacy API retained for custom scripts; the permanent weapon choice now occurs at level 2.</summary>
-        [System.Obsolete("Use TryChooseWeaponUpgrade. The weapon choice now occurs at level 2.")]
-        public bool TryChooseLevelThreeUpgrade(WeaponDefinition definition) => TryChooseWeaponUpgrade(definition);
-
         /// <summary>
         /// Starts an already-authorised relocation. Placement validation and the relocation fee belong to
         /// FarmHandPlacementController so this component remains reusable by pooling and AI code.
@@ -719,7 +711,7 @@ namespace TAD.Defenders
             visualController ??= GetComponent<FarmHandVisualController>();
             rangeCollider ??= GetComponent<CircleCollider2D>();
             rangeBody ??= GetComponent<Rigidbody2D>();
-            placementCollider ??= transform.Find("PlacementHitbox")?.GetComponent<BoxCollider2D>();
+            placementCollider ??= transform.Find("PlacementHitbox")?.GetComponent<PolygonCollider2D>();
             rangeVisual ??= GetComponentInChildren<DefenderRangeVisual>(true);
             pooledInstance ??= GetComponent<PooledInstance>();
             upgradeIndicator ??= GetComponent<FarmHandUpgradeIndicator>();
@@ -1196,10 +1188,19 @@ namespace TAD.Defenders
                     footprintTransform.SetParent(transform, false);
                 }
 
-                placementCollider = footprintTransform.GetComponent<BoxCollider2D>();
+                placementCollider = footprintTransform.GetComponent<PolygonCollider2D>();
                 if (placementCollider == null)
                 {
-                    placementCollider = footprintTransform.gameObject.AddComponent<BoxCollider2D>();
+                    // Older pooled instances can carry the former rectangular placement trigger.
+                    // Leave it disabled rather than allowing it to widen the defender-only overlap
+                    // test alongside the generated body outline.
+                    var legacyBoxCollider = footprintTransform.GetComponent<BoxCollider2D>();
+                    if (legacyBoxCollider != null)
+                    {
+                        legacyBoxCollider.enabled = false;
+                    }
+
+                    placementCollider = footprintTransform.gameObject.AddComponent<PolygonCollider2D>();
                 }
             }
 
@@ -1220,27 +1221,29 @@ namespace TAD.Defenders
             {
                 placementCollider.enabled = false;
                 placementFootprintSprite = null;
+                hasPlacementFootprintVisualScale = false;
                 return;
             }
 
-            var rootScale = transform.lossyScale;
-            var worldSize = visual.bounds.size;
-            var localSize = new Vector2(
-                Mathf.Abs(rootScale.x) > Mathf.Epsilon ? worldSize.x / Mathf.Abs(rootScale.x) : visual.sprite.bounds.size.x,
-                Mathf.Abs(rootScale.y) > Mathf.Epsilon ? worldSize.y / Mathf.Abs(rootScale.y) : visual.sprite.bounds.size.y);
-
-            placementCollider.transform.localPosition = transform.InverseTransformPoint(visual.bounds.center);
+            // Keep the child transform neutral so each point from Unity's generated sprite shape
+            // is stored directly in the placement trigger's local space. The helper handles all
+            // parent scale, so level growth and preview scale stay visually exact.
+            placementCollider.transform.localPosition = Vector3.zero;
             placementCollider.transform.localRotation = Quaternion.identity;
             placementCollider.transform.localScale = Vector3.one;
             placementCollider.offset = Vector2.zero;
-            placementCollider.size = localSize;
-            placementCollider.enabled = localSize.x > Mathf.Epsilon && localSize.y > Mathf.Epsilon;
+            placementCollider.enabled = SpritePhysicsFootprint2D.SynchronizePolygonCollider(placementCollider, visual);
             placementFootprintSprite = visual.sprite;
+            placementFootprintVisualLocalScale = visual.transform.localScale;
+            hasPlacementFootprintVisualScale = true;
         }
 
         private void UpdatePlacementColliderIfNeeded()
         {
-            if (placementCollider != null && visual != null && visual.sprite != placementFootprintSprite)
+            if (placementCollider != null && visual != null &&
+                (visual.sprite != placementFootprintSprite ||
+                 !hasPlacementFootprintVisualScale ||
+                 visual.transform.localScale != placementFootprintVisualLocalScale))
             {
                 ConfigurePlacementCollider();
             }

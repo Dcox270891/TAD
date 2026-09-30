@@ -611,10 +611,11 @@ namespace TAD.Tests.PlayMode
             Assert.That(farmHand, Is.Not.Null);
             Assert.That(farmHand.PlacementCollider, Is.Not.Null);
             Assert.That(farmHand.PlacementCollider.isTrigger, Is.True);
+            var expectedPlacementBounds = GetSpritePhysicsBounds(farmHand.Visual);
             Assert.That(farmHand.PlacementCollider.bounds.size.x,
-                Is.EqualTo(farmHand.Visual.bounds.size.x).Within(0.01f));
+                Is.EqualTo(expectedPlacementBounds.size.x).Within(0.01f));
             Assert.That(farmHand.PlacementCollider.bounds.size.y,
-                Is.EqualTo(farmHand.Visual.bounds.size.y).Within(0.01f));
+                Is.EqualTo(expectedPlacementBounds.size.y).Within(0.01f));
             Assert.That(farmHand.TargetingMode, Is.EqualTo(DefenderTargetingMode.FirstEnemyInRange));
             farmHand.SetTargetingMode(DefenderTargetingMode.Fastest);
             Assert.That(defenderBank.CurrentGold,
@@ -1338,8 +1339,15 @@ namespace TAD.Tests.PlayMode
             terrainObject.layer = LayerMask.NameToLayer("Environment");
             terrainObject.transform.position = position;
             terrainObject.SetActive(false);
-            var terrainCollider = terrainObject.AddComponent<BoxCollider2D>();
-            terrainCollider.size = size ?? new Vector2(2f, 2f);
+            var terrainCollider = terrainObject.AddComponent<PolygonCollider2D>();
+            var halfSize = (size ?? new Vector2(2f, 2f)) * 0.5f;
+            terrainCollider.SetPath(0, new[]
+            {
+                new Vector2(-halfSize.x, -halfSize.y),
+                new Vector2(-halfSize.x, halfSize.y),
+                new Vector2(halfSize.x, halfSize.y),
+                new Vector2(halfSize.x, -halfSize.y)
+            });
             var modifier = terrainObject.AddComponent<TerrainSpeedModifier>();
             modifier.Configure(effect);
             terrainObject.SetActive(true);
@@ -1386,6 +1394,38 @@ namespace TAD.Tests.PlayMode
             var projectile = projectileObject.AddComponent<FarmHandProjectile>();
             projectileObject.SetActive(true);
             return projectile;
+        }
+
+        private static Bounds GetSpritePhysicsBounds(SpriteRenderer visual)
+        {
+            Assert.That(visual, Is.Not.Null);
+            Assert.That(visual.sprite, Is.Not.Null);
+            Assert.That(visual.sprite.GetPhysicsShapeCount(), Is.GreaterThan(0));
+
+            var sourcePath = new List<Vector2>();
+            var hasPoint = false;
+            var bounds = new Bounds();
+            for (var pathIndex = 0; pathIndex < visual.sprite.GetPhysicsShapeCount(); pathIndex++)
+            {
+                sourcePath.Clear();
+                visual.sprite.GetPhysicsShape(pathIndex, sourcePath);
+                foreach (var point in sourcePath)
+                {
+                    var worldPoint = visual.transform.TransformPoint(point);
+                    if (!hasPoint)
+                    {
+                        bounds = new Bounds(worldPoint, Vector3.zero);
+                        hasPoint = true;
+                    }
+                    else
+                    {
+                        bounds.Encapsulate(worldPoint);
+                    }
+                }
+            }
+
+            Assert.That(hasPoint, Is.True, "The visual sprite needs a usable generated physics outline.");
+            return bounds;
         }
 
         private static void SetPrivateField<T>(object target, string fieldName, T value)

@@ -37,7 +37,7 @@ namespace TAD.UI
             {
                 // The shared pause control remains visible, but this arrow dispatches attacker
                 // orders and must not let a Defender player control the attacking AI.
-                spawnedPlayButton = Object.FindFirstObjectByType<WaveStartButton>(FindObjectsInactive.Include);
+                spawnedPlayButton = Object.FindAnyObjectByType<WaveStartButton>(FindObjectsInactive.Include);
                 if (spawnedPlayButton != null)
                 {
                     spawnedPlayButton.gameObject.SetActive(false);
@@ -47,7 +47,7 @@ namespace TAD.UI
             }
 
             var eventSystem = EnsureEventSystem();
-            spawnedPlayButton = Object.FindFirstObjectByType<WaveStartButton>(FindObjectsInactive.Include);
+            spawnedPlayButton = Object.FindAnyObjectByType<WaveStartButton>(FindObjectsInactive.Include);
             if (spawnedPlayButton == null)
             {
                 if (playButtonPrefab == null)

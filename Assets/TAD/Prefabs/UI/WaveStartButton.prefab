@@ -229,6 +229,7 @@ GameObject:
   - component: {fileID: 5351250469703765446}
   - component: {fileID: 7321085545762522241}
   - component: {fileID: 4325626275830097187}
+  - component: {fileID: 1045845324368916602}
   m_Layer: 5
   m_Name: WaveStartButton
   m_TagString: Untagged
@@ -334,3 +335,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TAD.UI.WaveStartButton
   playButton: {fileID: 5197135274748658257}
   playLabel: {fileID: 2846477581952149371}
+--- !u!114 &1045845324368916602
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4802591853627937884}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53068baf28cd9d24dba66745e9688a90, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TAD.Runtime::TAD.UI.FarmUiSkin
+  panelSprite: {fileID: 21300000, guid: e6391910ff51ce047852d71b219ac884, type: 3}
+  buttonSprite: {fileID: 21300000, guid: 781e3ef992fdae44ea2e6ed382dc77d2, type: 3}
+  menuGrassSprite: {fileID: 21300000, guid: 18dc9001961fbfe47a9cbe4d9e0d645d, type: 3}

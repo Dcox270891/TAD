@@ -186,12 +186,62 @@ namespace TAD.Tests.Editor
             var ice = icePrefab.GetComponent<TerrainSpeedModifier>();
             Assert.That(mud, Is.Not.Null);
             Assert.That(ice, Is.Not.Null);
-            Assert.That(mudPrefab.GetComponent<BoxCollider2D>().isTrigger, Is.True);
-            Assert.That(icePrefab.GetComponent<BoxCollider2D>().isTrigger, Is.True);
+            Assert.That(mudPrefab.GetComponent<PolygonCollider2D>().isTrigger, Is.True);
+            Assert.That(icePrefab.GetComponent<PolygonCollider2D>().isTrigger, Is.True);
             Assert.That(mud.TerrainType, Is.EqualTo(TerrainSpeedEffect.Mud));
             Assert.That(mud.MovementSpeedMultiplier, Is.EqualTo(0.75f).Within(0.0001f));
             Assert.That(ice.TerrainType, Is.EqualTo(TerrainSpeedEffect.Ice));
             Assert.That(ice.MovementSpeedMultiplier, Is.EqualTo(1.1f).Within(0.0001f));
+
+            AssertTerrainFootprintMatchesVisibleSprite("Assets/TAD/Prefabs/Environment/Mud.prefab");
+            AssertTerrainFootprintMatchesVisibleSprite("Assets/TAD/Prefabs/Environment/Ice.prefab");
+        }
+
+        [Test]
+        public void EnvironmentGameplayColliders_MatchVisibleSpriteFootprints()
+        {
+            var solidPrefabPaths = new[]
+            {
+                "Assets/TAD/Prefabs/Environment/FullCoverWall.prefab",
+                "Assets/TAD/Prefabs/Environment/FullCoverWoodFence.prefab",
+                "Assets/TAD/Prefabs/Environment/FullCoverChainLinkFence.prefab",
+                "Assets/TAD/Prefabs/Environment/HalfCoverWall.prefab",
+                "Assets/TAD/Prefabs/Environment/HalfCoverHayBales.prefab",
+                "Assets/TAD/Prefabs/Environment/HalfCoverFarmBins.prefab",
+                "Assets/TAD/Prefabs/Environment/HalfCoverChickenCoop.prefab",
+                "Assets/TAD/Prefabs/Environment/HalfCoverLowBrickWall.prefab",
+                "Assets/TAD/Prefabs/Environment/FoodStore.prefab"
+            };
+
+            foreach (var prefabPath in solidPrefabPaths)
+            {
+                AssertBoxColliderMatchesVisibleSpriteFootprint(prefabPath);
+            }
+        }
+
+        [Test]
+        public void AttackerHitColliders_MatchEveryRenderedMovementSpriteOutline()
+        {
+            var attackerPrefabPaths = new[]
+            {
+                "Assets/TAD/Prefabs/Attackers/Chicken.prefab",
+                "Assets/TAD/Prefabs/Attackers/Duck.prefab",
+                "Assets/TAD/Prefabs/Attackers/Boar.prefab",
+                "Assets/TAD/Prefabs/Attackers/Bull.prefab",
+                "Assets/TAD/Prefabs/Attackers/Bison.prefab",
+                "Assets/TAD/Prefabs/Attackers/Fox.prefab",
+                "Assets/TAD/Prefabs/Attackers/Greyhound.prefab",
+                "Assets/TAD/Prefabs/Attackers/Hare.prefab",
+                "Assets/TAD/Prefabs/Attackers/Ram.prefab",
+                "Assets/TAD/Prefabs/Attackers/Crow.prefab",
+                "Assets/TAD/Prefabs/Attackers/Eagle.prefab",
+                "Assets/TAD/Prefabs/Attackers/Hawk.prefab"
+            };
+
+            foreach (var prefabPath in attackerPrefabPaths)
+            {
+                AssertAttackerFootprintsMatchMovementSprites(prefabPath);
+            }
         }
 
         [Test]
@@ -523,6 +573,162 @@ namespace TAD.Tests.Editor
             var asset = AssetDatabase.LoadAssetAtPath<T>(path);
             Assert.That(asset, Is.Not.Null, "Missing authored asset " + path + ".");
             return asset;
+        }
+
+        private static void AssertTerrainFootprintMatchesVisibleSprite(string prefabPath)
+        {
+            var root = PrefabUtility.LoadPrefabContents(prefabPath);
+            try
+            {
+                var modifier = root.GetComponent<TerrainSpeedModifier>();
+                var collider = root.GetComponent<PolygonCollider2D>();
+                var visual = root.transform.Find("Visual")?.GetComponent<SpriteRenderer>();
+
+                Assert.That(modifier, Is.Not.Null);
+                Assert.That(collider, Is.Not.Null);
+                Assert.That(visual, Is.Not.Null);
+                Assert.That(visual.sprite, Is.Not.Null);
+
+                modifier.SynchronizeTriggerToVisibleFootprint();
+                Assert.That(collider.pathCount, Is.EqualTo(visual.sprite.GetPhysicsShapeCount()));
+                Assert.That(collider.isTrigger, Is.True);
+                AssertColliderMatchesVisibleSpriteFootprint(collider, visual);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+        }
+
+        private static void AssertBoxColliderMatchesVisibleSpriteFootprint(string prefabPath)
+        {
+            var root = PrefabUtility.LoadPrefabContents(prefabPath);
+            try
+            {
+                var collider = root.GetComponent<BoxCollider2D>();
+                var visual = root.transform.Find("Visual")?.GetComponent<SpriteRenderer>();
+
+                Assert.That(collider, Is.Not.Null, "Missing BoxCollider2D on " + prefabPath + ".");
+                Assert.That(visual, Is.Not.Null, "Missing Visual SpriteRenderer on " + prefabPath + ".");
+                AssertColliderMatchesVisibleSpriteFootprint(collider, visual);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+        }
+
+        private static void AssertAttackerFootprintsMatchMovementSprites(string prefabPath)
+        {
+            var root = PrefabUtility.LoadPrefabContents(prefabPath);
+            try
+            {
+                var attacker = root.GetComponent<BasicAttacker>();
+                var collider = root.GetComponent<PolygonCollider2D>();
+                var visualController = root.GetComponentInChildren<AttackerVisualController>(true);
+                var visual = visualController?.GetComponent<SpriteRenderer>();
+                var visuals = attacker != null && attacker.Definition != null
+                    ? attacker.Definition.VisualDefinition
+                    : null;
+
+                Assert.That(attacker, Is.Not.Null, "Missing BasicAttacker on " + prefabPath + ".");
+                Assert.That(collider, Is.Not.Null, "Missing PolygonCollider2D on " + prefabPath + ".");
+                Assert.That(visualController, Is.Not.Null, "Missing AttackerVisualController on " + prefabPath + ".");
+                Assert.That(visual, Is.Not.Null, "Missing attacker visual SpriteRenderer on " + prefabPath + ".");
+                Assert.That(visuals, Is.Not.Null, "Missing attacker visual definition on " + prefabPath + ".");
+                Assert.That(visuals.HasMovementSprites, Is.True,
+                    "Every attacker needs its complete movement sprite set before its footprint can be validated.");
+
+                visualController.RefreshFromAttackerDefinition();
+                AssertPolygonColliderMatchesVisibleSpriteOutline(collider, visual, prefabPath);
+
+                for (var directionIndex = 0; directionIndex < AttackerVisualDefinition.DirectionCount; directionIndex++)
+                {
+                    for (var frameIndex = 0; frameIndex < AttackerVisualDefinition.MovementFrameCount; frameIndex++)
+                    {
+                        visual.sprite = visuals.GetMovementSprite(directionIndex, frameIndex);
+                        attacker.SynchronizeHitColliderToVisual(visual);
+                        AssertPolygonColliderMatchesVisibleSpriteOutline(collider, visual, prefabPath);
+                    }
+                }
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+        }
+
+        private static void AssertColliderMatchesVisibleSpriteFootprint(Collider2D collider, SpriteRenderer visual)
+        {
+            Assert.That(visual.sprite, Is.Not.Null);
+            Assert.That(visual.sprite.GetPhysicsShapeCount(), Is.GreaterThan(0));
+
+            var expectedBounds = GetVisibleSpritePhysicsBounds(visual);
+            var actualBounds = collider.bounds;
+            Assert.That(actualBounds.center.x, Is.EqualTo(expectedBounds.center.x).Within(0.005f));
+            Assert.That(actualBounds.center.y, Is.EqualTo(expectedBounds.center.y).Within(0.005f));
+            Assert.That(actualBounds.size.x, Is.EqualTo(expectedBounds.size.x).Within(0.005f));
+            Assert.That(actualBounds.size.y, Is.EqualTo(expectedBounds.size.y).Within(0.005f));
+        }
+
+        private static void AssertPolygonColliderMatchesVisibleSpriteOutline(
+            PolygonCollider2D collider,
+            SpriteRenderer visual,
+            string prefabPath)
+        {
+            Assert.That(visual.sprite, Is.Not.Null, "Missing visual sprite while validating " + prefabPath + ".");
+            Assert.That(visual.sprite.GetPhysicsShapeCount(), Is.GreaterThan(0),
+                "The displayed attacker sprite needs a generated physics outline: " + prefabPath + ".");
+            Assert.That(collider.pathCount, Is.EqualTo(visual.sprite.GetPhysicsShapeCount()),
+                "Collider path count must match the current sprite outline: " + prefabPath + ".");
+
+            var expectedPath = new List<Vector2>();
+            for (var pathIndex = 0; pathIndex < visual.sprite.GetPhysicsShapeCount(); pathIndex++)
+            {
+                expectedPath.Clear();
+                visual.sprite.GetPhysicsShape(pathIndex, expectedPath);
+                var actualPath = collider.GetPath(pathIndex);
+                Assert.That(actualPath.Length, Is.EqualTo(expectedPath.Count),
+                    "Collider point count must match the visible sprite outline: " + prefabPath + ".");
+
+                for (var pointIndex = 0; pointIndex < expectedPath.Count; pointIndex++)
+                {
+                    var expectedColliderPoint = collider.transform.InverseTransformPoint(
+                        visual.transform.TransformPoint(expectedPath[pointIndex]));
+                    Assert.That(actualPath[pointIndex].x, Is.EqualTo(expectedColliderPoint.x).Within(0.0001f));
+                    Assert.That(actualPath[pointIndex].y, Is.EqualTo(expectedColliderPoint.y).Within(0.0001f));
+                }
+            }
+
+            AssertColliderMatchesVisibleSpriteFootprint(collider, visual);
+        }
+
+        private static Bounds GetVisibleSpritePhysicsBounds(SpriteRenderer visual)
+        {
+            var physicsShape = new List<Vector2>();
+            var bounds = new Bounds();
+            var hasPoint = false;
+            for (var shapeIndex = 0; shapeIndex < visual.sprite.GetPhysicsShapeCount(); shapeIndex++)
+            {
+                physicsShape.Clear();
+                visual.sprite.GetPhysicsShape(shapeIndex, physicsShape);
+                foreach (var point in physicsShape)
+                {
+                    var worldPoint = visual.transform.TransformPoint(point);
+                    if (!hasPoint)
+                    {
+                        bounds = new Bounds(worldPoint, Vector3.zero);
+                        hasPoint = true;
+                    }
+                    else
+                    {
+                        bounds.Encapsulate(worldPoint);
+                    }
+                }
+            }
+
+            Assert.That(hasPoint, Is.True, "The visible sprite did not provide a usable physics outline.");
+            return bounds;
         }
     }
 }

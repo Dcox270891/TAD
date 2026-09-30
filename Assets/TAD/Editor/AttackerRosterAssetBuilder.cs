@@ -257,7 +257,14 @@ namespace TAD.Editor
                     throw new FileNotFoundException("The existing Chicken attacker definition is missing.", ChickenDefinitionPath);
                 }
 
-                // Preserve the user's existing Chicken data asset exactly; Chicken's prefab uses a visual fallback.
+                // Preserve the user's author-tuned Chicken stats while maintaining the canonical visual
+                // definition. Runtime hitbox generation and roster validation read visuals from the data
+                // asset, so relying only on the prefab fallback leaves Chicken inconsistent with every
+                // other roster entry.
+                var chickenSerialized = new SerializedObject(chicken);
+                chickenSerialized.FindProperty("visualDefinition").objectReferenceValue = visuals;
+                chickenSerialized.ApplyModifiedPropertiesWithoutUndo();
+                EditorUtility.SetDirty(chicken);
                 return chicken;
             }
 

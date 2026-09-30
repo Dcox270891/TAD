@@ -184,6 +184,7 @@ GameObject:
   - component: {fileID: 3055635681182049627}
   - component: {fileID: 318747435865215380}
   - component: {fileID: 3693089565900747242}
+  - component: {fileID: 540413604895111364}
   m_Layer: 5
   m_Name: AttackerSelectionButton
   m_TagString: Untagged
@@ -335,6 +336,21 @@ MonoBehaviour:
   attackerImage: {fileID: 5323029202859266236}
   costText: {fileID: 1951630826344846744}
   incomeText: {fileID: 4473923964631501693}
+--- !u!114 &540413604895111364
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5896516371137457016}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53068baf28cd9d24dba66745e9688a90, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TAD.Runtime::TAD.UI.FarmUiSkin
+  panelSprite: {fileID: 21300000, guid: e6391910ff51ce047852d71b219ac884, type: 3}
+  buttonSprite: {fileID: 21300000, guid: 781e3ef992fdae44ea2e6ed382dc77d2, type: 3}
+  menuGrassSprite: {fileID: 21300000, guid: 18dc9001961fbfe47a9cbe4d9e0d645d, type: 3}
 --- !u!1 &6117199107042791316
 GameObject:
   m_ObjectHideFlags: 0

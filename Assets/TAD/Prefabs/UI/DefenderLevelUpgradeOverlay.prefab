@@ -94,6 +94,7 @@ GameObject:
   - component: {fileID: 920699437533906558}
   - component: {fileID: 1074916571573375170}
   - component: {fileID: 29308662564694487}
+  - component: {fileID: 6907289032772125638}
   m_Layer: 12
   m_Name: DefenderLevelUpgradeOverlay
   m_TagString: Untagged
@@ -237,6 +238,21 @@ MonoBehaviour:
   - {fileID: 2231259076401761241}
   - {fileID: 4228114403174349756}
   - {fileID: 7408649752447481128}
+--- !u!114 &6907289032772125638
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1878239868116266450}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53068baf28cd9d24dba66745e9688a90, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TAD.Runtime::TAD.UI.FarmUiSkin
+  panelSprite: {fileID: 21300000, guid: e6391910ff51ce047852d71b219ac884, type: 3}
+  buttonSprite: {fileID: 21300000, guid: 781e3ef992fdae44ea2e6ed382dc77d2, type: 3}
+  menuGrassSprite: {fileID: 21300000, guid: 18dc9001961fbfe47a9cbe4d9e0d645d, type: 3}
 --- !u!1 &1916778005167652019
 GameObject:
   m_ObjectHideFlags: 0

@@ -288,7 +288,7 @@ namespace TAD.UI
         private void SetAttackerOrderingBlocked(bool blocked)
         {
             selectionPanel?.SetOrderInputEnabled(!blocked);
-            waveStartButton ??= FindFirstObjectByType<WaveStartButton>(FindObjectsInactive.Include);
+            waveStartButton ??= FindAnyObjectByType<WaveStartButton>(FindObjectsInactive.Include);
             waveStartButton?.SetExternalInputBlocked(blocked);
         }
 

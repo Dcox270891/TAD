@@ -112,6 +112,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 8593776642194539742, guid: c3b394a6ee25e0b47ba7a7883252645e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 8853863350156583789}
+    - targetCorrespondingSourceObject: {fileID: 8593776642194539742, guid: c3b394a6ee25e0b47ba7a7883252645e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8879141698384188075}
   m_SourcePrefab: {fileID: 100100000, guid: c3b394a6ee25e0b47ba7a7883252645e, type: 3}
 --- !u!114 &744811353527046815 stripped
 MonoBehaviour:
@@ -180,3 +183,18 @@ MonoBehaviour:
   quitButton: {fileID: 4647469702548462675}
   mainMenuSceneName: MainMenu
   levelLoadingOverlayPrefab: {fileID: 711827298958036746, guid: 5e1abc7f1987e7440a716dd49ca9e6ba, type: 3}
+--- !u!114 &8879141698384188075
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8790274346615042656}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53068baf28cd9d24dba66745e9688a90, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TAD.Runtime::TAD.UI.FarmUiSkin
+  panelSprite: {fileID: 21300000, guid: e6391910ff51ce047852d71b219ac884, type: 3}
+  buttonSprite: {fileID: 21300000, guid: 781e3ef992fdae44ea2e6ed382dc77d2, type: 3}
+  menuGrassSprite: {fileID: 21300000, guid: 18dc9001961fbfe47a9cbe4d9e0d645d, type: 3}

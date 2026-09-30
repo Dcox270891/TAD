@@ -143,16 +143,6 @@ namespace TAD.UI
             }
         }
 
-        /// <summary>
-        /// Compatibility helper for older test fixtures that only supplied one option list. The first
-        /// two entries become the free level-two branch; level-five entries still need explicit setup.
-        /// </summary>
-        [Obsolete("Configure the level-two, melee level-five, and ranged level-five branches explicitly.")]
-        public void Configure(DefenderLevelUpgradeOverlay prefab, WeaponDefinition[] upgradeOptions)
-        {
-            Configure(prefab, upgradeOptions, meleeLevelFiveUpgradeOptions, rangedLevelFiveUpgradeOptions);
-        }
-
         private void Subscribe()
         {
             if (isSubscribed)

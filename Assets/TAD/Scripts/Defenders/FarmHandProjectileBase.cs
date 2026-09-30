@@ -234,9 +234,10 @@ namespace TAD.Defenders
             }
 
             areaImpactTargets.Clear();
-            var resultCount = Physics2D.OverlapCircleNonAlloc(
+            var resultCount = Physics2D.OverlapCircle(
                 impactPosition,
                 Definition.ImpactAreaRadius,
+                default,
                 impactOverlapResults);
             for (var index = 0; index < resultCount; index++)
             {

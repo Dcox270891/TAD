@@ -37,7 +37,12 @@ namespace TAD.UI
         private void OnDisable()
         {
             lastTarget = null;
-            spawnedPanel?.Hide();
+            // Unity's destroyed-object reference is not a CLR null, so a null-conditional
+            // call can still attempt to access its game object while the scene is unloading.
+            if (spawnedPanel != null)
+            {
+                spawnedPanel.Hide();
+            }
         }
 
         private void OnDestroy()
@@ -83,7 +88,7 @@ namespace TAD.UI
                 return;
             }
 
-            spawnedPanel = Object.FindFirstObjectByType<DefenderDetailsPanel>(FindObjectsInactive.Include);
+            spawnedPanel = Object.FindAnyObjectByType<DefenderDetailsPanel>(FindObjectsInactive.Include);
             if (spawnedPanel != null)
             {
                 spawnedPanel.BindPlacementController(placementController);

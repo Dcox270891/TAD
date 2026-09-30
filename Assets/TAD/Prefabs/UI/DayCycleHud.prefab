@@ -184,6 +184,7 @@ GameObject:
   - component: {fileID: 2694685051142239464}
   - component: {fileID: 4840638584245815013}
   - component: {fileID: 5395352909747150178}
+  - component: {fileID: 7643102175314924478}
   m_Layer: 5
   m_Name: DayCycleHud
   m_TagString: Untagged
@@ -272,6 +273,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TAD.UI.DayCycleHud
   dayText: {fileID: 4286211279244002455}
   preparationText: {fileID: 7813854748526663433}
+--- !u!114 &7643102175314924478
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4471879064145327302}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53068baf28cd9d24dba66745e9688a90, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TAD.Runtime::TAD.UI.FarmUiSkin
+  panelSprite: {fileID: 21300000, guid: e6391910ff51ce047852d71b219ac884, type: 3}
+  buttonSprite: {fileID: 21300000, guid: 781e3ef992fdae44ea2e6ed382dc77d2, type: 3}
+  menuGrassSprite: {fileID: 21300000, guid: 18dc9001961fbfe47a9cbe4d9e0d645d, type: 3}
 --- !u!1 &4772685865530449503
 GameObject:
   m_ObjectHideFlags: 0

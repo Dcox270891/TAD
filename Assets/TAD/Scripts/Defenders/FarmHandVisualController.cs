@@ -267,7 +267,7 @@ namespace TAD.Defenders
         private void RefreshBodyAndCosmetics()
         {
             var frameIndex = GetAimFrameIndex();
-            SetSprite(bodyRenderer, appearance != null && appearance.Body != null
+            var bodySpriteChanged = SetSprite(bodyRenderer, appearance != null && appearance.Body != null
                 ? appearance.Body.GetMovementSprite(directionIndex, frameIndex)
                 : bodyRenderer != null ? bodyRenderer.sprite : null);
             SetSprite(hairRenderer, appearance != null && appearance.Hair != null
@@ -276,6 +276,13 @@ namespace TAD.Defenders
             SetSprite(outfitRenderer, appearance != null && appearance.Outfit != null
                 ? appearance.Outfit.GetMovementSprite(directionIndex, frameIndex)
                 : null);
+
+            // The body is the defender's placement footprint. Rebuild it only when the visible
+            // body actually changes, avoiding polygon work during ordinary aiming frames.
+            if (bodySpriteChanged)
+            {
+                farmHand?.SynchronizePlacementFootprint();
+            }
         }
 
         private void RefreshHeldWeapon()
@@ -354,18 +361,21 @@ namespace TAD.Defenders
             weaponRenderer ??= transform.Find("WeaponVisual")?.GetComponent<SpriteRenderer>();
         }
 
-        private static void SetSprite(SpriteRenderer renderer, Sprite sprite)
+        private static bool SetSprite(SpriteRenderer renderer, Sprite sprite)
         {
             if (renderer == null)
             {
-                return;
+                return false;
             }
 
             renderer.enabled = sprite != null;
             if (sprite != null && renderer.sprite != sprite)
             {
                 renderer.sprite = sprite;
+                return true;
             }
+
+            return false;
         }
 
         private static void CreatePreviewLayer(

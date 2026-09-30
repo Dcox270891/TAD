@@ -57,6 +57,7 @@ namespace TAD.UI
             }
 
             badge.Configure(definition, attackerImage.rectTransform);
+            FarmUiSkin.ApplyFromCanvas(attackerImage.transform, badge.transform);
             return badge;
         }
 

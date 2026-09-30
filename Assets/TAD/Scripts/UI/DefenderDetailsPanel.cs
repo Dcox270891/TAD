@@ -185,6 +185,7 @@ namespace TAD.UI
             ConfigureTextWrapping(statsText);
             ConfigureTextWrapping(experienceText);
             ConfigureTextWrapping(targetingReadOnlyText);
+            FarmUiSkin.ApplyFromCanvas(transform, transform);
         }
 
         private void EnsureUpgradeButton()

@@ -44,6 +44,7 @@ namespace TAD.UI
                 existing.Configure(returnSelectionTarget, roleSelected, cancelled);
                 existing.gameObject.SetActive(true);
                 existing.transform.SetAsLastSibling();
+                FarmUiSkin.ApplyFromCanvas(canvasRoot, existing.transform);
                 return existing;
             }
 
@@ -69,6 +70,7 @@ namespace TAD.UI
             var overlay = root.GetComponent<RestartRoleChoiceOverlay>();
             overlay.Build(buttonTemplate, ResolveFont(canvasRoot, buttonTemplate));
             overlay.Configure(returnSelectionTarget, roleSelected, cancelled);
+            FarmUiSkin.ApplyFromCanvas(canvasRoot, root.transform);
             root.transform.SetAsLastSibling();
             return overlay;
         }

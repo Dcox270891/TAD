@@ -97,7 +97,7 @@ namespace TAD.UI
             }
             else if (attackerWaveQueue != null && attackerWaveQueue.HasQueuedAttackers)
             {
-                attackerWaveQueue.TrySendQueuedWave();
+                attackerWaveQueue.TrySendQueuedWaves(null);
             }
             else
             {

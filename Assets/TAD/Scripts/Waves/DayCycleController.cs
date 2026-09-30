@@ -231,9 +231,7 @@ namespace TAD.Waves
 
         private static void ResetLevelResourceBanks()
         {
-            foreach (var bank in FindObjectsByType<ResourceBank>(
-                         FindObjectsInactive.Include,
-                         FindObjectsSortMode.None))
+            foreach (var bank in FindObjectsByType<ResourceBank>(FindObjectsInactive.Include))
             {
                 bank?.ResetGold();
             }
@@ -241,9 +239,7 @@ namespace TAD.Waves
 
         private static void HideExistingModalOverlays()
         {
-            foreach (var overlay in FindObjectsByType<ModalOverlay>(
-                         FindObjectsInactive.Include,
-                         FindObjectsSortMode.None))
+            foreach (var overlay in FindObjectsByType<ModalOverlay>(FindObjectsInactive.Include))
             {
                 overlay?.Hide();
             }
@@ -545,9 +541,7 @@ namespace TAD.Waves
 
         private void RegisterExistingFarmHandsForExperienceTracking()
         {
-            foreach (var farmHand in FindObjectsByType<FarmHand>(
-                         FindObjectsInactive.Include,
-                         FindObjectsSortMode.None))
+            foreach (var farmHand in FindObjectsByType<FarmHand>(FindObjectsInactive.Include))
             {
                 RegisterFarmHandForExperienceTracking(farmHand);
             }

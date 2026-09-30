@@ -445,6 +445,7 @@ GameObject:
   - component: {fileID: 4887461914520203026}
   - component: {fileID: 3074933020722402053}
   - component: {fileID: 3840638929522613190}
+  - component: {fileID: 573534792394167889}
   m_Layer: 5
   m_Name: FarmHandPlacementUi
   m_TagString: Untagged
@@ -553,6 +554,21 @@ MonoBehaviour:
   buyButton: {fileID: 1563860417624510356}
   confirmButton: {fileID: 4491734631365065498}
   cancelButton: {fileID: 895531775092052426}
+--- !u!114 &573534792394167889
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6883894590174958959}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53068baf28cd9d24dba66745e9688a90, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TAD.Runtime::TAD.UI.FarmUiSkin
+  panelSprite: {fileID: 21300000, guid: e6391910ff51ce047852d71b219ac884, type: 3}
+  buttonSprite: {fileID: 21300000, guid: 781e3ef992fdae44ea2e6ed382dc77d2, type: 3}
+  menuGrassSprite: {fileID: 21300000, guid: 18dc9001961fbfe47a9cbe4d9e0d645d, type: 3}
 --- !u!1 &6962248729842695831
 GameObject:
   m_ObjectHideFlags: 0

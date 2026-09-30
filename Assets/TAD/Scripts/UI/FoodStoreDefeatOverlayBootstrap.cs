@@ -27,7 +27,7 @@ namespace TAD.UI
 
             EnsureEventSystem();
 
-            spawnedOverlay = Object.FindFirstObjectByType<AttackerWinOverlay>(FindObjectsInactive.Include);
+            spawnedOverlay = Object.FindAnyObjectByType<AttackerWinOverlay>(FindObjectsInactive.Include);
             if (spawnedOverlay == null)
             {
                 if (overlayPrefab == null)

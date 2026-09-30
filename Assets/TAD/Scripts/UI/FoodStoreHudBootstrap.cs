@@ -23,7 +23,7 @@ namespace TAD.UI
                 return;
             }
 
-            spawnedHud = Object.FindFirstObjectByType<FoodStoreHud>(FindObjectsInactive.Include);
+            spawnedHud = Object.FindAnyObjectByType<FoodStoreHud>(FindObjectsInactive.Include);
             if (spawnedHud == null)
             {
                 if (hudPrefab == null)

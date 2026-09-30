@@ -287,6 +287,7 @@ GameObject:
   - component: {fileID: 5591981720131812959}
   - component: {fileID: 4190568211364359138}
   - component: {fileID: 8486414186020280732}
+  - component: {fileID: 7515474555793569577}
   m_Layer: 5
   m_Name: AttackerSelectionPanel
   m_TagString: Untagged
@@ -392,3 +393,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TAD.UI.AttackerSelectionPanel
   content: {fileID: 6758695829540839405}
   buttonPrefab: {fileID: 3693089565900747242, guid: a2eeb1a035d081241bc334bf0095121c, type: 3}
+  inputCanvasGroup: {fileID: 0}
+--- !u!114 &7515474555793569577
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5130354825446766896}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53068baf28cd9d24dba66745e9688a90, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TAD.Runtime::TAD.UI.FarmUiSkin
+  panelSprite: {fileID: 21300000, guid: e6391910ff51ce047852d71b219ac884, type: 3}
+  buttonSprite: {fileID: 21300000, guid: 781e3ef992fdae44ea2e6ed382dc77d2, type: 3}
+  menuGrassSprite: {fileID: 21300000, guid: 18dc9001961fbfe47a9cbe4d9e0d645d, type: 3}

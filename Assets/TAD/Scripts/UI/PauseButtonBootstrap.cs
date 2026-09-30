@@ -34,14 +34,14 @@ namespace TAD.UI
             }
 
             EnsureEventSystem();
-            spawnedPauseOverlay = Object.FindFirstObjectByType<PauseOverlay>(FindObjectsInactive.Include);
+            spawnedPauseOverlay = Object.FindAnyObjectByType<PauseOverlay>(FindObjectsInactive.Include);
             if (spawnedPauseOverlay == null && pauseOverlayPrefab != null)
             {
                 spawnedPauseOverlay = Instantiate(pauseOverlayPrefab);
                 ownsSpawnedPauseOverlay = true;
             }
 
-            spawnedPauseButton = Object.FindFirstObjectByType<PauseButton>(FindObjectsInactive.Include);
+            spawnedPauseButton = Object.FindAnyObjectByType<PauseButton>(FindObjectsInactive.Include);
             if (spawnedPauseButton == null && pauseButtonPrefab != null)
             {
                 spawnedPauseButton = Instantiate(pauseButtonPrefab);

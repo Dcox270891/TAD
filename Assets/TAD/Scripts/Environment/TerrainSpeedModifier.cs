@@ -15,7 +15,7 @@ namespace TAD.Environment
     /// ensures pooled attackers always reset cleanly. Flying attackers deliberately ignore this surface.
     /// </summary>
     [DisallowMultipleComponent]
-    [RequireComponent(typeof(BoxCollider2D))]
+    [RequireComponent(typeof(PolygonCollider2D))]
     public sealed class TerrainSpeedModifier : MonoBehaviour
     {
         public const float DefaultMudMovementMultiplier = 0.75f;
@@ -29,7 +29,11 @@ namespace TAD.Environment
         [Tooltip("Ground movement multiplier for this mud tile. A value of 0.75 is 25 percent slower.")]
         private float mudMovementMultiplier = DefaultMudMovementMultiplier;
 
-        private BoxCollider2D terrainCollider;
+        [SerializeField]
+        [Tooltip("The visible ground patch used to build this surface's gameplay footprint.")]
+        private SpriteRenderer footprintVisual;
+
+        private PolygonCollider2D terrainCollider;
 
         public TerrainSpeedEffect TerrainType => terrainType;
         public float MudMovementMultiplier => mudMovementMultiplier;
@@ -64,9 +68,10 @@ namespace TAD.Environment
         private void Awake()
         {
             EnsureTriggerCollider();
+            SynchronizeTriggerToVisibleFootprint();
         }
 
-        /// <summary>Configures a generated or runtime-authored terrain tile without changing its collider size.</summary>
+        /// <summary>Configures a generated or runtime-authored terrain tile without changing its authored footprint.</summary>
         public void Configure(TerrainSpeedEffect type, float mudMultiplier = DefaultMudMovementMultiplier)
         {
             terrainType = type;
@@ -74,24 +79,55 @@ namespace TAD.Environment
             EnsureTriggerCollider();
         }
 
+        /// <summary>
+        /// Copies the visible sprite's generated physics outline into the terrain trigger. This makes
+        /// the gameplay effect follow the painted ice or mud shape rather than an oversized rectangle.
+        /// </summary>
+        [ContextMenu("Synchronize Trigger To Visible Footprint")]
+        public void SynchronizeTriggerToVisibleFootprint()
+        {
+            EnsureTriggerCollider();
+            footprintVisual ??= FindFootprintVisual();
+            if (terrainCollider == null || footprintVisual == null || footprintVisual.sprite == null)
+            {
+                return;
+            }
+
+            if (SpritePhysicsFootprint2D.SynchronizePolygonCollider(terrainCollider, footprintVisual))
+            {
+                terrainCollider.isTrigger = true;
+            }
+        }
+
         private void EnsureTriggerCollider()
         {
-            terrainCollider ??= GetComponent<BoxCollider2D>();
+            terrainCollider ??= GetComponent<PolygonCollider2D>();
             if (terrainCollider != null)
             {
                 terrainCollider.isTrigger = true;
             }
         }
 
+        private SpriteRenderer FindFootprintVisual()
+        {
+            foreach (var renderer in GetComponentsInChildren<SpriteRenderer>(true))
+            {
+                if (renderer != null && renderer.enabled && renderer.sprite != null)
+                {
+                    return renderer;
+                }
+            }
+
+            return null;
+        }
+
 #if UNITY_EDITOR
         private void OnValidate()
         {
             mudMovementMultiplier = Mathf.Clamp(mudMovementMultiplier, 0.05f, 0.99f);
-            terrainCollider = GetComponent<BoxCollider2D>();
-            if (terrainCollider != null)
-            {
-                terrainCollider.isTrigger = true;
-            }
+            terrainCollider = GetComponent<PolygonCollider2D>();
+            footprintVisual ??= FindFootprintVisual();
+            SynchronizeTriggerToVisibleFootprint();
         }
 #endif
     }

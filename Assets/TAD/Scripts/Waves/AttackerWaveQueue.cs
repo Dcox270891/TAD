@@ -281,14 +281,6 @@ namespace TAD.Waves
         }
 
         /// <summary>
-        /// Sends a snapshot of all currently queued groups. This legacy entry point preserves existing callers.
-        /// </summary>
-        public bool TrySendQueuedWave()
-        {
-            return TrySendQueuedWaves(null);
-        }
-
-        /// <summary>
         /// Sends every group currently queued in click order. New selections made while this sequence runs
         /// stay in the pending queue for the next preparation period.
         /// </summary>
