@@ -329,6 +329,13 @@ namespace TAD.Tests.PlayMode
             var arrow = defender.transform.Find("Upgrade Available Arrow")?.GetComponent<SpriteRenderer>();
             Assert.That(arrow, Is.Not.Null);
             Assert.That(arrow.enabled, Is.True);
+            Assert.That(arrow.color.r, Is.GreaterThan(0.8f));
+            Assert.That(arrow.color.g, Is.LessThan(0.25f));
+            Assert.That(arrow.color.b, Is.LessThan(0.25f));
+            Assert.That(arrow.sortingLayerID, Is.EqualTo(defender.Visual.sortingLayerID));
+            Assert.That(arrow.sortingOrder, Is.LessThan(defender.Visual.sortingOrder));
+            Assert.That(arrow.bounds.size.x, Is.GreaterThan(defender.Visual.bounds.size.x));
+            Assert.That(arrow.bounds.size.y, Is.GreaterThan(defender.Visual.bounds.size.y));
 
             var experienceBefore = defender.TotalExperience;
             var goldBefore = defenderBank.CurrentGold;
@@ -378,6 +385,9 @@ namespace TAD.Tests.PlayMode
             yield return null;
             Assert.That(defender.CurrentLevel, Is.EqualTo(2));
             Assert.That(defender.transform.localScale.x, Is.GreaterThan(defenderBaseScale.x));
+            var upgradeArrow = defender.transform.Find("Upgrade Available Arrow")?.GetComponent<SpriteRenderer>();
+            Assert.That(upgradeArrow, Is.Not.Null);
+            Assert.That(upgradeArrow.enabled, Is.True);
             defender.SetRangeIndicatorVisible(true);
             defender.SetTargetingMode(DefenderTargetingMode.HighestHealth);
             defenderObject.GetComponent<PooledInstance>().ReturnToPool();
@@ -388,6 +398,9 @@ namespace TAD.Tests.PlayMode
             Assert.That(reusedDefender.IsRangeIndicatorVisible, Is.False);
             Assert.That(reusedDefender.TargetingMode, Is.EqualTo(DefenderTargetingMode.FirstEnemyInRange));
             Assert.That(reusedDefender.transform.localScale.x, Is.EqualTo(defenderBaseScale.x).Within(0.0001f));
+            var reusedUpgradeArrow = reusedDefender.transform.Find("Upgrade Available Arrow")?.GetComponent<SpriteRenderer>();
+            Assert.That(reusedUpgradeArrow, Is.Not.Null);
+            Assert.That(reusedUpgradeArrow.enabled, Is.False);
             Object.Destroy(progressionDefinition);
 
             var projectileObject = pool.Spawn(PooledObjectType.Projectile, Vector3.zero, Quaternion.identity);
@@ -399,6 +412,67 @@ namespace TAD.Tests.PlayMode
             Assert.That(reusedProjectile.IsLaunched, Is.False);
             Assert.That(reusedProjectile.Source, Is.Null);
             Assert.That(reusedProjectile.ProjectileDefinition, Is.Null);
+        }
+
+        [UnityTest]
+        public IEnumerator Pool_ResolvesEveryConfiguredAttackerDefenderAndProjectile()
+        {
+            var pool = GameBasicsTestSupport.CreateSpawnPool();
+            Assert.That(pool, Is.Not.Null);
+            yield return null;
+
+            var attackerDefinitions = new List<AttackerDefinition>();
+            pool.CopyAvailableAttackerDefinitions(attackerDefinitions);
+            Assert.That(attackerDefinitions, Has.Count.EqualTo(12),
+                "The complete authored attacker roster must be available from the reusable Spawn Pool.");
+
+            AttackerDefinition ramDefinition = null;
+            foreach (var definition in attackerDefinitions)
+            {
+                Assert.That(definition, Is.Not.Null);
+                var attackerObject = pool.SpawnAttacker(definition, Vector3.zero, Quaternion.identity);
+                Assert.That(attackerObject, Is.Not.Null, $"{definition.DisplayName} did not resolve to a pooled prefab.");
+
+                var attacker = attackerObject.GetComponent<BasicAttacker>();
+                var instance = attackerObject.GetComponent<PooledInstance>();
+                Assert.That(attacker, Is.Not.Null);
+                Assert.That(instance, Is.Not.Null);
+                Assert.That(attacker.Definition, Is.EqualTo(definition));
+                instance.ReturnToPool();
+
+                if (definition.AttackerId == "003")
+                {
+                    ramDefinition = definition;
+                }
+            }
+
+            Assert.That(ramDefinition, Is.Not.Null);
+            var deserializedRamCopy = Object.Instantiate(ramDefinition);
+            var clonedRamObject = pool.SpawnAttacker(deserializedRamCopy, Vector3.zero, Quaternion.identity);
+            Assert.That(clonedRamObject, Is.Not.Null,
+                "An equivalent Ram definition copy should still resolve the canonical Ram pool bucket.");
+            Assert.That(clonedRamObject.GetComponent<BasicAttacker>().Definition.AttackerId,
+                Is.EqualTo(deserializedRamCopy.AttackerId));
+            clonedRamObject.GetComponent<PooledInstance>().ReturnToPool();
+            Object.Destroy(deserializedRamCopy);
+
+            var defenderObject = pool.Spawn(PooledObjectType.Defender, Vector3.zero, Quaternion.identity);
+            Assert.That(defenderObject, Is.Not.Null);
+            Assert.That(defenderObject.GetComponent<FarmHand>(), Is.Not.Null);
+            defenderObject.GetComponent<PooledInstance>().ReturnToPool();
+
+            var projectilePrefabs = new List<GameObject>();
+            pool.CopyAvailableProjectilePrefabs(projectilePrefabs);
+            Assert.That(projectilePrefabs, Is.Not.Empty,
+                "The Spawn Pool must expose its default and specialised projectile buckets.");
+            foreach (var projectilePrefab in projectilePrefabs)
+            {
+                Assert.That(projectilePrefab, Is.Not.Null);
+                var projectileObject = pool.SpawnProjectile(projectilePrefab, Vector3.zero, Quaternion.identity);
+                Assert.That(projectileObject, Is.Not.Null, $"{projectilePrefab.name} did not resolve to a pooled projectile bucket.");
+                Assert.That(projectileObject.GetComponent<FarmHandProjectileBase>(), Is.Not.Null);
+                projectileObject.GetComponent<PooledInstance>().ReturnToPool();
+            }
         }
 
         [UnityTest]

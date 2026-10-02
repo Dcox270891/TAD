@@ -139,9 +139,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 53068baf28cd9d24dba66745e9688a90, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TAD.Runtime::TAD.UI.FarmUiSkin
-  panelSprite: {fileID: 21300000, guid: e6391910ff51ce047852d71b219ac884, type: 3}
-  buttonSprite: {fileID: 21300000, guid: 781e3ef992fdae44ea2e6ed382dc77d2, type: 3}
   menuGrassSprite: {fileID: 21300000, guid: 18dc9001961fbfe47a9cbe4d9e0d645d, type: 3}
+  thinWoodOutlineSprite: {fileID: 21300000, guid: 6ebe4ce13b9a6b3409a0346843127883, type: 3}
 --- !u!1 &2011779070501776278
 GameObject:
   m_ObjectHideFlags: 0
@@ -153,7 +152,6 @@ GameObject:
   - component: {fileID: 3359095712809757286}
   - component: {fileID: 2957054531471364481}
   - component: {fileID: 2354548759914337526}
-  - component: {fileID: 3197738538765953302}
   m_Layer: 5
   m_Name: Stats
   m_TagString: Untagged
@@ -201,7 +199,7 @@ MonoBehaviour:
   m_Name: Text
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Text
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0.24, g: 0.105, b: 0.03, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -211,32 +209,17 @@ MonoBehaviour:
   m_FontData:
     m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
     m_FontSize: 14
-    m_FontStyle: 0
+    m_FontStyle: 1
     m_BestFit: 0
     m_MinSize: 10
     m_MaxSize: 40
     m_Alignment: 0
-    m_AlignByGeometry: 0
+    m_AlignByGeometry: 1
     m_RichText: 1
     m_HorizontalOverflow: 1
     m_VerticalOverflow: 1
     m_LineSpacing: 1
   m_Text: "Damage: 1    Range: 1\nAttack Speed: 1/sec\nAttack: Melee  \u2022  Direct\nProjectile Speed: 1\nLifetime: 1 sec\nWeapon Cost: 0"
---- !u!114 &3197738538765953302
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2011779070501776278}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cfabb0440166ab443bba8876756fdfa9, type: 3}
-  m_Name: Shadow
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Shadow
-  m_EffectColor: {r: 0, g: 0, b: 0, a: 0.65}
-  m_EffectDistance: {x: 1, y: -1}
-  m_UseGraphicAlpha: 1
 --- !u!1 &2041279446345783533
 GameObject:
   m_ObjectHideFlags: 0
@@ -248,7 +231,6 @@ GameObject:
   - component: {fileID: 6356243361481563681}
   - component: {fileID: 3442230313665384286}
   - component: {fileID: 9085035287941575808}
-  - component: {fileID: 3491464633393800314}
   m_Layer: 5
   m_Name: Weapon
   m_TagString: Untagged
@@ -296,7 +278,7 @@ MonoBehaviour:
   m_Name: Text
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Text
   m_Material: {fileID: 0}
-  m_Color: {r: 0.72, g: 1, b: 0.76, a: 1}
+  m_Color: {r: 0.24, g: 0.105, b: 0.03, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -306,12 +288,12 @@ MonoBehaviour:
   m_FontData:
     m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
     m_FontSize: 14
-    m_FontStyle: 0
+    m_FontStyle: 3
     m_BestFit: 0
     m_MinSize: 10
     m_MaxSize: 40
     m_Alignment: 1
-    m_AlignByGeometry: 0
+    m_AlignByGeometry: 1
     m_RichText: 1
     m_HorizontalOverflow: 1
     m_VerticalOverflow: 1
@@ -319,21 +301,6 @@ MonoBehaviour:
   m_Text: 'Unarmed
 
     A basic unarmed farmhand attack.'
---- !u!114 &3491464633393800314
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2041279446345783533}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cfabb0440166ab443bba8876756fdfa9, type: 3}
-  m_Name: Shadow
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Shadow
-  m_EffectColor: {r: 0, g: 0, b: 0, a: 0.65}
-  m_EffectDistance: {x: 1, y: -1}
-  m_UseGraphicAlpha: 1
 --- !u!1 &4121911072761092762
 GameObject:
   m_ObjectHideFlags: 0
@@ -345,7 +312,6 @@ GameObject:
   - component: {fileID: 3939816789094718949}
   - component: {fileID: 4957064982592234015}
   - component: {fileID: 6435703678583417823}
-  - component: {fileID: 5023344293982548854}
   m_Layer: 5
   m_Name: Experience
   m_TagString: Untagged
@@ -393,7 +359,7 @@ MonoBehaviour:
   m_Name: Text
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Text
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 0.88, b: 0.25, a: 1}
+  m_Color: {r: 0.24, g: 0.105, b: 0.03, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -403,32 +369,17 @@ MonoBehaviour:
   m_FontData:
     m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
     m_FontSize: 14
-    m_FontStyle: 0
+    m_FontStyle: 1
     m_BestFit: 0
     m_MinSize: 10
     m_MaxSize: 40
     m_Alignment: 4
-    m_AlignByGeometry: 0
+    m_AlignByGeometry: 1
     m_RichText: 1
     m_HorizontalOverflow: 1
     m_VerticalOverflow: 1
     m_LineSpacing: 1
   m_Text: 'EXP: 0/10   Total: 0'
---- !u!114 &5023344293982548854
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4121911072761092762}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cfabb0440166ab443bba8876756fdfa9, type: 3}
-  m_Name: Shadow
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Shadow
-  m_EffectColor: {r: 0, g: 0, b: 0, a: 0.65}
-  m_EffectDistance: {x: 1, y: -1}
-  m_UseGraphicAlpha: 1
 --- !u!1 &4729223434097215847
 GameObject:
   m_ObjectHideFlags: 0
@@ -761,7 +712,6 @@ GameObject:
   - component: {fileID: 2840655073491295488}
   - component: {fileID: 3128557743132270627}
   - component: {fileID: 5610544127782455438}
-  - component: {fileID: 8701607372585993614}
   m_Layer: 5
   m_Name: Heading
   m_TagString: Untagged
@@ -809,7 +759,7 @@ MonoBehaviour:
   m_Name: Text
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Text
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0.24, g: 0.105, b: 0.03, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -819,32 +769,17 @@ MonoBehaviour:
   m_FontData:
     m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
     m_FontSize: 19
-    m_FontStyle: 0
+    m_FontStyle: 3
     m_BestFit: 0
     m_MinSize: 10
     m_MaxSize: 40
     m_Alignment: 4
-    m_AlignByGeometry: 0
+    m_AlignByGeometry: 1
     m_RichText: 1
     m_HorizontalOverflow: 1
     m_VerticalOverflow: 1
     m_LineSpacing: 1
   m_Text: "Farmhand  \u2022  Level 1/10"
---- !u!114 &8701607372585993614
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6803738203907730109}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cfabb0440166ab443bba8876756fdfa9, type: 3}
-  m_Name: Shadow
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Shadow
-  m_EffectColor: {r: 0, g: 0, b: 0, a: 0.65}
-  m_EffectDistance: {x: 1, y: -1}
-  m_UseGraphicAlpha: 1
 --- !u!1 &9156310138469381375
 GameObject:
   m_ObjectHideFlags: 0

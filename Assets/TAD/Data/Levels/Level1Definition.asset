@@ -16,3 +16,4 @@ MonoBehaviour:
   displayName: 'Level 1: Meadow Run'
   sceneName: Level1
   description: A clear first farm route with three escalating waves.
+  unlocked: 1

@@ -56,6 +56,7 @@ namespace TAD.UI
                 attackerImage.sprite = rightFacingSprite;
                 attackerImage.enabled = rightFacingSprite != null;
                 AttackerCombatRatingBadge.ShowFor(attackerImage, group.Definition);
+                AttackerArchetypeBadge.ShowFor(attackerImage, group.Definition);
             }
 
             if (countText != null)

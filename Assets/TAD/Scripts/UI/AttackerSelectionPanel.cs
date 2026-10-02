@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using TAD.Attackers;
 using TAD.Economy;
@@ -18,6 +19,7 @@ namespace TAD.UI
         private readonly List<AttackerDefinition> definitions = new();
         private readonly List<AttackerSelectionButton> spawnedButtons = new();
         private bool isOrderInputEnabled = true;
+        private bool isPresentationVisible = true;
 
         /// <summary>Whether this panel is currently allowed to accept additional attacker orders.</summary>
         public bool IsOrderInputEnabled => isOrderInputEnabled;
@@ -38,6 +40,7 @@ namespace TAD.UI
             }
 
             spawnPool.CopyAvailableAttackerDefinitions(definitions);
+            definitions.Sort(CompareForDisplay);
             foreach (var definition in definitions)
             {
                 if (definition == null || !spawnPool.TryGetAttackerPrefab(definition, out var attackerPrefab))
@@ -55,6 +58,46 @@ namespace TAD.UI
         }
 
         /// <summary>
+        /// Keeps the choice tray predictable: every challenge-one attacker is shown before
+        /// challenge two, then challenge three. Within a tier, roles follow the authored
+        /// Basic/Fast/Strong/Flying order and then their display names.
+        /// </summary>
+        private static int CompareForDisplay(AttackerDefinition left, AttackerDefinition right)
+        {
+            if (ReferenceEquals(left, right))
+            {
+                return 0;
+            }
+
+            if (left == null)
+            {
+                return 1;
+            }
+
+            if (right == null)
+            {
+                return -1;
+            }
+
+            var tierComparison = left.ChallengeTier.CompareTo(right.ChallengeTier);
+            if (tierComparison != 0)
+            {
+                return tierComparison;
+            }
+
+            var archetypeComparison = left.Archetype.CompareTo(right.Archetype);
+            if (archetypeComparison != 0)
+            {
+                return archetypeComparison;
+            }
+
+            var nameComparison = string.Compare(left.DisplayName, right.DisplayName, StringComparison.Ordinal);
+            return nameComparison != 0
+                ? nameComparison
+                : string.Compare(left.AttackerId, right.AttackerId, StringComparison.Ordinal);
+        }
+
+        /// <summary>
         /// Locally suspends this panel's input without using a modal gameplay overlay, allowing defender
         /// inspection to continue while attacker group details are open.
         /// </summary>
@@ -66,6 +109,18 @@ namespace TAD.UI
             }
 
             isOrderInputEnabled = enabled;
+            ApplyOrderInputState();
+        }
+
+        /// <summary>Temporarily hides the card tray while a selected wave's information card is open.</summary>
+        public void SetPresentationVisible(bool visible)
+        {
+            if (isPresentationVisible == visible)
+            {
+                return;
+            }
+
+            isPresentationVisible = visible;
             ApplyOrderInputState();
         }
 
@@ -95,9 +150,11 @@ namespace TAD.UI
                 return;
             }
 
-            inputCanvasGroup.interactable = isOrderInputEnabled;
-            inputCanvasGroup.blocksRaycasts = isOrderInputEnabled;
-            inputCanvasGroup.alpha = isOrderInputEnabled ? 1f : 0.5f;
+            inputCanvasGroup.interactable = isPresentationVisible && isOrderInputEnabled;
+            inputCanvasGroup.blocksRaycasts = isPresentationVisible && isOrderInputEnabled;
+            inputCanvasGroup.alpha = isPresentationVisible
+                ? isOrderInputEnabled ? 1f : 0.5f
+                : 0f;
         }
 
         private bool ResolveInputCanvasGroup()

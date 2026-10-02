@@ -11,7 +11,6 @@ GameObject:
   - component: {fileID: 9029012698333204333}
   - component: {fileID: 8713945127861744884}
   - component: {fileID: 8418234047849985427}
-  - component: {fileID: 4891739874989271459}
   m_Layer: 5
   m_Name: AttackerIncomeText
   m_TagString: Untagged
@@ -59,7 +58,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Text
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 0.88, b: 0.35, a: 1}
+  m_Color: {r: 0.24, g: 0.105, b: 0.03, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -69,32 +68,17 @@ MonoBehaviour:
   m_FontData:
     m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
     m_FontSize: 20
-    m_FontStyle: 0
-    m_BestFit: 0
-    m_MinSize: 10
-    m_MaxSize: 40
-    m_Alignment: 3
-    m_AlignByGeometry: 0
+    m_FontStyle: 1
+    m_BestFit: 1
+    m_MinSize: 12
+    m_MaxSize: 20
+    m_Alignment: 4
+    m_AlignByGeometry: 1
     m_RichText: 1
     m_HorizontalOverflow: 1
-    m_VerticalOverflow: 1
+    m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: 'Income: +0'
---- !u!114 &4891739874989271459
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 165731936776696029}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cfabb0440166ab443bba8876756fdfa9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Shadow
-  m_EffectColor: {r: 0, g: 0, b: 0, a: 0.65}
-  m_EffectDistance: {x: 1, y: -1}
-  m_UseGraphicAlpha: 1
 --- !u!1 &1690877410769971815
 GameObject:
   m_ObjectHideFlags: 0
@@ -211,9 +195,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 53068baf28cd9d24dba66745e9688a90, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TAD.Runtime::TAD.UI.FarmUiSkin
-  panelSprite: {fileID: 21300000, guid: e6391910ff51ce047852d71b219ac884, type: 3}
-  buttonSprite: {fileID: 21300000, guid: 781e3ef992fdae44ea2e6ed382dc77d2, type: 3}
   menuGrassSprite: {fileID: 21300000, guid: 18dc9001961fbfe47a9cbe4d9e0d645d, type: 3}
+  thinWoodOutlineSprite: {fileID: 21300000, guid: 6ebe4ce13b9a6b3409a0346843127883, type: 3}
 --- !u!1 &5053406786931409880
 GameObject:
   m_ObjectHideFlags: 0
@@ -225,7 +208,6 @@ GameObject:
   - component: {fileID: 6608588297413967520}
   - component: {fileID: 2499824387741263876}
   - component: {fileID: 5806201188716948795}
-  - component: {fileID: 6394595997640705333}
   m_Layer: 5
   m_Name: AttackerGoldText
   m_TagString: Untagged
@@ -273,7 +255,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Text
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 0.84, b: 0.27, a: 1}
+  m_Color: {r: 0.24, g: 0.105, b: 0.03, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -284,31 +266,16 @@ MonoBehaviour:
     m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
     m_FontSize: 24
     m_FontStyle: 1
-    m_BestFit: 0
-    m_MinSize: 10
-    m_MaxSize: 40
-    m_Alignment: 3
-    m_AlignByGeometry: 0
+    m_BestFit: 1
+    m_MinSize: 12
+    m_MaxSize: 24
+    m_Alignment: 4
+    m_AlignByGeometry: 1
     m_RichText: 1
     m_HorizontalOverflow: 1
-    m_VerticalOverflow: 1
+    m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: 'Attacker Gold: 100'
---- !u!114 &6394595997640705333
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5053406786931409880}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cfabb0440166ab443bba8876756fdfa9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Shadow
-  m_EffectColor: {r: 0, g: 0, b: 0, a: 0.9}
-  m_EffectDistance: {x: 1, y: -1}
-  m_UseGraphicAlpha: 1
 --- !u!1 &5185476397663349759
 GameObject:
   m_ObjectHideFlags: 0
@@ -320,7 +287,6 @@ GameObject:
   - component: {fileID: 8695287283132892283}
   - component: {fileID: 1190234174360171728}
   - component: {fileID: 5522682269277614064}
-  - component: {fileID: 5183352655367584222}
   m_Layer: 5
   m_Name: DefenderGoldText
   m_TagString: Untagged
@@ -368,7 +334,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Text
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 0.84, b: 0.27, a: 1}
+  m_Color: {r: 0.24, g: 0.105, b: 0.03, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -379,28 +345,13 @@ MonoBehaviour:
     m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
     m_FontSize: 24
     m_FontStyle: 1
-    m_BestFit: 0
-    m_MinSize: 10
-    m_MaxSize: 40
-    m_Alignment: 5
-    m_AlignByGeometry: 0
+    m_BestFit: 1
+    m_MinSize: 12
+    m_MaxSize: 24
+    m_Alignment: 4
+    m_AlignByGeometry: 1
     m_RichText: 1
     m_HorizontalOverflow: 1
-    m_VerticalOverflow: 1
+    m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: 'Defender Gold: 100'
---- !u!114 &5183352655367584222
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5185476397663349759}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cfabb0440166ab443bba8876756fdfa9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Shadow
-  m_EffectColor: {r: 0, g: 0, b: 0, a: 0.9}
-  m_EffectDistance: {x: 1, y: -1}
-  m_UseGraphicAlpha: 1

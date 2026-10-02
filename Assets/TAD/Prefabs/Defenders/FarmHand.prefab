@@ -161,6 +161,7 @@ GameObject:
   - component: {fileID: 7503971524455403412}
   - component: {fileID: 35709057752819855}
   - component: {fileID: 7376161628610800881}
+  - component: {fileID: 2515115941203810951}
   m_Layer: 11
   m_Name: FarmHand
   m_TagString: Untagged
@@ -380,6 +381,18 @@ MonoBehaviour:
   - {fileID: 11400000, guid: a0549787ed494334bbc86a56e16b1da8, type: 2}
   - {fileID: 11400000, guid: 11525543435da894f83e4cfa109a6f22, type: 2}
   aimTransitionDuration: 0.16
+--- !u!114 &2515115941203810951
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1396477453823266386}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 50518f42d018cd64a96ea33eef391ff7, type: 3}
+  m_Name: FarmHand Upgrade Indicator
+  m_EditorClassIdentifier: TAD.Runtime::TAD.Defenders.FarmHandUpgradeIndicator
 --- !u!1 &1961148835843387005
 GameObject:
   m_ObjectHideFlags: 0

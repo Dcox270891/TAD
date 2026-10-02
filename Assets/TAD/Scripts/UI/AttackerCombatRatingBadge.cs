@@ -94,17 +94,9 @@ namespace TAD.UI
 
             ratingText ??= FindOrCreateText(RatingLabelName);
             sendSizeText ??= FindOrCreateText(SendSizeLabelName);
-            ConfigureTextDefaults(ratingText, Color.black);
-            ConfigureTextDefaults(sendSizeText, Color.white);
-
-            var sendSizeOutline = sendSizeText.GetComponent<UnityEngine.UI.Outline>();
-            if (sendSizeOutline == null)
-            {
-                sendSizeOutline = sendSizeText.gameObject.AddComponent<UnityEngine.UI.Outline>();
-            }
-
-            sendSizeOutline.effectColor = new Color(0f, 0f, 0f, 0.85f);
-            sendSizeOutline.effectDistance = new Vector2(1f, -1f);
+            var inkBrown = new Color(0.24f, 0.105f, 0.03f, 1f);
+            ConfigureTextDefaults(ratingText, inkBrown);
+            ConfigureTextDefaults(sendSizeText, inkBrown);
         }
 
         private void ConfigureLayout(RectTransform attackerImageRect)
@@ -171,6 +163,7 @@ namespace TAD.UI
 
             text.font ??= Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             text.color = color;
+            text.fontStyle = FontStyle.Bold;
             text.alignment = TextAnchor.MiddleCenter;
             text.horizontalOverflow = HorizontalWrapMode.Overflow;
             text.verticalOverflow = VerticalWrapMode.Overflow;

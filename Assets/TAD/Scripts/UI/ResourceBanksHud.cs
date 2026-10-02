@@ -108,6 +108,7 @@ namespace TAD.UI
             if (attackerGoldText != null)
             {
                 attackerGoldText.text = $"Attacker Gold: {gold}";
+                RefreshTextSkin(attackerGoldText);
             }
         }
 
@@ -116,6 +117,7 @@ namespace TAD.UI
             if (attackerIncomeText != null)
             {
                 attackerIncomeText.text = $"Income: +{income}";
+                RefreshTextSkin(attackerIncomeText);
             }
         }
 
@@ -124,7 +126,19 @@ namespace TAD.UI
             if (defenderGoldText != null)
             {
                 defenderGoldText.text = $"Defender Gold: {gold}";
+                RefreshTextSkin(defenderGoldText);
             }
+        }
+
+        private void RefreshTextSkin(UnityEngine.UI.Text text)
+        {
+            if (text == null)
+            {
+                return;
+            }
+
+            var skin = GetComponent<FarmUiSkin>() ?? GetComponentInParent<FarmUiSkin>();
+            skin?.ApplyThemeTo(text.transform);
         }
     }
 }

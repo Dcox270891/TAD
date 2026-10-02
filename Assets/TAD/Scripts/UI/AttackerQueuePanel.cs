@@ -13,6 +13,12 @@ namespace TAD.UI
     [DisallowMultipleComponent]
     public sealed class AttackerQueuePanel : MonoBehaviour
     {
+        // The attacker bank uses two stacked plaques. Keep the queue below both and stop before
+        // the bottom attacker-card tray, rather than relying on the old single-label offset.
+        private const float QueueScrollTopOffset = -212f;
+        private const float QueueScrollHeight = 602f;
+        private const float QueueHeadingTopOffset = -189f;
+
         [SerializeField] private RectTransform content;
         [SerializeField] private AttackerQueueGroupButton groupButtonPrefab;
 
@@ -26,6 +32,8 @@ namespace TAD.UI
         private AttackerDetailsPanel detailsPanel;
         private WaveStartButton waveStartButton;
         private AttackerRoutePreview routePreview;
+        private RectTransform queueScrollView;
+        private RectTransform queueHeading;
         private long selectedGroupId;
         private bool isSubscribed;
         private bool isClosingSelection;
@@ -33,16 +41,33 @@ namespace TAD.UI
         private void Awake()
         {
             content ??= transform.Find("ScrollView/Viewport/Content") as RectTransform;
+            queueScrollView ??= transform.Find("ScrollView") as RectTransform;
+            queueHeading ??= transform.Find("Heading") as RectTransform;
+            ApplyResponsiveLayout();
+        }
+
+        /// <summary>
+        /// Reapplies the fixed safe region used by the left-side attacker UI. This is public so
+        /// the UI asset builder can persist the same layout into the prefab, while OnEnable
+        /// repairs retained play-session instances after scripts are reloaded.
+        /// </summary>
+        public void ApplyResponsiveLayout()
+        {
             ConfigureLeftSideLayout();
         }
 
         private void ConfigureLeftSideLayout()
         {
-            ConfigureTopLeft(transform.Find("ScrollView") as RectTransform, new Vector2(16f, -114f));
+            queueScrollView ??= transform.Find("ScrollView") as RectTransform;
+            queueHeading ??= transform.Find("Heading") as RectTransform;
+            ConfigureTopLeft(queueScrollView, new Vector2(16f, QueueScrollTopOffset));
+            if (queueScrollView != null)
+            {
+                queueScrollView.sizeDelta = new Vector2(queueScrollView.sizeDelta.x, QueueScrollHeight);
+            }
 
-            var heading = transform.Find("Heading");
-            ConfigureTopLeft(heading as RectTransform, new Vector2(16f, -91f));
-            var headingText = heading != null ? heading.GetComponent<UnityEngine.UI.Text>() : null;
+            ConfigureTopLeft(queueHeading, new Vector2(16f, QueueHeadingTopOffset));
+            var headingText = queueHeading != null ? queueHeading.GetComponent<UnityEngine.UI.Text>() : null;
             if (headingText != null)
             {
                 headingText.text = "UP NEXT";
@@ -64,6 +89,10 @@ namespace TAD.UI
 
         private void OnEnable()
         {
+            // With domain/scene reload disabled, an already-instantiated panel can survive a
+            // script update. Reapply the anchors here as well as in Awake so its old, taller
+            // queue never resumes over the attacker income plaque.
+            ApplyResponsiveLayout();
             Subscribe();
             Refresh();
         }
@@ -115,6 +144,7 @@ namespace TAD.UI
                 detailsPanel.Closed += HandleDetailsClosed;
             }
 
+            ApplyResponsiveLayout();
             EnsureRoutePreview();
             Subscribe();
             Refresh();
@@ -288,8 +318,23 @@ namespace TAD.UI
         private void SetAttackerOrderingBlocked(bool blocked)
         {
             selectionPanel?.SetOrderInputEnabled(!blocked);
+            selectionPanel?.SetPresentationVisible(!blocked);
+            SetQueuePresentationVisible(!blocked);
             waveStartButton ??= FindAnyObjectByType<WaveStartButton>(FindObjectsInactive.Include);
             waveStartButton?.SetExternalInputBlocked(blocked);
+        }
+
+        private void SetQueuePresentationVisible(bool visible)
+        {
+            if (queueScrollView != null && queueScrollView.gameObject.activeSelf != visible)
+            {
+                queueScrollView.gameObject.SetActive(visible);
+            }
+
+            if (queueHeading != null && queueHeading.gameObject.activeSelf != visible)
+            {
+                queueHeading.gameObject.SetActive(visible);
+            }
         }
 
         private void EnsureRoutePreview()

@@ -133,6 +133,41 @@ namespace TAD.Pooling
             }
         }
 
+        /// <summary>
+        /// Copies every projectile prefab configured by this pool, including the default projectile and
+        /// all specialised weapon variants. This provides a safe way for validation and diagnostics to
+        /// exercise the same buckets gameplay uses.
+        /// </summary>
+        public void CopyAvailableProjectilePrefabs(List<GameObject> destination)
+        {
+            if (destination == null)
+            {
+                return;
+            }
+
+            destination.Clear();
+            if (poolSettings != null)
+            {
+                foreach (var settings in poolSettings)
+                {
+                    if (settings != null && settings.ObjectType == PooledObjectType.Projectile)
+                    {
+                        AddUniquePrefab(settings.Prefab, destination);
+                    }
+                }
+            }
+
+            if (additionalProjectilePrefabs == null)
+            {
+                return;
+            }
+
+            foreach (var projectilePrefab in additionalProjectilePrefabs)
+            {
+                AddUniquePrefab(projectilePrefab, destination);
+            }
+        }
+
         /// <summary>Gets the configured attacker prefab for a definition, including the legacy default attacker.</summary>
         public bool TryGetAttackerPrefab(AttackerDefinition definition, out GameObject attackerPrefab)
         {
@@ -157,7 +192,7 @@ namespace TAD.Pooling
 
             if (additionalAttackerPrefabs == null)
             {
-                return false;
+                return TryFindEquivalentAttackerPrefab(definition, out attackerPrefab);
             }
 
             foreach (var candidate in additionalAttackerPrefabs)
@@ -169,7 +204,11 @@ namespace TAD.Pooling
                 }
             }
 
-            return false;
+            // A pool normally receives the canonical asset reference. In editor hot reload or
+            // deserialization edge cases Unity can provide an equivalent ScriptableObject copy.
+            // Accept that copy only when its entire authored identity matches exactly; an ID by itself
+            // is deliberately not enough to redirect a potentially different attacker to a prefab.
+            return TryFindEquivalentAttackerPrefab(definition, out attackerPrefab);
         }
 
         private static void AddAttackerDefinition(GameObject attackerPrefab, List<AttackerDefinition> destination)
@@ -185,11 +224,28 @@ namespace TAD.Pooling
             destination.Add(attacker.Definition);
         }
 
+        private static void AddUniquePrefab(GameObject prefab, List<GameObject> destination)
+        {
+            if (prefab != null && !destination.Contains(prefab))
+            {
+                destination.Add(prefab);
+            }
+        }
+
         private static bool MatchesDefinition(GameObject attackerPrefab, AttackerDefinition definition)
         {
             return attackerPrefab != null &&
                    attackerPrefab.TryGetComponent<BasicAttacker>(out var attacker) &&
                    attacker.Definition == definition;
+        }
+
+        private static bool MatchesEquivalentDefinition(GameObject attackerPrefab, AttackerDefinition definition)
+        {
+            return attackerPrefab != null &&
+                   definition != null &&
+                   attackerPrefab.TryGetComponent<BasicAttacker>(out var attacker) &&
+                   attacker.Definition != null &&
+                   AreDefinitionsEquivalent(attacker.Definition, definition);
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -254,7 +310,7 @@ namespace TAD.Pooling
             }
 
             Initialize();
-            if (!attackerPoolsByDefinition.TryGetValue(definition, out var pool))
+            if (!TryResolveAttackerPool(definition, out var pool))
             {
                 Debug.LogError($"{name} has no configured pooled prefab for attacker definition {definition.DisplayName} ({definition.AttackerId}).", this);
                 return null;
@@ -329,7 +385,7 @@ namespace TAD.Pooling
                 }
 
                 var pool = CreateBucket(attackerPrefab, PooledObjectType.Attacker, $"Attacker Pool ({attackerPrefab.name})");
-                attackerPoolsByDefinition.Add(attacker.Definition, pool);
+                RegisterAttackerPool(attackerPrefab, pool);
                 Prewarm(pool, additionalAttackerInitialCapacity);
             }
 
@@ -378,7 +434,107 @@ namespace TAD.Pooling
             if (!attackerPoolsByDefinition.TryAdd(attacker.Definition, pool))
             {
                 Debug.LogWarning($"{name} has more than one pooled prefab for attacker definition {attacker.Definition.DisplayName}. The later prefab is ignored.", this);
+                return;
             }
+        }
+
+        private bool TryResolveAttackerPool(AttackerDefinition definition, out PoolBucket pool)
+        {
+            if (attackerPoolsByDefinition.TryGetValue(definition, out pool))
+            {
+                return true;
+            }
+
+            pool = null;
+            foreach (var registeredPool in attackerPoolsByDefinition)
+            {
+                if (!AreDefinitionsEquivalent(registeredPool.Key, definition))
+                {
+                    continue;
+                }
+
+                if (pool != null && pool != registeredPool.Value)
+                {
+                    // Do not make a best guess if a malformed roster contains multiple equivalent
+                    // data entries that point to different prefabs.
+                    pool = null;
+                    return false;
+                }
+
+                pool = registeredPool.Value;
+            }
+
+            return pool != null;
+        }
+
+        private bool TryFindEquivalentAttackerPrefab(AttackerDefinition definition, out GameObject attackerPrefab)
+        {
+            attackerPrefab = null;
+            if (definition == null)
+            {
+                return false;
+            }
+
+            if (poolSettings != null)
+            {
+                foreach (var settings in poolSettings)
+                {
+                    if (settings == null || settings.ObjectType != PooledObjectType.Attacker ||
+                        !MatchesEquivalentDefinition(settings.Prefab, definition))
+                    {
+                        continue;
+                    }
+
+                    if (attackerPrefab != null && attackerPrefab != settings.Prefab)
+                    {
+                        attackerPrefab = null;
+                        return false;
+                    }
+
+                    attackerPrefab = settings.Prefab;
+                }
+            }
+
+            if (additionalAttackerPrefabs != null)
+            {
+                foreach (var candidate in additionalAttackerPrefabs)
+                {
+                    if (!MatchesEquivalentDefinition(candidate, definition))
+                    {
+                        continue;
+                    }
+
+                    if (attackerPrefab != null && attackerPrefab != candidate)
+                    {
+                        attackerPrefab = null;
+                        return false;
+                    }
+
+                    attackerPrefab = candidate;
+                }
+            }
+
+            return attackerPrefab != null;
+        }
+
+        private static bool AreDefinitionsEquivalent(AttackerDefinition first, AttackerDefinition second)
+        {
+            return first != null &&
+                   second != null &&
+                   string.Equals(first.AttackerId?.Trim(), second.AttackerId?.Trim(), StringComparison.Ordinal) &&
+                   string.Equals(first.DisplayName, second.DisplayName, StringComparison.Ordinal) &&
+                   Mathf.Approximately(first.MaximumHealth, second.MaximumHealth) &&
+                   Mathf.Approximately(first.MovementSpeed, second.MovementSpeed) &&
+                   Mathf.Approximately(first.Size, second.Size) &&
+                   first.SendCost == second.SendCost &&
+                   first.WaveIncome == second.WaveIncome &&
+                   first.ExpGiven == second.ExpGiven &&
+                   first.KillGain == second.KillGain &&
+                   first.SendSize == second.SendSize &&
+                   first.Archetype == second.Archetype &&
+                   first.ChallengeTier == second.ChallengeTier &&
+                   first.TraversalProfile == second.TraversalProfile &&
+                   first.VisualDefinition == second.VisualDefinition;
         }
 
         private void RegisterProjectilePool(GameObject prefab, PoolBucket pool)

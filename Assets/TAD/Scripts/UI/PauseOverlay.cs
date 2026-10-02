@@ -1,3 +1,4 @@
+using TAD.Levels;
 using TAD.Match;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -15,14 +16,20 @@ namespace TAD.UI
         [SerializeField] private ModalOverlay modalOverlay;
         [SerializeField] private UnityEngine.UI.Button playButton;
         [SerializeField] private UnityEngine.UI.Button restartButton;
+        [SerializeField] private UnityEngine.UI.Button nextLevelButton;
         [SerializeField] private UnityEngine.UI.Button mainMenuButton;
         [SerializeField] private UnityEngine.UI.Button quitButton;
+        [SerializeField] private LevelCatalog levelCatalog;
+        [SerializeField] private LevelLoadingOverlay levelLoadingOverlayPrefab;
         [SerializeField] private string mainMenuSceneName = "MainMenu";
 
         private GameObject resumeSelectionTarget;
         private bool buttonsSubscribed;
         private bool isChoosingRestartRole;
         private bool isRestarting;
+        private bool isLoadingNextLevel;
+        private Vector2 panelSizeWithoutNextLevel;
+        private bool hasPanelSizeWithoutNextLevel;
 
         public bool IsVisible => modalOverlay != null && modalOverlay.IsVisible;
 
@@ -59,6 +66,7 @@ namespace TAD.UI
             }
 
             resumeSelectionTarget = selectionAfterResume;
+            RefreshNextLevelButton();
             modalOverlay.Show();
             SelectPlayButton();
             return true;
@@ -79,6 +87,47 @@ namespace TAD.UI
             if (EventSystem.current != null && selectionTarget != null && selectionTarget.activeInHierarchy)
             {
                 EventSystem.current.SetSelectedGameObject(selectionTarget);
+            }
+        }
+
+        /// <summary>
+        /// Loads the immediate next unlocked catalog level while retaining the selected player side.
+        /// </summary>
+        public void NextLevel()
+        {
+            ResolveReferences();
+            if (isRestarting || isChoosingRestartRole || isLoadingNextLevel)
+            {
+                return;
+            }
+
+            if (!TryGetNextLevel(out LevelDefinition nextLevel, out var sceneBuildIndex))
+            {
+                RefreshNextLevelButton();
+                SelectNextLevelOrRestartButton();
+                return;
+            }
+
+            if (levelLoadingOverlayPrefab == null)
+            {
+                Debug.LogError("Pause Overlay is missing its Level Loading Overlay prefab.", this);
+                RefreshNextLevelButton();
+                SelectNextLevelOrRestartButton();
+                return;
+            }
+
+            resumeSelectionTarget = null;
+            modalOverlay?.Hide();
+            Time.timeScale = 1f;
+
+            var loadingOverlay = Instantiate(levelLoadingOverlayPrefab);
+            isLoadingNextLevel = loadingOverlay.TryLoadScene(
+                sceneBuildIndex,
+                nextLevel.SceneName,
+                () => HandleNextLevelLoadFailed(loadingOverlay));
+            if (!isLoadingNextLevel)
+            {
+                HandleNextLevelLoadFailed(loadingOverlay);
             }
         }
 
@@ -130,6 +179,19 @@ namespace TAD.UI
             modalOverlay?.Hide();
             Time.timeScale = 1f;
             SceneManager.LoadScene(activeScene.buildIndex);
+        }
+
+        private void HandleNextLevelLoadFailed(LevelLoadingOverlay loadingOverlay)
+        {
+            isLoadingNextLevel = false;
+            if (loadingOverlay != null)
+            {
+                Destroy(loadingOverlay.gameObject);
+            }
+
+            modalOverlay?.Show();
+            RefreshNextLevelButton();
+            SelectNextLevelOrRestartButton();
         }
 
         private void CancelRestartRoleChoice()
@@ -204,6 +266,11 @@ namespace TAD.UI
                 restartButton.onClick.AddListener(Restart);
             }
 
+            if (nextLevelButton != null)
+            {
+                nextLevelButton.onClick.AddListener(NextLevel);
+            }
+
             if (mainMenuButton != null)
             {
                 mainMenuButton.onClick.AddListener(GoToMainMenu);
@@ -232,6 +299,11 @@ namespace TAD.UI
             if (restartButton != null)
             {
                 restartButton.onClick.RemoveListener(Restart);
+            }
+
+            if (nextLevelButton != null)
+            {
+                nextLevelButton.onClick.RemoveListener(NextLevel);
             }
 
             if (mainMenuButton != null)
@@ -263,11 +335,31 @@ namespace TAD.UI
             }
         }
 
+        private void SelectNextLevelOrRestartButton()
+        {
+            if (EventSystem.current == null)
+            {
+                return;
+            }
+
+            if (nextLevelButton != null && nextLevelButton.gameObject.activeInHierarchy)
+            {
+                EventSystem.current.SetSelectedGameObject(nextLevelButton.gameObject);
+                return;
+            }
+
+            SelectRestartButton();
+        }
+
         private void ResolveReferences()
         {
             modalOverlay ??= GetComponent<ModalOverlay>();
 
-            if (playButton == null || mainMenuButton == null || quitButton == null)
+            if (playButton == null ||
+                restartButton == null ||
+                nextLevelButton == null ||
+                mainMenuButton == null ||
+                quitButton == null)
             {
                 foreach (var button in GetComponentsInChildren<UnityEngine.UI.Button>(true))
                 {
@@ -278,6 +370,9 @@ namespace TAD.UI
                             break;
                         case "RestartButton":
                             restartButton ??= button;
+                            break;
+                        case "NextLevelButton":
+                            nextLevelButton ??= button;
                             break;
                         case "MainMenuButton":
                             mainMenuButton ??= button;
@@ -290,6 +385,7 @@ namespace TAD.UI
             }
 
             EnsureRestartButton();
+            EnsureNextLevelButton();
         }
 
         private void EnsureRestartButton()
@@ -325,6 +421,81 @@ namespace TAD.UI
                     pausePanelRect.sizeDelta.x,
                     Mathf.Max(pausePanelRect.sizeDelta.y, 500f));
             }
+        }
+
+        private void EnsureNextLevelButton()
+        {
+            if (nextLevelButton != null || restartButton == null || restartButton.transform.parent == null)
+            {
+                return;
+            }
+
+            var panelRect = restartButton.transform.parent as RectTransform;
+            if (panelRect != null && !hasPanelSizeWithoutNextLevel)
+            {
+                panelSizeWithoutNextLevel = panelRect.sizeDelta;
+                hasPanelSizeWithoutNextLevel = true;
+            }
+
+            GameObject nextLevelObject = Instantiate(restartButton.gameObject, restartButton.transform.parent);
+            nextLevelObject.name = "NextLevelButton";
+            nextLevelObject.layer = gameObject.layer;
+            nextLevelObject.transform.SetSiblingIndex(restartButton.transform.GetSiblingIndex() + 1);
+
+            nextLevelButton = nextLevelObject.GetComponent<UnityEngine.UI.Button>();
+            if (nextLevelButton == null)
+            {
+                Destroy(nextLevelObject);
+                return;
+            }
+
+            nextLevelButton.onClick.RemoveAllListeners();
+            UnityEngine.UI.Text label = nextLevelButton.GetComponentInChildren<UnityEngine.UI.Text>(true);
+            if (label != null)
+            {
+                label.text = "Next Level";
+            }
+
+            nextLevelButton.gameObject.SetActive(false);
+        }
+
+        private void RefreshNextLevelButton()
+        {
+            EnsureNextLevelButton();
+            if (nextLevelButton == null)
+            {
+                return;
+            }
+
+            var shouldShow = TryGetNextLevel(out _, out _);
+            nextLevelButton.gameObject.SetActive(shouldShow);
+
+            var panelRect = nextLevelButton.transform.parent as RectTransform;
+            if (panelRect == null)
+            {
+                return;
+            }
+
+            if (!hasPanelSizeWithoutNextLevel)
+            {
+                panelSizeWithoutNextLevel = panelRect.sizeDelta;
+                hasPanelSizeWithoutNextLevel = true;
+            }
+
+            panelRect.sizeDelta = new Vector2(
+                panelRect.sizeDelta.x,
+                shouldShow
+                    ? Mathf.Max(panelSizeWithoutNextLevel.y + 68f, 568f)
+                    : panelSizeWithoutNextLevel.y);
+        }
+
+        private bool TryGetNextLevel(out LevelDefinition nextLevel, out int sceneBuildIndex)
+        {
+            return LevelCatalogNavigation.TryGetNextUnlockedLevel(
+                levelCatalog,
+                SceneManager.GetActiveScene().name,
+                out nextLevel,
+                out sceneBuildIndex);
         }
     }
 }

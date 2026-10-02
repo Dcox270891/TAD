@@ -55,6 +55,26 @@ namespace TAD.Tests.Editor
         }
 
         [Test]
+        public void PlayerLevelProgression_RewardRetainsTheProgressShownBeforeTheMatch()
+        {
+            var profile = new PlayerProfileData
+            {
+                playerLevel = 2,
+                playerExp = 40f,
+                totalPlayerExperience = 40f
+            };
+
+            var reward = PlayerLevelProgression.AwardMatchExperience(profile, 100f, playerWon: true);
+
+            Assert.That(reward.StartingLevel, Is.EqualTo(2));
+            Assert.That(reward.StartingExperience, Is.EqualTo(40f));
+            Assert.That(reward.StartingExperienceRequired, Is.EqualTo(100f));
+            Assert.That(reward.AwardedExperience, Is.EqualTo(100f));
+            Assert.That(reward.ResultingLevel, Is.EqualTo(3));
+            Assert.That(reward.CurrentExperience, Is.EqualTo(40f));
+        }
+
+        [Test]
         public void MatchExperienceLedger_UsesActualCombatExperienceForDispatchedAttackersAndTheSelectedSide()
         {
             var attacker = ScriptableObject.CreateInstance<AttackerDefinition>();

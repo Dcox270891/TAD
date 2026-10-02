@@ -13,14 +13,21 @@ namespace TAD.UI
         [SerializeField] private UnityEngine.UI.Image backgroundImage;
         [SerializeField] private UnityEngine.UI.Image fillImage;
         [SerializeField] private UnityEngine.UI.Text amountText;
+        [SerializeField] private Sprite squareFillSprite;
         [SerializeField] private Color depletedColor = new(0.88f, 0.18f, 0.16f, 1f);
         [SerializeField] private Color fullColor = new(0.18f, 0.78f, 0.28f, 1f);
 
+        private const float BarInset = 7f;
+        private const float LabelHorizontalInset = 14f;
+        private const float LabelVerticalInset = 6f;
+
         private FoodStore foodStore;
         private bool isSubscribed;
+        private static Sprite runtimeFallbackSquareFillSprite;
 
         private void Awake()
         {
+            ConfigureSquareBarGeometry();
             ConfigureLeftToRightFill();
             ConfigureEmptyBar();
         }
@@ -38,6 +45,24 @@ namespace TAD.UI
             foodStore = source;
             Subscribe();
             Refresh();
+        }
+
+        /// <summary>
+        /// Assigns the opaque square sprite used by the horizontal fill. A Filled uGUI Image
+        /// needs a real sprite; a sprite-less image silently renders no coloured portion.
+        /// This is called by the UI asset builder so every authored HUD uses the same fill.
+        /// </summary>
+        public void ConfigureSquareFillSprite(Sprite sprite)
+        {
+            if (sprite == null)
+            {
+                return;
+            }
+
+            squareFillSprite = sprite;
+            ConfigureSquareBarGeometry();
+            ConfigureLeftToRightFill();
+            ConfigureEmptyBar();
         }
 
         private void OnEnable()
@@ -115,6 +140,10 @@ namespace TAD.UI
             fillImage.type = UnityEngine.UI.Image.Type.Filled;
             fillImage.fillMethod = UnityEngine.UI.Image.FillMethod.Horizontal;
             fillImage.fillOrigin = (int)UnityEngine.UI.Image.OriginHorizontal.Left;
+            fillImage.sprite = ResolveSquareFillSprite();
+            fillImage.fillCenter = true;
+            fillImage.preserveAspect = false;
+            fillImage.raycastTarget = false;
         }
 
         private void ConfigureEmptyBar()
@@ -122,7 +151,71 @@ namespace TAD.UI
             if (backgroundImage != null)
             {
                 backgroundImage.color = Color.black;
+                backgroundImage.raycastTarget = false;
             }
+        }
+
+        private void ConfigureSquareBarGeometry()
+        {
+            if (backgroundImage != null)
+            {
+                backgroundImage.sprite = null;
+                backgroundImage.type = UnityEngine.UI.Image.Type.Simple;
+                backgroundImage.fillCenter = true;
+                backgroundImage.preserveAspect = false;
+            }
+
+            if (fillImage != null)
+            {
+                var fillRect = fillImage.rectTransform;
+                fillRect.anchorMin = Vector2.zero;
+                fillRect.anchorMax = Vector2.one;
+                fillRect.pivot = new Vector2(0.5f, 0.5f);
+                fillRect.offsetMin = Vector2.one * BarInset;
+                fillRect.offsetMax = Vector2.one * -BarInset;
+                fillRect.localScale = Vector3.one;
+            }
+
+            if (amountText != null)
+            {
+                var textRect = amountText.rectTransform;
+                textRect.anchorMin = Vector2.zero;
+                textRect.anchorMax = Vector2.one;
+                textRect.pivot = new Vector2(0.5f, 0.5f);
+                textRect.offsetMin = new Vector2(LabelHorizontalInset, LabelVerticalInset);
+                textRect.offsetMax = new Vector2(-LabelHorizontalInset, -LabelVerticalInset);
+                textRect.localScale = Vector3.one;
+                amountText.alignment = UnityEngine.TextAnchor.MiddleCenter;
+                amountText.resizeTextForBestFit = true;
+                amountText.resizeTextMinSize = 12;
+                amountText.resizeTextMaxSize = Mathf.Max(12, amountText.fontSize);
+                amountText.horizontalOverflow = UnityEngine.HorizontalWrapMode.Overflow;
+                amountText.verticalOverflow = UnityEngine.VerticalWrapMode.Truncate;
+            }
+        }
+
+        private Sprite ResolveSquareFillSprite()
+        {
+            if (squareFillSprite != null)
+            {
+                return squareFillSprite;
+            }
+
+            // Old scene copies can be played before their prefab is migrated by the editor
+            // builder. Retain a minimal, opaque fallback so the vital food state is never
+            // invisible in that situation.
+            if (runtimeFallbackSquareFillSprite == null)
+            {
+                var texture = Texture2D.whiteTexture;
+                runtimeFallbackSquareFillSprite = Sprite.Create(
+                    texture,
+                    new Rect(0f, 0f, texture.width, texture.height),
+                    new Vector2(0.5f, 0.5f),
+                    100f);
+                runtimeFallbackSquareFillSprite.name = "Runtime Square UI Fill";
+            }
+
+            return runtimeFallbackSquareFillSprite;
         }
     }
 }

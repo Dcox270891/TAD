@@ -1,29 +1,35 @@
 using System;
 using System.IO;
+using System.Linq;
 using TAD.UI;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace TAD.Editor
 {
     /// <summary>
-    /// Builds the small reusable thin-wood button and applies the same outline to the two
-    /// gameplay information cards. It uses Unity's asset APIs so prefab and importer data are
+    /// Builds the reusable thin-wood button and migrates every shipped UI prefab and Main Menu
+    /// panel to the same brass-free frame. It uses Unity's asset APIs so serialized UI is
     /// authored safely while the editor is open.
     /// </summary>
     internal static class ThinWoodOutlineUiAssetBuilder
     {
         private const string OutlineAssetPath = "Assets/TAD/Art/UI/TAD_ThinWoodOutline.png";
+        private const string SquareFillAssetPath = "Assets/TAD/Art/UI/TAD_SquareUiFill.png";
         private const string ButtonPrefabPath = "Assets/TAD/Prefabs/UI/ThinWoodOutlineButton.prefab";
-        private const string AttackerDetailsPrefabPath = "Assets/TAD/Prefabs/UI/AttackerDetailsPanel.prefab";
-        private const string DefenderDetailsPrefabPath = "Assets/TAD/Prefabs/UI/DefenderDetailsPanel.prefab";
+        private const string PlayerLevelUpCardPrefabPath = "Assets/TAD/Prefabs/UI/PlayerLevelUpCard.prefab";
+        private const string UiPrefabsFolder = "Assets/TAD/Prefabs/UI";
+        private const string MainMenuScenePath = "Assets/Scenes/MainMenu.unity";
+        private const string CircularMaskSpritePath = "UI/Skin/Knob.psd";
+        private const float CloseButtonEdgeInset = 18f;
         // The source artwork is high-resolution. A high PPU keeps its actual timber trim at
         // roughly nine pixels on a 52-pixel compact control instead of inheriting the very
         // heavy border of the older farm UI assets.
         private const float SpritePixelsPerUnit = 512f;
         private static readonly Vector4 SliceBorder = new(64f, 64f, 64f, 64f);
-        private static readonly Color InformationCardInterior = new(0.94f, 0.86f, 0.66f, 0.97f);
 
         [InitializeOnLoadMethod]
         private static void QueueInitialBuild()
@@ -57,16 +63,23 @@ namespace TAD.Editor
             {
                 AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
                 var outlineSprite = ConfigureOutlineImporter();
+                var squareFillSprite = CreateOrUpdateSquareFillSprite();
                 if (outlineSprite == null)
                 {
                     throw new InvalidOperationException($"Unable to import the outline sprite at '{OutlineAssetPath}'.");
                 }
 
+                if (squareFillSprite == null)
+                {
+                    throw new InvalidOperationException($"Unable to import the square fill sprite at '{SquareFillAssetPath}'.");
+                }
+
                 CreateOrUpdateButtonPrefab(outlineSprite);
-                ApplyOutlineToInformationPanel(AttackerDetailsPrefabPath, outlineSprite);
-                ApplyOutlineToInformationPanel(DefenderDetailsPrefabPath, outlineSprite);
+                var levelUpCardPrefab = CreateOrUpdatePlayerLevelUpCardPrefab(outlineSprite);
+                ApplyThinOutlineThemeToUiPrefabs(outlineSprite, squareFillSprite, levelUpCardPrefab);
+                ApplyThinOutlineThemeToMainMenu(outlineSprite);
                 AssetDatabase.SaveAssets();
-                Debug.Log("TAD: Thin wood outline button and information-card frames are ready.");
+                Debug.Log("TAD: Thin wood outlines are now applied to all UI panels and buttons.");
             }
             catch (Exception exception)
             {
@@ -92,6 +105,61 @@ namespace TAD.Editor
             importer.filterMode = FilterMode.Bilinear;
             importer.SaveAndReimport();
             return AssetDatabase.LoadAssetAtPath<Sprite>(OutlineAssetPath);
+        }
+
+        /// <summary>
+        /// Provides an explicit opaque sprite for Filled Images. uGUI does not render a
+        /// sprite-less Filled Image, which otherwise makes the food bar look empty at every
+        /// value even though its fill amount is correct.
+        /// </summary>
+        private static Sprite CreateOrUpdateSquareFillSprite()
+        {
+            var absolutePath = ToAbsoluteProjectPath(SquareFillAssetPath);
+            if (!File.Exists(absolutePath))
+            {
+                var directory = Path.GetDirectoryName(absolutePath);
+                if (!string.IsNullOrWhiteSpace(directory))
+                {
+                    Directory.CreateDirectory(directory);
+                }
+
+                var texture = new Texture2D(8, 8, TextureFormat.RGBA32, false);
+                try
+                {
+                    var pixels = new Color32[8 * 8];
+                    for (var index = 0; index < pixels.Length; index++)
+                    {
+                        pixels[index] = new Color32(255, 255, 255, 255);
+                    }
+
+                    texture.SetPixels32(pixels);
+                    texture.Apply(false, false);
+                    File.WriteAllBytes(absolutePath, texture.EncodeToPNG());
+                }
+                finally
+                {
+                    UnityEngine.Object.DestroyImmediate(texture);
+                }
+
+                AssetDatabase.ImportAsset(SquareFillAssetPath, ImportAssetOptions.ForceSynchronousImport);
+            }
+
+            var importer = AssetImporter.GetAtPath(SquareFillAssetPath) as TextureImporter;
+            if (importer == null)
+            {
+                return null;
+            }
+
+            importer.textureType = TextureImporterType.Sprite;
+            importer.spriteImportMode = SpriteImportMode.Single;
+            importer.spritePixelsPerUnit = 100f;
+            importer.spriteBorder = Vector4.zero;
+            importer.alphaIsTransparency = true;
+            importer.mipmapEnabled = false;
+            importer.wrapMode = TextureWrapMode.Clamp;
+            importer.filterMode = FilterMode.Bilinear;
+            importer.SaveAndReimport();
+            return AssetDatabase.LoadAssetAtPath<Sprite>(SquareFillAssetPath);
         }
 
         private static void CreateOrUpdateButtonPrefab(Sprite outlineSprite)
@@ -127,7 +195,7 @@ namespace TAD.Editor
                 image.raycastTarget = true;
 
                 var outline = buttonObject.GetComponent<FarmUiThinWoodOutline>();
-                outline.ConfigureForAuthoring(outlineSprite);
+                outline.Configure(outlineSprite);
 
                 var button = buttonObject.GetComponent<Button>();
                 button.targetGraphic = image;
@@ -157,9 +225,56 @@ namespace TAD.Editor
             }
         }
 
+        /// <summary>
+        /// Creates the shared surface for the player-level modal. The progression presenter adds
+        /// current content at runtime, while future three-choice upgrades can extend this prefab
+        /// without replacing the post-match flow.
+        /// </summary>
+        private static GameObject CreateOrUpdatePlayerLevelUpCardPrefab(Sprite outlineSprite)
+        {
+            var existing = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerLevelUpCardPrefabPath);
+            if (existing != null)
+            {
+                return existing;
+            }
+
+            var directory = Path.GetDirectoryName(PlayerLevelUpCardPrefabPath);
+            if (!string.IsNullOrWhiteSpace(directory) && !AssetDatabase.IsValidFolder(directory))
+            {
+                Directory.CreateDirectory(directory);
+                AssetDatabase.Refresh();
+            }
+
+            var cardObject = new GameObject(
+                "PlayerLevelUpCard",
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(Image));
+            try
+            {
+                cardObject.layer = LayerMask.NameToLayer("UI");
+                if (cardObject.layer < 0)
+                {
+                    cardObject.layer = 5;
+                }
+
+                var rect = cardObject.GetComponent<RectTransform>();
+                rect.sizeDelta = new Vector2(680f, 380f);
+                var image = cardObject.GetComponent<Image>();
+                image.color = new Color(0.94f, 0.86f, 0.66f, 1f);
+                image.raycastTarget = true;
+                FarmUiThinWoodOutline.EnsureFrame(image, outlineSprite);
+                return PrefabUtility.SaveAsPrefabAsset(cardObject, PlayerLevelUpCardPrefabPath);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(cardObject);
+            }
+        }
+
         private static void CreateLabel(Transform parent)
         {
-            var labelObject = new GameObject("Label", typeof(RectTransform), typeof(CanvasRenderer), typeof(Text), typeof(Shadow));
+            var labelObject = new GameObject("Label", typeof(RectTransform), typeof(CanvasRenderer), typeof(Text));
             labelObject.layer = parent.gameObject.layer;
             labelObject.transform.SetParent(parent, false);
 
@@ -177,87 +292,212 @@ namespace TAD.Editor
             label.resizeTextMinSize = 12;
             label.resizeTextMaxSize = 24;
             label.fontStyle = FontStyle.Bold;
-            label.color = new Color(1f, 0.97f, 0.82f, 1f);
+            label.color = new Color(0.24f, 0.105f, 0.03f, 1f);
             label.raycastTarget = false;
-
-            var shadow = labelObject.GetComponent<Shadow>();
-            shadow.effectColor = new Color(0.16f, 0.07f, 0.02f, 0.88f);
-            shadow.effectDistance = new Vector2(1.2f, -1.2f);
-            shadow.useGraphicAlpha = true;
         }
 
-        private static void ApplyOutlineToInformationPanel(string prefabPath, Sprite outlineSprite)
+        private static void ApplyThinOutlineThemeToUiPrefabs(
+            Sprite outlineSprite,
+            Sprite squareFillSprite,
+            GameObject levelUpCardPrefab)
         {
-            var prefabRoot = PrefabUtility.LoadPrefabContents(prefabPath);
+            var prefabPaths = AssetDatabase.FindAssets("t:Prefab", new[] { UiPrefabsFolder })
+                .Select(AssetDatabase.GUIDToAssetPath)
+                .OrderBy(path => path, StringComparer.Ordinal);
+
+            foreach (var prefabPath in prefabPaths)
+            {
+                var prefabRoot = PrefabUtility.LoadPrefabContents(prefabPath);
+                try
+                {
+                    EnsureSkin(prefabRoot, outlineSprite);
+                    RepairMaskedButtonTargets(prefabRoot);
+                    FarmUiSkin.ApplyThinWoodOutlineTheme(prefabRoot.transform, outlineSprite);
+                    ConfigureFoodStoreHud(prefabRoot, squareFillSprite);
+                    ConfigureAttackerQueuePanel(prefabRoot);
+                    ConfigureCloseButtonPlacement(prefabRoot);
+                    EnsurePostMatchExperiencePresentation(prefabRoot, levelUpCardPrefab);
+                    PrefabUtility.SaveAsPrefabAsset(prefabRoot, prefabPath);
+                }
+                finally
+                {
+                    PrefabUtility.UnloadPrefabContents(prefabRoot);
+                }
+            }
+        }
+
+        private static void ConfigureFoodStoreHud(GameObject prefabRoot, Sprite squareFillSprite)
+        {
+            var foodStoreHud = prefabRoot != null ? prefabRoot.GetComponent<FoodStoreHud>() : null;
+            foodStoreHud?.ConfigureSquareFillSprite(squareFillSprite);
+        }
+
+        private static void ConfigureAttackerQueuePanel(GameObject prefabRoot)
+        {
+            var queuePanel = prefabRoot != null ? prefabRoot.GetComponent<AttackerQueuePanel>() : null;
+            queuePanel?.ApplyResponsiveLayout();
+        }
+
+        /// <summary>
+        /// Both terminal overlays share the same post-match account progression presentation.
+        /// Keeping the component on their prefab roots means it inherits the overlay Canvas and
+        /// stays available even when a level's view is instantiated by the day-cycle controller.
+        /// </summary>
+        private static void EnsurePostMatchExperiencePresentation(GameObject prefabRoot, GameObject levelUpCardPrefab)
+        {
+            if (prefabRoot == null)
+            {
+                return;
+            }
+
+            foreach (var attackerOverlay in prefabRoot.GetComponentsInChildren<AttackerWinOverlay>(true))
+            {
+                EnsurePresentationOnTerminalOverlay(attackerOverlay.gameObject, levelUpCardPrefab);
+            }
+
+            foreach (var defenderOverlay in prefabRoot.GetComponentsInChildren<DefenderWinOverlay>(true))
+            {
+                EnsurePresentationOnTerminalOverlay(defenderOverlay.gameObject, levelUpCardPrefab);
+            }
+        }
+
+        private static void EnsurePresentationOnTerminalOverlay(GameObject terminalOverlayRoot, GameObject levelUpCardPrefab)
+        {
+            if (terminalOverlayRoot == null)
+            {
+                return;
+            }
+
+            var presentation = terminalOverlayRoot.GetComponent<PlayerMatchExperiencePresentation>();
+            if (presentation == null)
+            {
+                presentation = terminalOverlayRoot.AddComponent<PlayerMatchExperiencePresentation>();
+            }
+
+            presentation.ConfigureLevelUpCardTemplate(levelUpCardPrefab);
+        }
+
+        /// <summary>
+        /// Every ordinary modal close control belongs in the same familiar place. Layout-group
+        /// children are intentionally excluded because their owner (for example Settings) is
+        /// responsible for their row order instead of RectTransform anchors.
+        /// </summary>
+        private static void ConfigureCloseButtonPlacement(GameObject root)
+        {
+            if (root == null)
+            {
+                return;
+            }
+
+            foreach (var button in root.GetComponentsInChildren<Button>(true))
+            {
+                if (button == null ||
+                    (!string.Equals(button.name, "Close", StringComparison.OrdinalIgnoreCase) &&
+                     !string.Equals(button.name, "CloseButton", StringComparison.OrdinalIgnoreCase)))
+                {
+                    continue;
+                }
+
+                var rect = button.transform as RectTransform;
+                var parent = rect != null ? rect.parent : null;
+                if (rect == null || parent == null || parent.GetComponent<LayoutGroup>() != null)
+                {
+                    continue;
+                }
+
+                rect.anchorMin = Vector2.one;
+                rect.anchorMax = Vector2.one;
+                rect.pivot = Vector2.one;
+                rect.anchoredPosition = new Vector2(-CloseButtonEdgeInset, -CloseButtonEdgeInset);
+                rect.SetAsLastSibling();
+            }
+        }
+
+        private static void ApplyThinOutlineThemeToMainMenu(Sprite outlineSprite)
+        {
+            if (AssetDatabase.LoadAssetAtPath<SceneAsset>(MainMenuScenePath) == null)
+            {
+                throw new InvalidOperationException($"The Main Menu scene was not found at '{MainMenuScenePath}'.");
+            }
+
+            var setup = EditorSceneManager.GetSceneManagerSetup();
             try
             {
-                var card = FindChildImage(prefabRoot.transform, "Card");
-                if (card == null)
+                var menuScene = EditorSceneManager.OpenScene(MainMenuScenePath, OpenSceneMode.Single);
+                foreach (var root in menuScene.GetRootGameObjects())
                 {
-                    throw new InvalidOperationException($"The information card was not found in '{prefabPath}'.");
+                    foreach (var skin in root.GetComponentsInChildren<FarmUiSkin>(true))
+                    {
+                        skin.ConfigureThinWoodOutline(outlineSprite);
+                        EditorUtility.SetDirty(skin);
+                    }
+
+                    RepairMaskedButtonTargets(root);
+                    FarmUiSkin.ApplyThinWoodOutlineTheme(root.transform, outlineSprite);
+                    ConfigureCloseButtonPlacement(root);
                 }
 
-                // If an interrupted older setup put the outline on the card itself, remove it
-                // before moving the decorative trim to its own non-interactive overlay.
-                var cardOutline = card.GetComponent<FarmUiThinWoodOutline>();
-                if (cardOutline != null)
-                {
-                    UnityEngine.Object.DestroyImmediate(cardOutline);
-                }
-
-                // The outline has no centre fill by design. A quiet, flat parchment surface
-                // preserves the existing dark copy treatment without bringing back a brass
-                // panel or decorative corners.
-                card.sprite = null;
-                card.type = Image.Type.Simple;
-                card.fillCenter = true;
-                card.color = InformationCardInterior;
-
-                var frame = card.transform.Find("ThinWoodOutlineFrame");
-                if (frame == null)
-                {
-                    var frameObject = new GameObject(
-                        "ThinWoodOutlineFrame",
-                        typeof(RectTransform),
-                        typeof(CanvasRenderer),
-                        typeof(Image),
-                        typeof(FarmUiThinWoodOutline));
-                    frameObject.layer = card.gameObject.layer;
-                    frameObject.transform.SetParent(card.transform, false);
-                    frame = frameObject.transform;
-                }
-
-                var frameRect = frame.GetComponent<RectTransform>();
-                frameRect.anchorMin = Vector2.zero;
-                frameRect.anchorMax = Vector2.one;
-                frameRect.pivot = new Vector2(0.5f, 0.5f);
-                frameRect.anchoredPosition = Vector2.zero;
-                frameRect.sizeDelta = Vector2.zero;
-
-                var frameImage = frame.GetComponent<Image>();
-                frameImage.raycastTarget = false;
-                var outline = frame.GetComponent<FarmUiThinWoodOutline>();
-                outline.ConfigureForAuthoring(outlineSprite);
-                frame.SetAsLastSibling();
-                PrefabUtility.SaveAsPrefabAsset(prefabRoot, prefabPath);
+                EditorSceneManager.SaveScene(menuScene);
             }
             finally
             {
-                PrefabUtility.UnloadPrefabContents(prefabRoot);
+                EditorSceneManager.RestoreSceneManagerSetup(setup);
             }
         }
 
-        private static Image FindChildImage(Transform root, string childName)
+        private static void EnsureSkin(GameObject prefabRoot, Sprite outlineSprite)
         {
-            foreach (var image in root.GetComponentsInChildren<Image>(true))
+            var skin = prefabRoot.GetComponent<FarmUiSkin>();
+            if (skin == null)
             {
-                if (image.gameObject.name == childName)
-                {
-                    return image;
-                }
+                skin = prefabRoot.AddComponent<FarmUiSkin>();
             }
 
-            return null;
+            skin.ConfigureThinWoodOutline(outlineSprite);
+        }
+
+        /// <summary>
+        /// A uGUI Mask uses its owning Image's alpha as its stencil shape. Keep those images
+        /// filled and circular; the regular transparent-centre timber frame cannot safely be
+        /// used as the mask graphic.
+        /// </summary>
+        private static void RepairMaskedButtonTargets(GameObject root)
+        {
+            if (root == null)
+            {
+                return;
+            }
+
+            var circularMask = AssetDatabase.GetBuiltinExtraResource<Sprite>(CircularMaskSpritePath);
+            foreach (var button in root.GetComponentsInChildren<Button>(true))
+            {
+                var targetImage = button.targetGraphic as Image ?? button.GetComponent<Image>();
+                var mask = targetImage != null ? targetImage.GetComponent<Mask>() : null;
+                if (targetImage == null || mask == null)
+                {
+                    continue;
+                }
+
+                var directOutline = targetImage.GetComponent<FarmUiThinWoodOutline>();
+                if (directOutline != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(directOutline);
+                }
+
+                var oldFrame = targetImage.transform.Find(FarmUiThinWoodOutline.FrameObjectName);
+                if (oldFrame != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(oldFrame.gameObject);
+                }
+
+                targetImage.sprite = circularMask;
+                targetImage.type = Image.Type.Simple;
+                targetImage.fillCenter = true;
+                targetImage.preserveAspect = false;
+                targetImage.color = new Color(0.08f, 0.16f, 0.13f, 0.96f);
+                targetImage.raycastTarget = true;
+                mask.showMaskGraphic = true;
+            }
         }
 
         private static bool NeedsInitialBuild()
@@ -267,20 +507,12 @@ namespace TAD.Editor
                 return true;
             }
 
-            return !HasThinOutlineFrame(AttackerDetailsPrefabPath) ||
-                   !HasThinOutlineFrame(DefenderDetailsPrefabPath);
-        }
-
-        private static bool HasThinOutlineFrame(string prefabPath)
-        {
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
-            if (prefab == null)
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(PlayerLevelUpCardPrefabPath) == null)
             {
-                return false;
+                return true;
             }
 
-            var card = FindChildImage(prefab.transform, "Card");
-            return card != null && card.transform.Find("ThinWoodOutlineFrame") != null;
+            return false;
         }
 
         private static string ToAbsoluteProjectPath(string assetPath)

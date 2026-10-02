@@ -229,6 +229,7 @@ namespace TAD.UI
 
             restoredCloseButton.onClick.RemoveAllListeners();
             restoredCloseButton.onClick.AddListener(Close);
+            ConfigureHeaderLayout(restoredPanel.Find("Header"));
 
             panelRect = restoredPanel;
             contentRoot = restoredContent;
@@ -292,13 +293,6 @@ namespace TAD.UI
             layout.childForceExpandWidth = false;
             layout.childForceExpandHeight = false;
 
-            var closeButton = CreateButton(header.transform, "CloseButton", "CLOSE", 190f, 62f);
-            if (closeButton != null)
-            {
-                SetButtonLabelSize(closeButton, 24);
-                closeButton.onClick.AddListener(Close);
-            }
-
             var title = CreateText(
                 header.transform,
                 "TitleText",
@@ -320,6 +314,52 @@ namespace TAD.UI
                 new Color(0.68f, 0.86f, 0.72f, 1f),
                 preferredHeight: 62f,
                 preferredWidth: 190f);
+
+            var closeButton = CreateButton(header.transform, "CloseButton", "SAVE & CLOSE", 190f, 62f);
+            if (closeButton != null)
+            {
+                SetButtonLabelSize(closeButton, 24);
+                closeButton.onClick.AddListener(Close);
+            }
+
+            ConfigureHeaderLayout(header.transform);
+        }
+
+        /// <summary>
+        /// Keeps restored and newly-built settings headers consistent: the action that saves and
+        /// dismisses the screen lives at its top-right, after the title and save-state message.
+        /// </summary>
+        private static void ConfigureHeaderLayout(Transform header)
+        {
+            if (header == null)
+            {
+                return;
+            }
+
+            var title = header.Find("TitleText");
+            var savedLabel = header.Find("SavedLabel");
+            var closeButton = header.Find("CloseButton");
+            if (title == null || savedLabel == null || closeButton == null)
+            {
+                return;
+            }
+
+            title.SetSiblingIndex(0);
+            savedLabel.SetSiblingIndex(1);
+            closeButton.SetSiblingIndex(2);
+
+            var titleLayout = title.GetComponent<UnityEngine.UI.LayoutElement>();
+            if (titleLayout != null)
+            {
+                titleLayout.flexibleWidth = 1f;
+                titleLayout.minWidth = 0f;
+            }
+
+            var buttonLabel = closeButton.GetComponentInChildren<UnityEngine.UI.Text>(true);
+            if (buttonLabel != null)
+            {
+                buttonLabel.text = "SAVE & CLOSE";
+            }
         }
 
         private void BuildTabs(Transform parent)

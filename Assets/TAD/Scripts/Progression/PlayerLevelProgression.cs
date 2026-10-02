@@ -56,6 +56,7 @@ namespace TAD.Progression
             var awardedExperience = RoundToNearestTenth(eligibleExperience * rewardMultiplier);
             var startingLevel = Mathf.Max(StartingLevel, profile.playerLevel);
             var startingProgress = RoundToNearestTenth(Mathf.Max(0f, profile.playerExp));
+            var startingExperienceRequired = GetExperienceRequiredForNextLevel(startingLevel);
             var currentLevel = startingLevel;
             var currentProgress = RoundToNearestTenth(startingProgress + awardedExperience);
             var levelsGained = 0;
@@ -78,6 +79,8 @@ namespace TAD.Progression
                 rewardMultiplier,
                 awardedExperience,
                 startingLevel,
+                startingProgress,
+                startingExperienceRequired,
                 currentLevel,
                 levelsGained,
                 currentProgress,
@@ -98,6 +101,8 @@ namespace TAD.Progression
             float rewardMultiplier,
             float awardedExperience,
             int startingLevel,
+            float startingExperience,
+            float startingExperienceRequired,
             int resultingLevel,
             int levelsGained,
             float currentExperience,
@@ -107,10 +112,39 @@ namespace TAD.Progression
             RewardMultiplier = rewardMultiplier;
             AwardedExperience = awardedExperience;
             StartingLevel = startingLevel;
+            StartingExperience = startingExperience;
+            StartingExperienceRequired = startingExperienceRequired;
             ResultingLevel = resultingLevel;
             LevelsGained = levelsGained;
             CurrentExperience = currentExperience;
             ExperienceRequiredForNextLevel = experienceRequiredForNextLevel;
+        }
+
+        /// <summary>
+        /// Compatibility constructor for callers that only need the settled result. New match
+        /// presentation code should use the richer snapshot produced by PlayerLevelProgression.
+        /// </summary>
+        public PlayerMatchExperienceReward(
+            float matchExperience,
+            float rewardMultiplier,
+            float awardedExperience,
+            int startingLevel,
+            int resultingLevel,
+            int levelsGained,
+            float currentExperience,
+            float experienceRequiredForNextLevel)
+            : this(
+                matchExperience,
+                rewardMultiplier,
+                awardedExperience,
+                startingLevel,
+                0f,
+                PlayerLevelProgression.GetExperienceRequiredForNextLevel(startingLevel),
+                resultingLevel,
+                levelsGained,
+                currentExperience,
+                experienceRequiredForNextLevel)
+        {
         }
 
         /// <summary>The total match XP collected before the win/loss multiplier.</summary>
@@ -123,6 +157,13 @@ namespace TAD.Progression
         public float AwardedExperience { get; }
 
         public int StartingLevel { get; }
+
+        /// <summary>Progress held toward the starting level before this match's reward.</summary>
+        public float StartingExperience { get; }
+
+        /// <summary>Requirement for the level that was active when the match began.</summary>
+        public float StartingExperienceRequired { get; }
+
         public int ResultingLevel { get; }
         public int LevelsGained { get; }
         public float CurrentExperience { get; }

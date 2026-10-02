@@ -63,6 +63,14 @@ namespace TAD.Tests.PlayMode
                 var headerTitle = overlay.transform.Find("SettingsPanel/Header/TitleText").GetComponent<RectTransform>();
                 Assert.That(headerTitle.rect.width, Is.GreaterThan(300f));
 
+                var header = overlay.transform.Find("SettingsPanel/Header");
+                var headerCloseButton = header.Find("CloseButton").GetComponent<Button>();
+                Assert.That(header.GetChild(header.childCount - 1), Is.EqualTo(headerCloseButton.transform),
+                    "Save & Close should be the top-right action in the settings header.");
+                Canvas.ForceUpdateCanvases();
+                Assert.That(headerCloseButton.transform.position.x, Is.GreaterThan(headerTitle.position.x),
+                    "Save & Close should be positioned to the right of the settings title.");
+
                 var panelRect = overlay.transform.Find("SettingsPanel").GetComponent<RectTransform>();
                 var overlayRect = overlay.GetComponent<RectTransform>();
                 Assert.That(panelRect.rect.width, Is.LessThanOrEqualTo(overlayRect.rect.width - 72f));

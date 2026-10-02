@@ -11,6 +11,10 @@ namespace TAD.UI
     [DisallowMultipleComponent]
     public sealed class AttackerDetailsPanel : MonoBehaviour
     {
+        // The two left HUD plaques occupy the top-left corner. Keep this card below their final
+        // stacked bounds so it remains clear at the compact mobile Game View sizes.
+        private const float SafeTopOffset = 188f;
+
         [SerializeField] private Text headingText;
         [SerializeField] private Image attackerImage;
         [SerializeField] private Text statusText;
@@ -31,6 +35,7 @@ namespace TAD.UI
         private void Awake()
         {
             ResolveReferences();
+            ConfigureSafePlacement();
             if (groupId == 0)
             {
                 gameObject.SetActive(false);
@@ -87,6 +92,7 @@ namespace TAD.UI
         public void Show(AttackerWaveQueue waveQueue, AttackerQueuedGroupInfo group, Sprite sprite)
         {
             ResolveReferences();
+            ConfigureSafePlacement();
             if (attackerWaveQueue != waveQueue || groupId != group.Id)
             {
                 Unsubscribe();
@@ -136,6 +142,20 @@ namespace TAD.UI
             ConfigureWrapping(statusText);
             ConfigureWrapping(statsText);
             ConfigureWrapping(routeText);
+        }
+
+        private void ConfigureSafePlacement()
+        {
+            var card = transform.Find("Card") as RectTransform;
+            if (card == null)
+            {
+                return;
+            }
+
+            card.anchorMin = new Vector2(0f, 1f);
+            card.anchorMax = new Vector2(0f, 1f);
+            card.pivot = new Vector2(0f, 1f);
+            card.anchoredPosition = new Vector2(card.anchoredPosition.x, -SafeTopOffset);
         }
 
         private Text FindText(string path)
@@ -207,6 +227,7 @@ namespace TAD.UI
                 attackerImage.sprite = rightFacingSprite;
                 attackerImage.enabled = rightFacingSprite != null;
                 AttackerCombatRatingBadge.ShowFor(attackerImage, definition);
+                AttackerArchetypeBadge.ShowFor(attackerImage, definition);
             }
 
             if (statusText != null)
