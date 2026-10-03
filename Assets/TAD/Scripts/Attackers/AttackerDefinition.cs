@@ -25,6 +25,11 @@ namespace TAD.Attackers
         [Header("Visuals")]
         [SerializeField] private AttackerVisualDefinition visualDefinition;
 
+        [Header("Audio")]
+        [SerializeField]
+        [Tooltip("Played once after this animal has successfully entered a valid wave route.")]
+        private AudioClip entrySound;
+
         public string AttackerId => attackerId;
         public string DisplayName => displayName;
         public float MaximumHealth => maximumHealth;
@@ -42,6 +47,7 @@ namespace TAD.Attackers
         public AttackerTraversalProfile TraversalProfile => traversalProfile;
         public bool IgnoresHalfCover => traversalProfile == AttackerTraversalProfile.IgnoresHalfCover;
         public AttackerVisualDefinition VisualDefinition => visualDefinition;
+        public AudioClip EntrySound => entrySound;
 
 #if UNITY_EDITOR
         private void OnValidate()

@@ -193,10 +193,12 @@ namespace TAD.Match
                 return false;
             }
 
+            var maximumChallengeTier = GetMaximumChallengeTierForAiDay(day);
             var mostRecent = recentSelections != null && recentSelections.Count > 0
                 ? recentSelections[0]
                 : null;
-            var canAvoidImmediateRepeat = mostRecent != null && HasDifferentDefinition(candidates, mostRecent);
+            var canAvoidImmediateRepeat = mostRecent != null &&
+                                           HasDifferentDefinition(candidates, mostRecent, maximumChallengeTier);
 
             var bestScore = float.NegativeInfinity;
             var bestCandidate = default(AttackerAiCandidate);
@@ -206,6 +208,15 @@ namespace TAD.Match
                 var definition = candidate.Definition;
                 if (!candidate.HasUsableRoute || definition == null || definition.MaximumHealth <= 0f ||
                     definition.MovementSpeed <= 0f || definition.SendSize <= 0)
+                {
+                    continue;
+                }
+
+                // Human attackers may take an early expensive risk, but the opponent should build
+                // its economy with the lighter roster first. This preserves a defend-favoured
+                // opening and lets the accumulated recurring income unlock meaningful tier-two
+                // and tier-three pressure in the final days.
+                if (definition.ChallengeTier > maximumChallengeTier)
                 {
                     continue;
                 }
@@ -376,18 +387,37 @@ namespace TAD.Match
             return multiplier;
         }
 
-        private static bool HasDifferentDefinition(IReadOnlyList<AttackerAiCandidate> candidates, AttackerDefinition current)
+        private static bool HasDifferentDefinition(
+            IReadOnlyList<AttackerAiCandidate> candidates,
+            AttackerDefinition current,
+            int maximumChallengeTier)
         {
             for (var index = 0; index < candidates.Count; index++)
             {
                 var definition = candidates[index].Definition;
-                if (candidates[index].HasUsableRoute && definition != null && !IsSameDefinition(definition, current))
+                if (candidates[index].HasUsableRoute && definition != null &&
+                    definition.ChallengeTier <= maximumChallengeTier &&
+                    !IsSameDefinition(definition, current))
                 {
                     return true;
                 }
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Gates only the attacker AI's catalogue by completed day. Player-controlled attackers
+        /// retain the full roster at all times; the economy and price are their own trade-off.
+        /// </summary>
+        public static int GetMaximumChallengeTierForAiDay(int day)
+        {
+            if (day <= 2)
+            {
+                return 1;
+            }
+
+            return day <= 5 ? 2 : 3;
         }
 
         private static bool IsSameDefinition(AttackerDefinition left, AttackerDefinition right)

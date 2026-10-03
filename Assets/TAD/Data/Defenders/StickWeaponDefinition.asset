@@ -14,8 +14,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: TAD.Runtime::TAD.Defenders.WeaponDefinition
   displayName: Stick
   description: Found on the farm floor. A quick, stronger melee poke that can evolve into Pole or Rolling.
+  requiredPreviousWeapon: {fileID: 0}
+  unlocksFinalEvolution: 0
   cost: 0
-  range: 1.6
-  attackSpeed: 1.65
-  damage: 11
+  range: 1.55
+  attackSpeed: 1.35
+  damage: 6.5
+  shotsPerMagazine: 1
+  reloadDuration: 0
   projectileDefinition: {fileID: 11400000, guid: 27fdb1ab87b62c946a420735073cd2d8, type: 2}

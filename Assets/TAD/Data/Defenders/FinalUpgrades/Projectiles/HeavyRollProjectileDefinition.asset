@@ -13,14 +13,16 @@ MonoBehaviour:
   m_Name: HeavyRollProjectileDefinition
   m_EditorClassIdentifier: TAD.Runtime::TAD.Defenders.ProjectileDefinition
   projectileType: 0
+  canTargetFlying: 0
   projectileBehavior: 2
   projectileLifetimeMode: 0
   projectilePrefab: {fileID: 9102540883998781089, guid: 6218cd650d99ab245a6ab3cfafd8d8e9, type: 3}
-  projectileSpeed: 4.5
-  projectileLifetime: 4.75
-  maximumActiveProjectiles: 2
-  initialSpeedMultiplier: 0.15
-  rollingAcceleration: 5.75
+  projectileSpeed: 4.1
+  projectileLifetime: 4
+  firingSound: {fileID: 8300000, guid: d3aa605362abe8c4189c0d579d30eb53, type: 3}
+  maximumActiveProjectiles: 1
+  initialSpeedMultiplier: 0.2
+  rollingAcceleration: 5
   poleSweepAngle: 180
   impactAreaRadius: 0
   impactAreaDamage: 0

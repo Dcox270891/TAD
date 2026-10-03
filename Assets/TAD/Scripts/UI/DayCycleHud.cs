@@ -88,7 +88,11 @@ namespace TAD.UI
             if (preparationText != null)
             {
                 preparationText.gameObject.SetActive(showCountdown);
-                if (dayCycle.IsPreparing)
+                if (dayCycle.IsTutorialHeld)
+                {
+                    preparationText.text = "Preparation: Tutorial";
+                }
+                else if (dayCycle.IsPreparing)
                 {
                     preparationText.text = $"Preparation: {Mathf.CeilToInt(dayCycle.PreparationRemaining)}";
                 }

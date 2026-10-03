@@ -395,6 +395,134 @@ public sealed class FarmRouteMapper : MonoBehaviour
         timing = BuildRouteTiming(routePoints, ignoresTerrainEffects);
         return routePoints.Count >= 2 && timing.IsValid;
     }
+
+    /// <summary>
+    /// Builds a one-off, wall-safe route between two visible-map positions for a ground unit.
+    /// Farmhands use this for relocation so they share the exact wall clearance and corner rules
+    /// used by attacking animals, while treating both Half and Full cover as solid environment.
+    /// The route is intentionally not cached: defender moves are infrequent and each request has
+    /// its own destination rather than the Food Store's shared destination.
+    /// </summary>
+    public bool TryGetWalkableGroundRoute(
+        Vector3 startingPosition,
+        Vector3 destination,
+        float agentDiameter,
+        List<Vector3> routePoints)
+    {
+        if (routePoints == null)
+        {
+            throw new ArgumentNullException(nameof(routePoints));
+        }
+
+        routePoints.Clear();
+        if (!hasBuiltMap && !RebuildRoutes())
+        {
+            return false;
+        }
+
+        var safeAgentDiameter = Mathf.Max(0.01f, agentDiameter);
+        var radius = (safeAgentDiameter * 0.5f) + obstaclePadding;
+        var startPosition2D = (Vector2)startingPosition;
+        var destination2D = (Vector2)destination;
+
+        // A moving defender never snaps into a nearby cell. This keeps an attempted relocation
+        // inside a wall from becoming an accidental move through or alongside that wall.
+        if (!IsWalkable(startPosition2D, radius, AttackerTraversalProfile.Ground) ||
+            !IsWalkable(destination2D, radius, AttackerTraversalProfile.Ground) ||
+            !TryGetCellIndex(startPosition2D, out var currentIndex))
+        {
+            return false;
+        }
+
+        routePoints.Add(startingPosition);
+        if (IsClearSegment(startPosition2D, destination2D, radius, AttackerTraversalProfile.Ground))
+        {
+            if ((startingPosition - destination).sqrMagnitude > 0.0001f)
+            {
+                routePoints.Add(destination);
+            }
+
+            return routePoints.Count >= 2;
+        }
+
+        var field = BuildRouteField(
+            safeAgentDiameter,
+            AttackerTraversalProfile.Ground,
+            ignoresTerrainEffects: true,
+            destination2D,
+            logMissingGoal: false);
+        if (field.GoalIndex < 0 || !field.Walkable[currentIndex])
+        {
+            routePoints.Clear();
+            return false;
+        }
+
+        var remainingSteps = field.NextIndices.Length;
+        while (currentIndex != field.GoalIndex && remainingSteps-- > 0)
+        {
+            var nextIndex = field.SmoothedNextIndices[currentIndex];
+            if (nextIndex < 0)
+            {
+                routePoints.Clear();
+                return false;
+            }
+
+            var nextCell = GetCellCenter(nextIndex);
+            if (!IsClearSegment(routePoints[^1], nextCell, radius, AttackerTraversalProfile.Ground))
+            {
+                nextIndex = field.NextIndices[currentIndex];
+                if (nextIndex < 0)
+                {
+                    routePoints.Clear();
+                    return false;
+                }
+
+                nextCell = GetCellCenter(nextIndex);
+                if (!IsClearSegment(routePoints[^1], nextCell, radius, AttackerTraversalProfile.Ground))
+                {
+                    routePoints.Clear();
+                    return false;
+                }
+            }
+
+            currentIndex = nextIndex;
+            var nextPoint = new Vector3(nextCell.x, nextCell.y, startingPosition.z);
+            if ((routePoints[^1] - nextPoint).sqrMagnitude > 0.0001f)
+            {
+                routePoints.Add(nextPoint);
+            }
+        }
+
+        if (currentIndex != field.GoalIndex ||
+            !IsClearSegment(routePoints[^1], destination2D, radius, AttackerTraversalProfile.Ground))
+        {
+            routePoints.Clear();
+            return false;
+        }
+
+        if ((routePoints[^1] - destination).sqrMagnitude > 0.0001f)
+        {
+            routePoints.Add(destination);
+        }
+
+        return routePoints.Count >= 2;
+    }
+
+    /// <summary>
+    /// Fast endpoint check for defender placement previews and AI candidate scoring. Unlike a
+    /// route query it performs no search, so it is safe to call while a preview is being moved.
+    /// </summary>
+    public bool CanOccupyGroundPosition(Vector2 position, float agentDiameter)
+    {
+        if (!hasBuiltMap && !RebuildRoutes())
+        {
+            return false;
+        }
+
+        var radius = (Mathf.Max(0.01f, agentDiameter) * 0.5f) + obstaclePadding;
+        return IsWalkable(position, radius, AttackerTraversalProfile.Ground);
+    }
+
     private void Start()
     {
         RebuildRoutes();
@@ -593,16 +721,35 @@ public sealed class FarmRouteMapper : MonoBehaviour
         AttackerTraversalProfile traversalProfile,
         bool ignoresTerrainEffects)
     {
+        return BuildRouteField(
+            attackerSize,
+            traversalProfile,
+            ignoresTerrainEffects,
+            foodStore.transform.position,
+            logMissingGoal: true);
+    }
+
+    private RouteField BuildRouteField(
+        float agentDiameter,
+        AttackerTraversalProfile traversalProfile,
+        bool ignoresTerrainEffects,
+        Vector2 goalPosition,
+        bool logMissingGoal)
+    {
         var field = new RouteField(columns * rows);
-        var radius = (attackerSize * 0.5f) + obstaclePadding;
+        var radius = (agentDiameter * 0.5f) + obstaclePadding;
         for (var index = 0; index < field.Walkable.Length; index++)
         {
             field.Walkable[index] = IsWalkable(GetCellCenter(index), radius, traversalProfile);
         }
-        var goalIndex = FindClosestWalkableCell(foodStore.transform.position, field.Walkable);
+        var goalIndex = FindClosestWalkableCell(goalPosition, field.Walkable);
         if (goalIndex < 0)
         {
-            Debug.LogWarning("Farm Route Mapper found no walkable route cell near the Food Store.", this);
+            if (logMissingGoal)
+            {
+                Debug.LogWarning("Farm Route Mapper found no walkable route cell near the Food Store.", this);
+            }
+
             return field;
         }
         field.GoalIndex = goalIndex;
@@ -1124,7 +1271,7 @@ public sealed class FarmRouteMapper : MonoBehaviour
         public bool[] Walkable { get; }
         public int[] NextIndices { get; }
         public int[] SmoothedNextIndices { get; }
-        /// <summary>Unit-speed travel cost from each cell to the Food Store.</summary>
+        /// <summary>Unit-speed travel cost from each cell to this route field's goal.</summary>
         public float[] TravelCosts { get; set; } = Array.Empty<float>();
         public int GoalIndex { get; set; } = -1;
     }

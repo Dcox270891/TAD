@@ -16,10 +16,10 @@ MonoBehaviour:
   description: A final rolling evolution that repeatedly strikes the ground, dealing area damage with every bounce along its route.
   requiredPreviousWeapon: {fileID: 11400000, guid: 27eab7ad44021804c9e61d79fd7c8b52, type: 2}
   unlocksFinalEvolution: 0
-  cost: 118
-  range: 3.05
-  attackSpeed: 0.75
-  damage: 18
+  cost: 90
+  range: 2.85
+  attackSpeed: 0.45
+  damage: 8
   shotsPerMagazine: 1
   reloadDuration: 0
   projectileDefinition: {fileID: 11400000, guid: 31051166584706544a97bb082637e6a4, type: 2}

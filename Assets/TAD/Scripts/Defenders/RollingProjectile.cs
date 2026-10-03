@@ -141,7 +141,10 @@ namespace TAD.Defenders
             remainingDistanceToBounce -= moveDistance;
             while (remainingDistanceToBounce <= 0f)
             {
-                TryApplyAreaImpact(impactPosition);
+                // A bounce has no primary target: every attacker inside the impact is hit for
+                // the launched weapon damage. Passing Damage through here preserves FarmHand
+                // level scaling and keeps the UI, AI, and actual effect in agreement.
+                TryApplyAreaImpact(impactPosition, Damage);
                 completedBounceCount++;
                 Bounced?.Invoke(impactPosition, completedBounceCount);
                 if (completedBounceCount >= Definition.MaximumBounceCount)

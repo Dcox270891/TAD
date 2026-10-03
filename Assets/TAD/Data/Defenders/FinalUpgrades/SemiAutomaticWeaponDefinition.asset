@@ -16,10 +16,10 @@ MonoBehaviour:
   description: 'A final rifle evolution: a very fast five-round burst followed by a long reload.'
   requiredPreviousWeapon: {fileID: 11400000, guid: 9b8b2dcaac92681458c4e0eb0a8ba9a5, type: 2}
   unlocksFinalEvolution: 0
-  cost: 135
-  range: 8
-  attackSpeed: 5.5
-  damage: 20
+  cost: 104
+  range: 7.5
+  attackSpeed: 3.8
+  damage: 13
   shotsPerMagazine: 5
-  reloadDuration: 3
+  reloadDuration: 2.5
   projectileDefinition: {fileID: 11400000, guid: 90c979e3c5d483a41ac65e3aaa876317, type: 2}

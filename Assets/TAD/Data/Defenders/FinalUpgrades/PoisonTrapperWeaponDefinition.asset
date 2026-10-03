@@ -16,10 +16,10 @@ MonoBehaviour:
   description: A final trap evolution. Only the animal that triggers it takes the initial hit, while nearby animals are poisoned.
   requiredPreviousWeapon: {fileID: 11400000, guid: f10c2b2ff3579d140ac2b7b19ae8d4cf, type: 2}
   unlocksFinalEvolution: 0
-  cost: 98
-  range: 2.65
-  attackSpeed: 0.8
-  damage: 11
+  cost: 75
+  range: 2.5
+  attackSpeed: 0.65
+  damage: 8
   shotsPerMagazine: 1
   reloadDuration: 0
   projectileDefinition: {fileID: 11400000, guid: b8c202c1e06f05b498fab1571082ce3b, type: 2}

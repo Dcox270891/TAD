@@ -14,8 +14,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: TAD.Runtime::TAD.Defenders.WeaponDefinition
   displayName: Stone
   description: Throw a stone from afar. Greatly extends range, but each throw is slower; it can evolve into Trapper or Air Rifle.
+  requiredPreviousWeapon: {fileID: 0}
+  unlocksFinalEvolution: 0
   cost: 0
-  range: 4.25
-  attackSpeed: 0.8
-  damage: 9
+  range: 4.2
+  attackSpeed: 0.85
+  damage: 6
+  shotsPerMagazine: 1
+  reloadDuration: 0
   projectileDefinition: {fileID: 11400000, guid: 22b6c63c151b342499d4077f1bdfc235, type: 2}

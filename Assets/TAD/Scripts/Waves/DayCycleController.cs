@@ -77,6 +77,7 @@ namespace TAD.Waves
         private bool isSubscribedToFarmHands;
         private bool hasAwardedPlayerExperience;
         private PlayerMatchExperienceReward lastPlayerExperienceReward;
+        private bool isTutorialHeld;
 
         /// <summary>The current completed-day count, beginning at zero when the level loads.</summary>
         public int CurrentDay => currentDay;
@@ -91,6 +92,12 @@ namespace TAD.Waves
         public bool IsWaitingForEmptyDay => phase == CyclePhase.EmptyDayTimer;
         public bool IsAttackerWavesRunning => phase == CyclePhase.AttackerWaves;
         public bool IsComplete => phase == CyclePhase.DefendersWon || phase == CyclePhase.AttackersWon;
+        /// <summary>
+        /// True while a Level tutorial has temporarily held the preparation/empty-day clock.
+        /// The hold deliberately leaves gameplay input active so players can complete guided
+        /// placement, inspection, ordering, and dispatch actions.
+        /// </summary>
+        public bool IsTutorialHeld => isTutorialHeld;
         public bool CanPause => phase == CyclePhase.Preparation ||
                                 phase == CyclePhase.EmptyDayTimer ||
                                 phase == CyclePhase.AttackerWaves;
@@ -155,7 +162,7 @@ namespace TAD.Waves
                 InitializeForNewLevelSession();
             }
 
-            if (IsComplete)
+            if (IsComplete || isTutorialHeld)
             {
                 return;
             }
@@ -273,6 +280,22 @@ namespace TAD.Waves
         public bool TryStartQueuedWavesEarly()
         {
             return CanStartQueuedWavesEarly && StartQueuedWaves();
+        }
+
+        /// <summary>
+        /// Holds or releases the day-cycle countdown for an interactive tutorial. This does not
+        /// use <see cref="Time.timeScale"/> and therefore does not prevent the player from using
+        /// normal attacker and defender controls.
+        /// </summary>
+        public void SetTutorialHeld(bool held)
+        {
+            if (isTutorialHeld == held)
+            {
+                return;
+            }
+
+            isTutorialHeld = held;
+            PublishCycleChanged();
         }
 
         private bool StartQueuedWaves()

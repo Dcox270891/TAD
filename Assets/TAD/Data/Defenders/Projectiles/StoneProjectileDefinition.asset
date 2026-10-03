@@ -13,11 +13,13 @@ MonoBehaviour:
   m_Name: StoneProjectileDefinition
   m_EditorClassIdentifier: TAD.Runtime::TAD.Defenders.ProjectileDefinition
   projectileType: 1
+  canTargetFlying: 0
   projectileBehavior: 0
   projectileLifetimeMode: 0
   projectilePrefab: {fileID: 8612160062785347739, guid: 5a4c672cd2881f648851583527535f09, type: 3}
-  projectileSpeed: 7
-  projectileLifetime: 1.4
+  projectileSpeed: 9
+  projectileLifetime: 0.55
+  firingSound: {fileID: 8300000, guid: 1204ece866213b34bbb8d4a42e8c885e, type: 3}
   maximumActiveProjectiles: 0
   initialSpeedMultiplier: 1
   rollingAcceleration: 0

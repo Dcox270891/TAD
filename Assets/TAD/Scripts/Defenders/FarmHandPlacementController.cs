@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using TAD.Economy;
 using TAD.Match;
 using TAD.Navigation;
@@ -21,6 +22,7 @@ namespace TAD.Defenders
         private const string InsufficientFundsMessage = "you do not you have the required amount to place this";
         private const string OccupiedPlacementMessage = "Another farmhand is already stationed there.";
         private const string RelocationFundsMessage = "You do not have the required amount to move this farmhand.";
+        private const string UnreachableRelocationMessage = "This farmhand cannot reach that position without crossing an obstacle.";
         private const float PlacementWarningDurationSeconds = 3f;
         private const int PlacementOverlapCapacity = 16;
 
@@ -69,6 +71,7 @@ namespace TAD.Defenders
         private bool isMousePlacementLocked;
         private bool isPlacementInputEnabled = true;
         private readonly Collider2D[] placementOverlapResults = new Collider2D[PlacementOverlapCapacity];
+        private readonly List<Vector3> relocationRoute = new();
         private ContactFilter2D defenderPlacementFilter;
 
         /// <summary>True while a translucent farmhand is awaiting confirmation or cancellation.</summary>
@@ -79,6 +82,13 @@ namespace TAD.Defenders
 
         /// <summary>Whether the human player can use the Buy, confirm, and cancel placement controls.</summary>
         public bool IsPlacementInputEnabled => isPlacementInputEnabled;
+
+        /// <summary>
+        /// Raised only after a player confirms and pays for a new FarmHand placement. AI and
+        /// direct-placement helpers intentionally do not raise this event, which makes it safe
+        /// for guided UI such as the Level 1 tutorial.
+        /// </summary>
+        public event System.Action<FarmHand> FarmHandPlacementConfirmed;
 
         private void Awake()
         {
@@ -220,7 +230,10 @@ namespace TAD.Defenders
                 CancelPlacement();
             }
 
-            return TrySpawnPaidFarmHand(constrainedPosition, showInsufficientFundsMessage: false);
+            return TrySpawnPaidFarmHand(
+                constrainedPosition,
+                showInsufficientFundsMessage: false,
+                out _);
         }
 
         /// <summary>
@@ -264,6 +277,7 @@ namespace TAD.Defenders
 
             routeMapper ??= spawnPool.RouteMapper;
             return routeMapper != null && routeMapper.TryClampToVisibleMap(requestedPosition, out constrainedPosition) &&
+                   routeMapper.CanOccupyGroundPosition(constrainedPosition, farmHand.RelocationPathDiameter) &&
                    IsFarmHandPlacementAvailable(constrainedPosition, farmHand, farmHand);
         }
 
@@ -275,6 +289,20 @@ namespace TAD.Defenders
                 if (showMessage)
                 {
                     ShowTransientPlacementMessage(OccupiedPlacementMessage);
+                }
+
+                return false;
+            }
+
+            if (!routeMapper.TryGetWalkableGroundRoute(
+                    farmHand.transform.position,
+                    new Vector3(constrainedPosition.x, constrainedPosition.y, farmHand.transform.position.z),
+                    farmHand.RelocationPathDiameter,
+                    relocationRoute))
+            {
+                if (showMessage)
+                {
+                    ShowTransientPlacementMessage(UnreachableRelocationMessage);
                 }
 
                 return false;
@@ -292,7 +320,7 @@ namespace TAD.Defenders
                 return false;
             }
 
-            if (farmHand.TryBeginRelocation(constrainedPosition))
+            if (farmHand.TryBeginRelocation(constrainedPosition, relocationRoute))
             {
                 return true;
             }
@@ -400,12 +428,21 @@ namespace TAD.Defenders
                 return;
             }
 
-            var completed = placementMode == PlacementMode.Relocation
-                ? TryRelocateFarmHandAt(relocatingFarmHand, previewPosition, showMessage: true)
-                : TrySpawnPaidFarmHand(previewPosition, showInsufficientFundsMessage: true);
+            var isNewFarmHandPlacement = placementMode == PlacementMode.Purchase;
+            FarmHand confirmedFarmHand = null;
+            var completed = isNewFarmHandPlacement
+                ? TrySpawnPaidFarmHand(
+                    previewPosition,
+                    showInsufficientFundsMessage: true,
+                    out confirmedFarmHand)
+                : TryRelocateFarmHandAt(relocatingFarmHand, previewPosition, showMessage: true);
             if (completed)
             {
                 EndPlacement();
+                if (isNewFarmHandPlacement && confirmedFarmHand != null)
+                {
+                    FarmHandPlacementConfirmed?.Invoke(confirmedFarmHand);
+                }
             }
         }
 
@@ -727,7 +764,9 @@ namespace TAD.Defenders
                 ? relocatingFarmHand
                 : farmHandPrefab;
             var ignoredFarmHand = placementMode == PlacementMode.Relocation ? relocatingFarmHand : null;
-            return IsFarmHandPlacementAvailable(position, footprintSource, ignoredFarmHand);
+            return routeMapper != null && footprintSource != null &&
+                   routeMapper.CanOccupyGroundPosition(position, footprintSource.RelocationPathDiameter) &&
+                   IsFarmHandPlacementAvailable(position, footprintSource, ignoredFarmHand);
         }
 
         private bool CreatePreview(FarmHand sourceFarmHand)
@@ -901,9 +940,15 @@ namespace TAD.Defenders
             Debug.LogWarning(message, this);
         }
 
-        private bool TrySpawnPaidFarmHand(Vector2 position, bool showInsufficientFundsMessage)
+        private bool TrySpawnPaidFarmHand(
+            Vector2 position,
+            bool showInsufficientFundsMessage,
+            out FarmHand placedFarmHand)
         {
-            if (!IsFarmHandPlacementAvailable(position, farmHandPrefab))
+            placedFarmHand = null;
+            if (routeMapper == null || farmHandPrefab == null ||
+                !routeMapper.CanOccupyGroundPosition(position, farmHandPrefab.RelocationPathDiameter) ||
+                !IsFarmHandPlacementAvailable(position, farmHandPrefab))
             {
                 if (showInsufficientFundsMessage)
                 {
@@ -925,28 +970,33 @@ namespace TAD.Defenders
                 return false;
             }
 
-            var spawnedFarmHand = spawnPool.Spawn(PooledObjectType.Defender, position, Quaternion.identity);
-            if (spawnedFarmHand == null)
+            var spawnedFarmHandObject = spawnPool.Spawn(PooledObjectType.Defender, position, Quaternion.identity);
+            if (spawnedFarmHandObject == null)
             {
                 return false;
             }
+
+            spawnedFarmHandObject.TryGetComponent(out placedFarmHand);
 
             // The affordability check above keeps this failure path exceptional, but returning the
             // object protects either player or AI from a charge if the bank changes this frame.
             if (bank.TrySpendGold(farmHandCost))
             {
+                placedFarmHand?.GetComponent<FarmHandAudioController>()?.PlayPlacementGreeting();
                 return true;
             }
 
-            var pooledInstance = spawnedFarmHand.GetComponent<PooledInstance>();
+            var pooledInstance = spawnedFarmHandObject.GetComponent<PooledInstance>();
             if (pooledInstance != null)
             {
                 pooledInstance.ReturnToPool();
             }
             else
             {
-                spawnedFarmHand.SetActive(false);
+                spawnedFarmHandObject.SetActive(false);
             }
+
+            placedFarmHand = null;
 
             if (showInsufficientFundsMessage)
             {

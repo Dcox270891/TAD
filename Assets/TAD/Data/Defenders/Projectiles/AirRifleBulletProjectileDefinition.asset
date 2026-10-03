@@ -13,12 +13,27 @@ MonoBehaviour:
   m_Name: AirRifleBulletProjectileDefinition
   m_EditorClassIdentifier: Assembly-CSharp::TAD.Defenders.ProjectileDefinition
   projectileType: 1
+  canTargetFlying: 0
   projectileBehavior: 0
   projectileLifetimeMode: 0
   projectilePrefab: {fileID: 3479797706705336641, guid: cc83f71ace6e7e44dab448c06be1d467, type: 3}
-  projectileSpeed: 12
-  projectileLifetime: 2
+  projectileSpeed: 16
+  projectileLifetime: 0.55
+  firingSound: {fileID: 8300000, guid: 91a22c7e1552bab47aa2f5b364314494, type: 3}
   maximumActiveProjectiles: 0
   initialSpeedMultiplier: 1
   rollingAcceleration: 0
   poleSweepAngle: 180
+  impactAreaRadius: 0
+  impactAreaDamage: 0
+  bleedDamagePerSecond: 0
+  bleedDuration: 0
+  poisonDamagePerSecond: 0
+  poisonDuration: 0
+  stunDuration: 0
+  slowMovementMultiplier: 1
+  slowDuration: 0
+  projectileScaleMultiplier: 1
+  bounceDistance: 1
+  bounceAngle: 20
+  maximumBounceCount: 3

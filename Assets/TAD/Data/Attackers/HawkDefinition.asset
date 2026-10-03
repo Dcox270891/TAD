@@ -14,15 +14,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TAD.Attackers.AttackerDefinition
   attackerId: 011
   displayName: Hawk
-  maximumHealth: 11
-  movementSpeed: 3.2
+  maximumHealth: 7.5
+  movementSpeed: 2.9
   size: 0.82
-  sendCost: 23
-  waveIncome: 4
-  expGiven: 7
-  killGain: 4
+  sendCost: 14
+  waveIncome: 3
+  expGiven: 4
+  killGain: 2
   sendSize: 4
   archetype: 3
   challengeTier: 2
   traversalProfile: 1
   visualDefinition: {fileID: 11400000, guid: 1d815ca0c039b494995709f05370f129, type: 2}
+  entrySound: {fileID: 8300000, guid: 3b98e5a6707616144b841dbeeff35f13, type: 3}

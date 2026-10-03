@@ -14,15 +14,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TAD.Attackers.AttackerDefinition
   attackerId: 003
   displayName: Ram
-  maximumHealth: 20
-  movementSpeed: 2.9
+  maximumHealth: 12
+  movementSpeed: 2.5
   size: 1.2
-  sendCost: 30
-  waveIncome: 6
-  expGiven: 9
-  killGain: 4
+  sendCost: 17
+  waveIncome: 4
+  expGiven: 5
+  killGain: 3
   sendSize: 5
   archetype: 0
   challengeTier: 3
   traversalProfile: 0
   visualDefinition: {fileID: 11400000, guid: 81215ee9a03bd0344bb10dfba7aa4fff, type: 2}
+  entrySound: {fileID: 8300000, guid: faab445d0ecbf104880099e23bea78ec, type: 3}

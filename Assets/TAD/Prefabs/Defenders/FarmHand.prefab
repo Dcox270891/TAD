@@ -162,6 +162,7 @@ GameObject:
   - component: {fileID: 35709057752819855}
   - component: {fileID: 7376161628610800881}
   - component: {fileID: 2515115941203810951}
+  - component: {fileID: 8253082098564435016}
   m_Layer: 11
   m_Name: FarmHand
   m_TagString: Untagged
@@ -319,7 +320,7 @@ CircleCollider2D:
   m_CompositeOperation: 0
   m_CompositeOrder: 0
   m_Offset: {x: 0, y: 0}
-  m_Radius: 12.5
+  m_Radius: 11.5
 --- !u!50 &35709057752819855
 Rigidbody2D:
   serializedVersion: 5
@@ -393,6 +394,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 50518f42d018cd64a96ea33eef391ff7, type: 3}
   m_Name: FarmHand Upgrade Indicator
   m_EditorClassIdentifier: TAD.Runtime::TAD.Defenders.FarmHandUpgradeIndicator
+--- !u!114 &8253082098564435016
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1396477453823266386}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ad4bde9ffe5d8e54e9447349495a5da0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TAD.Runtime::TAD.Defenders.FarmHandAudioController
+  placementGreeting: {fileID: 8300000, guid: cc42504be2007fc4b96acccccf2f7ff1, type: 3}
+  relocationLine: {fileID: 8300000, guid: e939567b6979e90428f24672153029cc, type: 3}
+  levelUpLine: {fileID: 8300000, guid: 05ccac3790fd8504a9e0b04de862d59a, type: 3}
 --- !u!1 &1961148835843387005
 GameObject:
   m_ObjectHideFlags: 0

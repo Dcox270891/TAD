@@ -16,10 +16,10 @@ MonoBehaviour:
   description: A larger final roller that keeps piercing through the line, with greater damage, scale, and lifetime.
   requiredPreviousWeapon: {fileID: 11400000, guid: 27eab7ad44021804c9e61d79fd7c8b52, type: 2}
   unlocksFinalEvolution: 0
-  cost: 112
-  range: 3.35
-  attackSpeed: 0.85
-  damage: 33
+  cost: 86
+  range: 3.1
+  attackSpeed: 0.7
+  damage: 22
   shotsPerMagazine: 1
   reloadDuration: 0
   projectileDefinition: {fileID: 11400000, guid: 9c85cfcc4dce9f24ead5b5c3b6e8f32c, type: 2}

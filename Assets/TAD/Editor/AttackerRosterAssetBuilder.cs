@@ -31,18 +31,20 @@ namespace TAD.Editor
 
         private static readonly AttackerSpec[] Specs =
         {
-            new("chicken", "Chicken", "001", 10f, 3f, 1f, 5, 1, 10, 10, 5, AttackerArchetype.Basic, 1, AttackerTraversalProfile.Ground, false),
-            new("duck", "Duck", "002", 16f, 3.15f, 1.05f, 7, 2, 12, 12, 5, AttackerArchetype.Basic, 2, AttackerTraversalProfile.Ground, true),
-            new("ram", "Ram", "003", 24f, 3.1f, 1.2f, 10, 3, 16, 19, 6, AttackerArchetype.Basic, 3, AttackerTraversalProfile.Ground, true),
-            new("hare", "Hare", "004", 6f, 4.4f, 0.75f, 6, 2, 9, 8, 5, AttackerArchetype.Fast, 1, AttackerTraversalProfile.Ground, true),
-            new("fox", "Fox", "005", 8f, 5.1f, 0.82f, 8, 3, 12, 13, 5, AttackerArchetype.Fast, 2, AttackerTraversalProfile.Ground, true),
-            new("greyhound", "Greyhound", "006", 10f, 5.8f, 0.9f, 10, 4, 16, 18, 6, AttackerArchetype.Fast, 3, AttackerTraversalProfile.Ground, true),
-            new("boar", "Boar", "007", 30f, 2.65f, 1.15f, 11, 3, 20, 22, 5, AttackerArchetype.Strong, 1, AttackerTraversalProfile.Ground, true),
-            new("bull", "Bull", "008", 45f, 2.35f, 1.35f, 15, 5, 27, 32, 6, AttackerArchetype.Strong, 2, AttackerTraversalProfile.Ground, true),
-            new("bison", "Bison", "009", 65f, 2.1f, 1.55f, 20, 7, 36, 45, 6, AttackerArchetype.Strong, 3, AttackerTraversalProfile.Ground, true),
-            new("crow", "Crow", "010", 9f, 3.25f, 0.7f, 8, 2, 11, 11, 5, AttackerArchetype.Flying, 1, AttackerTraversalProfile.IgnoresHalfCover, true),
-            new("hawk", "Hawk", "011", 14f, 3.35f, 0.82f, 12, 4, 18, 21, 5, AttackerArchetype.Flying, 2, AttackerTraversalProfile.IgnoresHalfCover, true),
-            new("eagle", "Eagle", "012", 21f, 3.45f, 0.95f, 17, 6, 27, 35, 6, AttackerArchetype.Flying, 3, AttackerTraversalProfile.IgnoresHalfCover, true)
+            // Final ten-day curve: early groups are deliberately light and inexpensive; higher
+            // tiers become decisive once recurring attacker income has had time to compound.
+            new("chicken", "Chicken", "001", 5f, 2.1f, 1f, 6, 1, 2, 1, 4, AttackerArchetype.Basic, 1, AttackerTraversalProfile.Ground, true),
+            new("duck", "Duck", "002", 8f, 2.3f, 1.05f, 11, 2, 3, 2, 4, AttackerArchetype.Basic, 2, AttackerTraversalProfile.Ground, true),
+            new("ram", "Ram", "003", 12f, 2.5f, 1.2f, 17, 4, 5, 3, 5, AttackerArchetype.Basic, 3, AttackerTraversalProfile.Ground, true),
+            new("hare", "Hare", "004", 3.5f, 3.2f, 0.75f, 7, 1, 2, 1, 4, AttackerArchetype.Fast, 1, AttackerTraversalProfile.Ground, true),
+            new("fox", "Fox", "005", 5f, 3.7f, 0.82f, 12, 2, 3, 2, 4, AttackerArchetype.Fast, 2, AttackerTraversalProfile.Ground, true),
+            new("greyhound", "Greyhound", "006", 7f, 4.2f, 0.9f, 19, 4, 5, 3, 5, AttackerArchetype.Fast, 3, AttackerTraversalProfile.Ground, true),
+            new("boar", "Boar", "007", 11f, 1.6f, 1.15f, 11, 2, 2, 3, 3, AttackerArchetype.Strong, 1, AttackerTraversalProfile.Ground, true),
+            new("bull", "Bull", "008", 16f, 1.8f, 1.35f, 18, 4, 4, 4, 3, AttackerArchetype.Strong, 2, AttackerTraversalProfile.Ground, true),
+            new("bison", "Bison", "009", 23f, 2f, 1.55f, 28, 6, 6, 6, 4, AttackerArchetype.Strong, 3, AttackerTraversalProfile.Ground, true),
+            new("crow", "Crow", "010", 5f, 2.6f, 0.7f, 8, 1, 2, 1, 3, AttackerArchetype.Flying, 1, AttackerTraversalProfile.IgnoresHalfCover, true),
+            new("hawk", "Hawk", "011", 7.5f, 2.9f, 0.82f, 14, 3, 4, 2, 4, AttackerArchetype.Flying, 2, AttackerTraversalProfile.IgnoresHalfCover, true),
+            new("eagle", "Eagle", "012", 10f, 3.2f, 0.95f, 22, 5, 6, 4, 4, AttackerArchetype.Flying, 3, AttackerTraversalProfile.IgnoresHalfCover, true)
         };
 
         [MenuItem("TAD/Attackers/Rebuild Directional Roster")]

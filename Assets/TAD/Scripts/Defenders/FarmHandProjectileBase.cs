@@ -210,7 +210,8 @@ namespace TAD.Defenders
         protected bool TryApplyImpactEffects(
             BasicAttacker primaryTarget,
             Vector2 impactPosition,
-            bool applyPrimaryDamage)
+            bool applyPrimaryDamage,
+            float areaDamageOverride = -1f)
         {
             if (Definition == null || !HasCurrentSourceActivation())
             {
@@ -233,6 +234,10 @@ namespace TAD.Defenders
                 return affected;
             }
 
+            var areaDamage = areaDamageOverride >= 0f
+                ? areaDamageOverride
+                : Definition.ImpactAreaDamage;
+
             areaImpactTargets.Clear();
             var resultCount = Physics2D.OverlapCircle(
                 impactPosition,
@@ -251,19 +256,28 @@ namespace TAD.Defenders
                 }
 
                 affected |= ApplyConfiguredStatusEffects(attacker, impactPosition);
-                if (Definition.ImpactAreaDamage > 0f)
+                if (areaDamage > 0f)
                 {
-                    affected |= TryDamageAttacker(attacker, Definition.ImpactAreaDamage);
+                    affected |= TryDamageAttacker(attacker, areaDamage);
                 }
             }
 
             return affected;
         }
 
-        /// <summary>Applies the configured area effect at a ground impact without a direct target.</summary>
-        protected bool TryApplyAreaImpact(Vector2 impactPosition)
+        /// <summary>
+        /// Applies an area effect at a ground impact without a direct target. A non-negative
+        /// <paramref name="areaDamageOverride"/> lets a behaviour such as Bounce use its launched
+        /// weapon damage, including the owning farmhand's level scaling, rather than a disconnected
+        /// authored splash number.
+        /// </summary>
+        protected bool TryApplyAreaImpact(Vector2 impactPosition, float areaDamageOverride = -1f)
         {
-            return TryApplyImpactEffects(null, impactPosition, applyPrimaryDamage: false);
+            return TryApplyImpactEffects(
+                null,
+                impactPosition,
+                applyPrimaryDamage: false,
+                areaDamageOverride);
         }
 
         private Vector2 GetPrimaryAttackOrigin(Vector2 impactPosition)

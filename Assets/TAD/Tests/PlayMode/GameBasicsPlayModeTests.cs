@@ -121,8 +121,8 @@ namespace TAD.Tests.PlayMode
             Assert.That(defender.IsAwaitingWeaponUpgrade, Is.True);
             Assert.That(defender.PendingWeaponUpgradeLevel, Is.EqualTo(2));
             Assert.That(defender.IsFreeWeaponUpgradePending, Is.True);
-            Assert.That(defender.Range, Is.EqualTo(upgrade.Range * 1.05f).Within(0.0001f));
-            Assert.That(defender.Damage, Is.EqualTo(upgrade.Damage * 1.1f).Within(0.0001f));
+            Assert.That(defender.Range, Is.EqualTo(upgrade.Range * 1.035f).Within(0.0001f));
+            Assert.That(defender.Damage, Is.EqualTo(upgrade.Damage * 1.07f).Within(0.0001f));
             Assert.That(defender.transform.localScale.x, Is.EqualTo(baseScale.x * 1.05f).Within(0.0001f));
             var goldBeforeFreeUpgrade = defenderBank.CurrentGold;
             Assert.That(defender.TryChooseWeaponUpgrade(upgrade), Is.True);
@@ -308,6 +308,53 @@ namespace TAD.Tests.PlayMode
             Assert.That(projectile.IsLaunched, Is.False, "Melee projectiles must not cross half cover.");
             Object.Destroy(attackerDefinition);
             Object.Destroy(projectileDefinition);
+        }
+
+        [UnityTest]
+        public IEnumerator BouncingProjectile_AppliesTheFarmhandsLevelScaledWeaponDamageAtEveryImpact()
+        {
+            GameBasicsTestSupport.CreateBank(BankSide.Defender);
+            var defender = GameBasicsTestSupport.CreateFarmHand();
+            var attackerDefinition = ScriptableObject.CreateInstance<AttackerDefinition>();
+            var attacker = GameBasicsTestSupport.CreateAttacker(attackerDefinition);
+            attacker.transform.position = new Vector2(0.2f, 0f);
+
+            var bounceDefinition = ScriptableObject.CreateInstance<ProjectileDefinition>();
+            SetPrivateField(bounceDefinition, "projectileType", ProjectileType.Melee);
+            SetPrivateField(bounceDefinition, "projectileBehavior", ProjectileBehavior.Bouncing);
+            SetPrivateField(bounceDefinition, "projectileLifetimeMode", ProjectileLifetimeMode.Timed);
+            SetPrivateField(bounceDefinition, "projectileSpeed", 10f);
+            SetPrivateField(bounceDefinition, "projectileLifetime", 1f);
+            SetPrivateField(bounceDefinition, "impactAreaRadius", 0.5f);
+            SetPrivateField(bounceDefinition, "impactAreaDamage", 0f);
+            SetPrivateField(bounceDefinition, "bounceDistance", 0.05f);
+            SetPrivateField(bounceDefinition, "maximumBounceCount", 1);
+
+            var bounceWeapon = CreateTestWeapon("Balanced Bounce", bounceDefinition);
+            SetPrivateField(bounceWeapon, "damage", 4f);
+            defender.SetWeapon(bounceWeapon);
+            SetPrivateField(defender, "currentLevel", 8);
+            var expectedDamage = bounceWeapon.Damage * Mathf.Pow(1.07f, 7);
+            var projectile = CreateTestRollingProjectile();
+
+            Physics2D.SyncTransforms();
+            Assert.That(projectile.Launch(
+                defender,
+                Vector2.zero,
+                attacker,
+                bounceDefinition,
+                bounceWeapon.Range,
+                defender.Damage), Is.True);
+
+            yield return new WaitForFixedUpdate();
+
+            Assert.That(attacker.RemainingHealth,
+                Is.EqualTo(attacker.MaximumHealth - expectedDamage).Within(0.001f),
+                "Bounce must use the launched damage, including the farmhand's level multiplier.");
+
+            Object.Destroy(attackerDefinition);
+            Object.Destroy(bounceDefinition);
+            Object.Destroy(bounceWeapon);
         }
 
         [UnityTest]
@@ -723,6 +770,61 @@ namespace TAD.Tests.PlayMode
             yield return new WaitForSeconds(1.2f);
             Assert.That(farmHand.IsRelocating, Is.False);
             Assert.That(Vector2.Distance(farmHand.transform.position, aiTargetPosition), Is.LessThan(0.02f));
+        }
+
+        [UnityTest]
+        public IEnumerator DefenderRelocation_FollowsGroundRouteAroundEveryWallType()
+        {
+            var fixture = GameBasicsTestSupport.CreateQueueFixture();
+            var defenderBank = GameBasicsTestSupport.CreateBank(BankSide.Defender);
+            yield return null;
+
+            var environmentLayer = LayerMask.NameToLayer("Environment");
+            Assert.That(environmentLayer, Is.GreaterThanOrEqualTo(0));
+
+            var wallObject = new GameObject("TAD Test Defender Relocation Half Cover Wall");
+            wallObject.layer = environmentLayer;
+            wallObject.transform.position = Vector2.zero;
+            var wallCollider = wallObject.AddComponent<BoxCollider2D>();
+            wallCollider.size = new Vector2(0.5f, 2f);
+            var wall = wallObject.AddComponent<FarmWall>();
+            SetPrivateField(wall, "cover", FarmWallCover.Half);
+            Physics2D.SyncTransforms();
+            Assert.That(fixture.SpawnPool.RouteMapper.RebuildRoutes(), Is.True);
+
+            var placementController = fixture.SpawnPool.GetComponent<FarmHandPlacementController>();
+            var initialPosition = new Vector2(-3f, 0f);
+            var destination = new Vector2(3f, 0f);
+            Assert.That(placementController.TryPlaceFarmHandAt(initialPosition), Is.True);
+            yield return null;
+
+            var farmHand = Object.FindAnyObjectByType<FarmHand>();
+            Assert.That(farmHand, Is.Not.Null);
+            SetPrivateField(farmHand, "relocationSpeed", 10f);
+            var goldBeforeRelocation = defenderBank.CurrentGold;
+
+            Assert.That(placementController.TryRelocateFarmHandAt(farmHand, destination), Is.True);
+            Assert.That(defenderBank.CurrentGold, Is.EqualTo(goldBeforeRelocation - farmHand.RelocationCost));
+
+            var maximumVerticalOffset = 0f;
+            var movementClearance = farmHand.RelocationPathDiameter * 0.5f;
+            for (var step = 0; step < 180 && farmHand.IsRelocating; step++)
+            {
+                yield return new WaitForFixedUpdate();
+                maximumVerticalOffset = Mathf.Max(maximumVerticalOffset, Mathf.Abs(farmHand.transform.position.y));
+                Assert.That(
+                    wall.BlocksCircle(farmHand.transform.position, movementClearance),
+                    Is.False,
+                    "A farmhand relocation route must never pass through a Half or Full cover wall.");
+            }
+
+            // Rigidbody2D applies the final waypoint during the last fixed tick; let Unity carry
+            // that position through to the visual Transform before checking the authored target.
+            yield return null;
+            Assert.That(farmHand.IsRelocating, Is.False);
+            Assert.That(Vector2.Distance(farmHand.transform.position, destination), Is.LessThan(0.02f));
+            Assert.That(maximumVerticalOffset, Is.GreaterThan(wallCollider.bounds.extents.y),
+                "The route should visibly bend around the wall instead of moving straight through it.");
         }
 
         [UnityTest]
@@ -1466,6 +1568,18 @@ namespace TAD.Tests.PlayMode
             projectileObject.AddComponent<Rigidbody2D>();
             projectileObject.AddComponent<CircleCollider2D>();
             var projectile = projectileObject.AddComponent<FarmHandProjectile>();
+            projectileObject.SetActive(true);
+            return projectile;
+        }
+
+        private static RollingProjectile CreateTestRollingProjectile()
+        {
+            var projectileObject = new GameObject("TAD Test Bounce Projectile");
+            projectileObject.SetActive(false);
+            projectileObject.AddComponent<SpriteRenderer>();
+            projectileObject.AddComponent<Rigidbody2D>();
+            projectileObject.AddComponent<CircleCollider2D>();
+            var projectile = projectileObject.AddComponent<RollingProjectile>();
             projectileObject.SetActive(true);
             return projectile;
         }

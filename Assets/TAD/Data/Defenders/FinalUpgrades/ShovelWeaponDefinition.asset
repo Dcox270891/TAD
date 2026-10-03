@@ -16,10 +16,10 @@ MonoBehaviour:
   description: A powerful final pole evolution. Its compact swing hits hard and stuns the attacker it connects with.
   requiredPreviousWeapon: {fileID: 11400000, guid: 80c7bf7be7647c041b69c346c86af0a5, type: 2}
   unlocksFinalEvolution: 0
-  cost: 96
-  range: 2
-  attackSpeed: 1.15
-  damage: 27
+  cost: 76
+  range: 1.95
+  attackSpeed: 0.95
+  damage: 18
   shotsPerMagazine: 1
   reloadDuration: 0
   projectileDefinition: {fileID: 11400000, guid: 6e86ba4c240ca574b97c0763995750a2, type: 2}

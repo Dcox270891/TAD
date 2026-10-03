@@ -133,7 +133,8 @@ namespace TAD.Match
 
         private void Update()
         {
-            if (ModalOverlay.IsGameplayInputBlocked || dayCycle == null || !dayCycle.IsPreparing || dayCycle.IsComplete)
+            if (ModalOverlay.IsGameplayInputBlocked || dayCycle == null || dayCycle.IsTutorialHeld ||
+                !dayCycle.IsPreparing || dayCycle.IsComplete)
             {
                 return;
             }
@@ -321,7 +322,10 @@ namespace TAD.Match
                 attackerAiDefenderThreats.Add(new AttackerAiDefenderThreat(
                     farmHand.transform.position,
                     farmHand.Range,
-                    farmHand.Damage * weapon.AttackSpeed,
+                    // Reload weapons must be evaluated by the fire rate they can sustain, not
+                    // their brief burst cadence. This keeps the attacker AI from dramatically
+                    // overestimating a rifle line during the later, denser days.
+                    farmHand.Damage * weapon.SustainedAttackSpeed,
                     projectile.ProjectileType,
                     projectile.ProjectileBehavior,
                     projectile.CanTargetFlying));

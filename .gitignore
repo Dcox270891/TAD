@@ -32,6 +32,13 @@ ExportedObj/
 sysinfo.txt
 *.stacktrace
 
+# Local Unity recovery, capture, and Android build intermediates
+/.utmp/
+/Assets/Library/
+/Assets/Library.meta
+/Assets/_Recovery/
+/Assets/_Recovery.meta
+
 # Local authoring and Unity conversion by-products
 *.blend1
 UpgradeLog.htm

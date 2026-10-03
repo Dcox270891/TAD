@@ -13,11 +13,13 @@ MonoBehaviour:
   m_Name: SemiAutomaticBulletProjectileDefinition
   m_EditorClassIdentifier: TAD.Runtime::TAD.Defenders.ProjectileDefinition
   projectileType: 1
+  canTargetFlying: 0
   projectileBehavior: 0
   projectileLifetimeMode: 0
   projectilePrefab: {fileID: 8595765098924578420, guid: cf6bf66e9174a69478a31c8fd345d18f, type: 3}
-  projectileSpeed: 26
-  projectileLifetime: 0.42
+  projectileSpeed: 24
+  projectileLifetime: 0.4
+  firingSound: {fileID: 8300000, guid: 701d8aeda845e9b4ba4dc26706299ebc, type: 3}
   maximumActiveProjectiles: 0
   initialSpeedMultiplier: 1
   rollingAcceleration: 0

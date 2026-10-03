@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Level1Definition
   m_EditorClassIdentifier: Assembly-CSharp::TAD.Levels.LevelDefinition
   id: level-01
-  displayName: 'Level 1: Meadow Run'
+  displayName: 'Level 1: Tutorial'
   sceneName: Level1
-  description: A clear first farm route with three escalating waves.
+  description: Learn how to play the game.
   unlocked: 1

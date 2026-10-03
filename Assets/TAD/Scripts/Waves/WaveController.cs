@@ -5,6 +5,7 @@ using TAD.Attackers;
 using TAD.Environment;
 using TAD.Navigation;
 using TAD.Pooling;
+using TAD.Progression;
 using UnityEngine;
 
 namespace TAD.Waves
@@ -565,6 +566,7 @@ namespace TAD.Waves
             }
 
             activeAttackers.Add(attackerObject);
+            TadSfxPlayer.Play(attacker.Definition.EntrySound, TadAudioChannelType.Attacker, attacker.CurrentPosition);
             spawnedAttacker = attacker;
             return true;
         }

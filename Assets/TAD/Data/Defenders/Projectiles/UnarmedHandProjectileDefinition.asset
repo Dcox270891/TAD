@@ -17,8 +17,9 @@ MonoBehaviour:
   projectileBehavior: 0
   projectileLifetimeMode: 0
   projectilePrefab: {fileID: 6925713925554940803, guid: 6b047fba528a63740813a18ead69958a, type: 3}
-  projectileSpeed: 10
-  projectileLifetime: 3
+  projectileSpeed: 8
+  projectileLifetime: 0.18
+  firingSound: {fileID: 8300000, guid: a0c8efc0f9e50b84988a121189c0f108, type: 3}
   maximumActiveProjectiles: 0
   initialSpeedMultiplier: 1
   rollingAcceleration: 0

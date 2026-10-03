@@ -13,11 +13,13 @@ MonoBehaviour:
   m_Name: PistolBulletProjectileDefinition
   m_EditorClassIdentifier: TAD.Runtime::TAD.Defenders.ProjectileDefinition
   projectileType: 1
+  canTargetFlying: 0
   projectileBehavior: 0
   projectileLifetimeMode: 0
   projectilePrefab: {fileID: 5063353061286360005, guid: 940d65c74d09ba243bdfa0d707d7d286, type: 3}
-  projectileSpeed: 24
-  projectileLifetime: 0.38
+  projectileSpeed: 22
+  projectileLifetime: 0.42
+  firingSound: {fileID: 8300000, guid: a700af5df70275245b3047e97f1fcc1c, type: 3}
   maximumActiveProjectiles: 0
   initialSpeedMultiplier: 1
   rollingAcceleration: 0

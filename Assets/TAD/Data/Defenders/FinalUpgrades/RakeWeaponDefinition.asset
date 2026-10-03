@@ -16,10 +16,10 @@ MonoBehaviour:
   description: A broad final pole evolution. Each sweep damages a target and leaves a heavy bleed behind.
   requiredPreviousWeapon: {fileID: 11400000, guid: 80c7bf7be7647c041b69c346c86af0a5, type: 2}
   unlocksFinalEvolution: 0
-  cost: 90
-  range: 2.2
-  attackSpeed: 1.55
-  damage: 18
+  cost: 70
+  range: 2.1
+  attackSpeed: 1.2
+  damage: 13
   shotsPerMagazine: 1
   reloadDuration: 0
   projectileDefinition: {fileID: 11400000, guid: ca6f193b4e5e69448bf3c7e4445f957a, type: 2}

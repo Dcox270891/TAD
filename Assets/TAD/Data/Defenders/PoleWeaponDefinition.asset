@@ -16,10 +16,10 @@ MonoBehaviour:
   description: A long melee pole. One pole sweeps 180 degrees around the farmhand and can strike each attacker once per swing.
   requiredPreviousWeapon: {fileID: 0}
   unlocksFinalEvolution: 1
-  cost: 40
+  cost: 34
   range: 1.75
-  attackSpeed: 1.35
-  damage: 12.5
+  attackSpeed: 1.1
+  damage: 9.5
   shotsPerMagazine: 1
   reloadDuration: 0
   projectileDefinition: {fileID: 11400000, guid: 5329dd2fc79fcc7489d9306d2fa756b8, type: 2}

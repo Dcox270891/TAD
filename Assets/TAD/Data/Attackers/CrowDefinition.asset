@@ -14,15 +14,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TAD.Attackers.AttackerDefinition
   attackerId: 010
   displayName: Crow
-  maximumHealth: 8
-  movementSpeed: 3
+  maximumHealth: 5
+  movementSpeed: 2.6
   size: 0.7
-  sendCost: 13
-  waveIncome: 2
-  expGiven: 4
-  killGain: 3
+  sendCost: 8
+  waveIncome: 1
+  expGiven: 2
+  killGain: 1
   sendSize: 3
   archetype: 3
   challengeTier: 1
   traversalProfile: 1
   visualDefinition: {fileID: 11400000, guid: faeb99b1a01098a4a85ffcbf6a3beadf, type: 2}
+  entrySound: {fileID: 8300000, guid: 5e0fbc689f8bb4d4d985d0a742d89fee, type: 3}

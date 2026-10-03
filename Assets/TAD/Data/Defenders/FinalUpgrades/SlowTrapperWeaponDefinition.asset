@@ -16,10 +16,10 @@ MonoBehaviour:
   description: A final trap evolution that deals a small area hit and slows every nearby attacker.
   requiredPreviousWeapon: {fileID: 11400000, guid: f10c2b2ff3579d140ac2b7b19ae8d4cf, type: 2}
   unlocksFinalEvolution: 0
-  cost: 96
-  range: 2.9
-  attackSpeed: 0.9
-  damage: 13
+  cost: 78
+  range: 2.7
+  attackSpeed: 0.7
+  damage: 9
   shotsPerMagazine: 1
   reloadDuration: 0
   projectileDefinition: {fileID: 11400000, guid: c95fb0b1f19b2184c84a6e71e1369cd0, type: 2}

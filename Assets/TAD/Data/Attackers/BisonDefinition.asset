@@ -14,15 +14,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TAD.Attackers.AttackerDefinition
   attackerId: 009
   displayName: Bison
-  maximumHealth: 40
-  movementSpeed: 2.2
+  maximumHealth: 23
+  movementSpeed: 2
   size: 1.55
-  sendCost: 50
-  waveIncome: 8
-  expGiven: 12
-  killGain: 10
+  sendCost: 28
+  waveIncome: 6
+  expGiven: 6
+  killGain: 6
   sendSize: 4
   archetype: 2
   challengeTier: 3
   traversalProfile: 0
   visualDefinition: {fileID: 11400000, guid: 3ebc963d90fcacc4bb72111c4b9b72e3, type: 2}
+  entrySound: {fileID: 8300000, guid: deb129f1b8f08c14db08d32fa5b67bc6, type: 3}

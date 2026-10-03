@@ -1,4 +1,5 @@
 using System;
+using TAD.Progression;
 using UnityEngine;
 
 namespace TAD.Environment
@@ -83,6 +84,7 @@ namespace TAD.Environment
 
             var foodConsumed = ConsumeFood(raider.RemainingHealth);
             raider.OnFoodStoreReached(this, foodConsumed);
+            TadHapticFeedback.PulseFoodStoreReached();
         }
 
         private static IFoodStoreRaider FindRaider(Collider2D collider)

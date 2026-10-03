@@ -16,10 +16,10 @@ MonoBehaviour:
   description: A heavy melee roller. It keeps its firing direction, starts slowly, then accelerates until its maximum speed.
   requiredPreviousWeapon: {fileID: 0}
   unlocksFinalEvolution: 1
-  cost: 52
-  range: 2.6
-  attackSpeed: 0.9
-  damage: 17
+  cost: 42
+  range: 2.35
+  attackSpeed: 0.7
+  damage: 12
   shotsPerMagazine: 1
   reloadDuration: 0
   projectileDefinition: {fileID: 11400000, guid: 9ab2073a6bbec624eba6d505dd8b9655, type: 2}

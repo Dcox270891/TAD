@@ -13,17 +13,19 @@ MonoBehaviour:
   m_Name: TrapProjectileDefinition
   m_EditorClassIdentifier: Assembly-CSharp::TAD.Defenders.ProjectileDefinition
   projectileType: 1
+  canTargetFlying: 0
   projectileBehavior: 3
   projectileLifetimeMode: 1
   projectilePrefab: {fileID: 1958398127359794655, guid: 1d5d2105462eb724b94bba69f475fab9, type: 3}
-  projectileSpeed: 13
+  projectileSpeed: 11
   projectileLifetime: 0
-  maximumActiveProjectiles: 3
+  firingSound: {fileID: 8300000, guid: 4b7947579848e4949bc73f5ccaa23a64, type: 3}
+  maximumActiveProjectiles: 2
   initialSpeedMultiplier: 1
   rollingAcceleration: 0
   poleSweepAngle: 180
   impactAreaRadius: 0.75
-  impactAreaDamage: 8
+  impactAreaDamage: 6
   bleedDamagePerSecond: 0
   bleedDuration: 0
   poisonDamagePerSecond: 0

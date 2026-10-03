@@ -40,8 +40,10 @@ namespace TAD.Defenders
 
         private const float BlockedTargetRetryInterval = 0.1f;
         private const int LineOfSightHitCapacity = 16;
-        private const float LevelDamageMultiplier = 1.1f;
-        private const float LevelRangeMultiplier = 1.05f;
+        // A farmhand must feel stronger at every level without its individual scaling eclipsing
+        // the increasingly frequent attacker groups in the final days of a match.
+        private const float LevelDamageMultiplier = 1.07f;
+        private const float LevelRangeMultiplier = 1.035f;
         private const float LevelVisualScaleMultiplier = 1.05f;
         private const int FirstWeaponUpgradeLevel = 2;
         private const int WeaponEvolutionUpgradeLevel = 5;
@@ -73,6 +75,7 @@ namespace TAD.Defenders
         [System.NonSerialized] private int investedGold;
         [System.NonSerialized] private bool isRelocating;
         [System.NonSerialized] private Vector2 relocationDestination;
+        [System.NonSerialized] private int relocationRouteIndex;
         [System.NonSerialized] private Sprite placementFootprintSprite;
         [System.NonSerialized] private Vector3 placementFootprintVisualLocalScale;
         [System.NonSerialized] private bool hasPlacementFootprintVisualScale;
@@ -84,6 +87,7 @@ namespace TAD.Defenders
         private SpawnPool projectilePool;
         private ResourceBank defenderBank;
         private readonly List<BasicAttacker> attackersInRange = new();
+        private readonly List<Vector3> relocationRoute = new();
         private readonly RaycastHit2D[] lineOfSightHits = new RaycastHit2D[LineOfSightHitCapacity];
         private ContactFilter2D lineOfSightFilter;
         private float nextFireTime;
@@ -110,6 +114,16 @@ namespace TAD.Defenders
 
         /// <summary>World-space destination of the active relocation, if any.</summary>
         public Vector2 RelocationDestination => relocationDestination;
+
+        /// <summary>
+        /// Diameter of a circle which fully contains the farmhand's visible placement footprint.
+        /// The movement route uses it as clearance, so the sprite itself cannot clip a wall while
+        /// the root transform follows a grid waypoint.
+        /// </summary>
+        public float RelocationPathDiameter => Mathf.Max(
+            0.02f,
+            Mathf.Max(PlacementFootprintSize.x, PlacementFootprintSize.y) +
+            (PlacementFootprintCenterOffset.magnitude * 2f));
 
         /// <summary>World-space size of this farmhand's sprite-sized placement footprint.</summary>
         public Vector2 PlacementFootprintSize => placementCollider != null && placementCollider.enabled
@@ -280,6 +294,12 @@ namespace TAD.Defenders
 
         /// <summary>Raised after this farmhand's experience or level changes.</summary>
         public event System.Action ProgressionChanged;
+
+        /// <summary>Raised once after one or more defender levels have been earned.</summary>
+        public event System.Action LeveledUp;
+
+        /// <summary>Raised after this farmhand begins an authorised relocation.</summary>
+        public event System.Action RelocationStarted;
 
         /// <summary>Raised after a successfully launched projectile so presentation can play its matching attack animation.</summary>
         public event System.Action<Vector2, WeaponDefinition> Fired;
@@ -517,12 +537,13 @@ namespace TAD.Defenders
         }
 
         /// <summary>
-        /// Starts an already-authorised relocation. Placement validation and the relocation fee belong to
-        /// FarmHandPlacementController so this component remains reusable by pooling and AI code.
+        /// Starts an already-authorised relocation along a route supplied by FarmRouteMapper.
+        /// Placement validation and the relocation fee belong to FarmHandPlacementController so this
+        /// component remains reusable by pooling and AI code.
         /// </summary>
-        public bool TryBeginRelocation(Vector2 destination)
+        public bool TryBeginRelocation(Vector2 destination, IReadOnlyList<Vector3> plannedRoute)
         {
-            if (!isActiveAndEnabled || isRelocating)
+            if (!isActiveAndEnabled || isRelocating || plannedRoute == null || plannedRoute.Count < 2)
             {
                 return false;
             }
@@ -534,12 +555,41 @@ namespace TAD.Defenders
                 return false;
             }
 
+            relocationRoute.Clear();
+            for (var routeIndex = 0; routeIndex < plannedRoute.Count; routeIndex++)
+            {
+                var routePoint = plannedRoute[routeIndex];
+                relocationRoute.Add(new Vector3(routePoint.x, routePoint.y, transform.position.z));
+            }
+
+            var finalRoutePoint = (Vector2)relocationRoute[^1];
+            if ((finalRoutePoint - destination).sqrMagnitude > RelocationArrivalDistance * RelocationArrivalDistance)
+            {
+                relocationRoute.Clear();
+                return false;
+            }
+
+            relocationRouteIndex = 0;
+            var currentPosition = rangeBody.position;
+            while (relocationRouteIndex < relocationRoute.Count &&
+                   ((Vector2)relocationRoute[relocationRouteIndex] - currentPosition).sqrMagnitude <=
+                   RelocationArrivalDistance * RelocationArrivalDistance)
+            {
+                relocationRouteIndex++;
+            }
+
+            if (relocationRouteIndex >= relocationRoute.Count)
+            {
+                relocationRoute.Clear();
+                return false;
+            }
+
             relocationDestination = destination;
             isRelocating = true;
             ClearAttackersInRange();
             nextFireTime = float.PositiveInfinity;
 
-            var direction = destination - (Vector2)transform.position;
+            var direction = (Vector2)relocationRoute[relocationRouteIndex] - currentPosition;
             if (direction.sqrMagnitude > 0.0001f)
             {
                 facingDirection = direction.normalized;
@@ -547,6 +597,7 @@ namespace TAD.Defenders
 
             rangeBody.linearVelocity = Vector2.zero;
             rangeBody.constraints = RigidbodyConstraints2D.FreezeRotation;
+            RelocationStarted?.Invoke();
             return true;
         }
 
@@ -1272,23 +1323,37 @@ namespace TAD.Defenders
 
         private void UpdateRelocation()
         {
-            if (rangeBody == null)
+            if (rangeBody == null || relocationRouteIndex >= relocationRoute.Count)
             {
                 ResetRelocation();
                 return;
             }
 
             var currentPosition = rangeBody.position;
-            var remaining = relocationDestination - currentPosition;
+            var nextWaypoint = (Vector2)relocationRoute[relocationRouteIndex];
+            var remaining = nextWaypoint - currentPosition;
             var step = Mathf.Max(0.01f, relocationSpeed) * Time.fixedDeltaTime;
             if (remaining.sqrMagnitude <= RelocationArrivalDistance * RelocationArrivalDistance || remaining.magnitude <= step)
             {
-                rangeBody.position = relocationDestination;
-                CompleteRelocation();
+                rangeBody.position = nextWaypoint;
+                relocationRouteIndex++;
+                if (relocationRouteIndex >= relocationRoute.Count)
+                {
+                    // MovePosition is normally applied at the end of the physics tick. The final
+                    // waypoint is an exact, already-validated destination, so commit it to the
+                    // visual Transform as well before releasing the defender to fire again.
+                    rangeBody.position = relocationDestination;
+                    rangeBody.transform.position = new Vector3(
+                        relocationDestination.x,
+                        relocationDestination.y,
+                        rangeBody.transform.position.z);
+                    CompleteRelocation();
+                }
+
                 return;
             }
 
-            var nextPosition = Vector2.MoveTowards(currentPosition, relocationDestination, step);
+            var nextPosition = Vector2.MoveTowards(currentPosition, nextWaypoint, step);
             rangeBody.MovePosition(nextPosition);
             facingDirection = remaining.normalized;
         }
@@ -1297,6 +1362,7 @@ namespace TAD.Defenders
         {
             isRelocating = false;
             relocationDestination = transform.position;
+            relocationRouteIndex = relocationRoute.Count;
             ConfigureRangeBody();
             nextFireTime = Time.time;
         }
@@ -1305,6 +1371,8 @@ namespace TAD.Defenders
         {
             isRelocating = false;
             relocationDestination = transform.position;
+            relocationRoute.Clear();
+            relocationRouteIndex = 0;
         }
 
         /// <summary>
@@ -1418,6 +1486,7 @@ namespace TAD.Defenders
                 ConfigurePlacementCollider();
                 ConfigureRangeCollider();
                 ConfigureRangeVisual();
+                LeveledUp?.Invoke();
             }
 
             ProgressionChanged?.Invoke();

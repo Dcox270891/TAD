@@ -13,17 +13,19 @@ MonoBehaviour:
   m_Name: BounceProjectileDefinition
   m_EditorClassIdentifier: TAD.Runtime::TAD.Defenders.ProjectileDefinition
   projectileType: 0
+  canTargetFlying: 0
   projectileBehavior: 4
   projectileLifetimeMode: 0
   projectilePrefab: {fileID: 5236741273928812746, guid: 70312c8c6958d754aae24a18d5363894, type: 3}
-  projectileSpeed: 3.1
-  projectileLifetime: 4.5
+  projectileSpeed: 2.5
+  projectileLifetime: 3
+  firingSound: {fileID: 8300000, guid: 00b96943ac31a30479e041b6f93444fa, type: 3}
   maximumActiveProjectiles: 1
   initialSpeedMultiplier: 1
   rollingAcceleration: 0
   poleSweepAngle: 180
-  impactAreaRadius: 1
-  impactAreaDamage: 18
+  impactAreaRadius: 0.85
+  impactAreaDamage: 0
   bleedDamagePerSecond: 0
   bleedDuration: 0
   poisonDamagePerSecond: 0
@@ -32,6 +34,6 @@ MonoBehaviour:
   slowMovementMultiplier: 1
   slowDuration: 0
   projectileScaleMultiplier: 1.15
-  bounceDistance: 1
+  bounceDistance: 0.9
   bounceAngle: 20
   maximumBounceCount: 4

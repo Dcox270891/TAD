@@ -53,6 +53,11 @@ namespace TAD.Defenders
         [SerializeField, Min(0f)] private float projectileSpeed;
         [SerializeField, Min(0f)] private float projectileLifetime;
 
+        [Header("Audio")]
+        [SerializeField]
+        [Tooltip("Played once when this projectile has launched successfully. Every projectile definition can use its own cue.")]
+        private AudioClip firingSound;
+
         [Header("Special Projectile Behaviour")]
         [SerializeField, Min(0)]
         [Tooltip("Zero permits unlimited active projectiles. Pole sweeps use one so a farmhand cannot begin a second sweep before the first has finished.")]
@@ -106,6 +111,7 @@ namespace TAD.Defenders
         public GameObject ProjectilePrefab => projectilePrefab;
         public float ProjectileSpeed => projectileSpeed;
         public float ProjectileLifetime => projectileLifetime;
+        public AudioClip FiringSound => firingSound;
         public int MaximumActiveProjectiles => maximumActiveProjectiles;
         public float InitialSpeedMultiplier => initialSpeedMultiplier;
         public float RollingAcceleration => rollingAcceleration;

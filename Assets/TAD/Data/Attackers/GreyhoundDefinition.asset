@@ -14,15 +14,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TAD.Attackers.AttackerDefinition
   attackerId: 006
   displayName: Greyhound
-  maximumHealth: 10
-  movementSpeed: 5
+  maximumHealth: 7
+  movementSpeed: 4.2
   size: 0.9
-  sendCost: 32
-  waveIncome: 6
-  expGiven: 9
-  killGain: 4
+  sendCost: 19
+  waveIncome: 4
+  expGiven: 5
+  killGain: 3
   sendSize: 5
   archetype: 1
   challengeTier: 3
   traversalProfile: 0
   visualDefinition: {fileID: 11400000, guid: a52958335ff95174d86a1709b7cc2c0d, type: 2}
+  entrySound: {fileID: 8300000, guid: 23670563ef67ccd45b6cf1e748ac7d72, type: 3}

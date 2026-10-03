@@ -219,8 +219,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 521fdfe2df0e95e439491b1dbfa8e5ae, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TAD.Match.MatchRoleController
-  baseAttackerGroupsPerDay: 1
-  attackerAiAdditionalGroupEveryDays: 4
+  baseAttackerGroupsPerDay: 2
+  attackerAiAdditionalGroupEveryDays: 3
   defenderAiMaximumFarmhands: 6
   defenderAiAdditionalFarmHandEveryDays: 2
   defenderAiSideOffset: 1.4
@@ -269,7 +269,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TAD.Economy.ResourceBank
   bankSide: 0
-  startingGold: 70
+  startingGold: 80
 --- !u!1 &3175488205663211672
 GameObject:
   m_ObjectHideFlags: 0

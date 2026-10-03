@@ -109,7 +109,9 @@ namespace TAD.Tests.Editor
                     candidates,
                     new List<AttackerAiDefenderThreat>(),
                     new List<AttackerDefinition> { basic },
-                    day: 1,
+                    // Tier-three contenders intentionally unlock for the AI in the late game;
+                    // the final balance suite separately guards the earlier tier gate.
+                    day: 6,
                     groupIndex: 0,
                     out var decision),
                 Is.True);

@@ -13,19 +13,21 @@ MonoBehaviour:
   m_Name: RakeProjectileDefinition
   m_EditorClassIdentifier: TAD.Runtime::TAD.Defenders.ProjectileDefinition
   projectileType: 0
+  canTargetFlying: 0
   projectileBehavior: 1
   projectileLifetimeMode: 0
   projectilePrefab: {fileID: 1236729632306841698, guid: b26f037cee572e84c9cd7f6cf0fc6a39, type: 3}
   projectileSpeed: 7
-  projectileLifetime: 0.9
+  projectileLifetime: 0.8
+  firingSound: {fileID: 8300000, guid: 7de58df97e406b54eadb72809a60b92c, type: 3}
   maximumActiveProjectiles: 1
   initialSpeedMultiplier: 1
   rollingAcceleration: 0
-  poleSweepAngle: 200
+  poleSweepAngle: 190
   impactAreaRadius: 0
   impactAreaDamage: 0
-  bleedDamagePerSecond: 4.5
-  bleedDuration: 3.5
+  bleedDamagePerSecond: 2.5
+  bleedDuration: 3
   poisonDamagePerSecond: 0
   poisonDuration: 0
   stunDuration: 0

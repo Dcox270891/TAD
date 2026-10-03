@@ -13,21 +13,23 @@ MonoBehaviour:
   m_Name: PoisonTrapProjectileDefinition
   m_EditorClassIdentifier: TAD.Runtime::TAD.Defenders.ProjectileDefinition
   projectileType: 1
+  canTargetFlying: 0
   projectileBehavior: 3
   projectileLifetimeMode: 1
   projectilePrefab: {fileID: 8135842313520881134, guid: 2fcf45cb6c425fb4bbacb63311a05c57, type: 3}
-  projectileSpeed: 13
+  projectileSpeed: 11
   projectileLifetime: 0
-  maximumActiveProjectiles: 3
+  firingSound: {fileID: 8300000, guid: d253e48bb899b8a4296fb6bd085da012, type: 3}
+  maximumActiveProjectiles: 2
   initialSpeedMultiplier: 1
   rollingAcceleration: 0
   poleSweepAngle: 180
-  impactAreaRadius: 0.95
+  impactAreaRadius: 0.85
   impactAreaDamage: 0
   bleedDamagePerSecond: 0
   bleedDuration: 0
-  poisonDamagePerSecond: 3.5
-  poisonDuration: 5
+  poisonDamagePerSecond: 2
+  poisonDuration: 4
   stunDuration: 0
   slowMovementMultiplier: 1
   slowDuration: 0

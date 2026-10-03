@@ -16,10 +16,10 @@ MonoBehaviour:
   description: A steady final rifle evolution with an eight-round magazine and a much faster reload.
   requiredPreviousWeapon: {fileID: 11400000, guid: 9b8b2dcaac92681458c4e0eb0a8ba9a5, type: 2}
   unlocksFinalEvolution: 0
-  cost: 128
-  range: 7.25
-  attackSpeed: 2.75
-  damage: 28
+  cost: 100
+  range: 6.9
+  attackSpeed: 1.8
+  damage: 14
   shotsPerMagazine: 8
-  reloadDuration: 1.1
+  reloadDuration: 0.8
   projectileDefinition: {fileID: 11400000, guid: a96eabfebf6b5624fb885dc9524b96de, type: 2}

@@ -13,11 +13,13 @@ MonoBehaviour:
   m_Name: StickProjectileDefinition
   m_EditorClassIdentifier: TAD.Runtime::TAD.Defenders.ProjectileDefinition
   projectileType: 0
+  canTargetFlying: 0
   projectileBehavior: 0
   projectileLifetimeMode: 0
   projectilePrefab: {fileID: 3468644203541840001, guid: efe64c7045d861442b1157a9251d87fb, type: 3}
   projectileSpeed: 9
-  projectileLifetime: 0.45
+  projectileLifetime: 0.25
+  firingSound: {fileID: 8300000, guid: b2ce57f9e018ac642a56ec0a3436e87e, type: 3}
   maximumActiveProjectiles: 0
   initialSpeedMultiplier: 1
   rollingAcceleration: 0

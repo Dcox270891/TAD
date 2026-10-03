@@ -74,6 +74,9 @@ namespace TAD.UI
         /// <summary>The farmhand currently represented by this card, if any.</summary>
         public FarmHand Target => target;
 
+        /// <summary>True while this non-modal card is visibly presenting a live FarmHand.</summary>
+        public bool IsShowing => gameObject.activeInHierarchy && target != null;
+
         /// <summary>Provides the defender-only relocation action without coupling this reusable card to a scene object.</summary>
         public void BindPlacementController(FarmHandPlacementController controller)
         {

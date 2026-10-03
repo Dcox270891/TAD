@@ -14,15 +14,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TAD.Attackers.AttackerDefinition
   attackerId: 005
   displayName: Fox
-  maximumHealth: 7
-  movementSpeed: 4.5
+  maximumHealth: 5
+  movementSpeed: 3.7
   size: 0.82
-  sendCost: 20
-  waveIncome: 4
-  expGiven: 6
-  killGain: 3
+  sendCost: 12
+  waveIncome: 2
+  expGiven: 3
+  killGain: 2
   sendSize: 4
   archetype: 1
   challengeTier: 2
   traversalProfile: 0
   visualDefinition: {fileID: 11400000, guid: d669a1f8c4b83c74fad20122eb8e551b, type: 2}
+  entrySound: {fileID: 8300000, guid: 99a381d747d6dc54da431263fad038ec, type: 3}
