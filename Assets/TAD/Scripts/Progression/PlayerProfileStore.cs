@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace TAD.Progression
@@ -20,6 +21,24 @@ namespace TAD.Progression
         public int playerLevel = PlayerLevelProgression.StartingLevel;
         [Tooltip("Lifetime account experience, retained independently from current level progress.")]
         public float totalPlayerExperience;
+
+        [Header("Player Upgrades")]
+        [Tooltip("Ranks purchased from the account-level player upgrade tree.")]
+        public List<PlayerUpgradeRankData> playerUpgradeRanks = new();
+        [Tooltip("Saved level-up card offers waiting for a player choice.")]
+        public List<PendingPlayerUpgradeChoiceData> pendingPlayerUpgradeChoices = new();
+
+        [Header("Player Energy")]
+        [Tooltip("Energy available to begin a new match.")]
+        public int playerEnergy = PlayerEnergyProgression.MaximumEnergy;
+        [Tooltip("Trusted live-time progress accumulated toward the next energy point.")]
+        public long playerEnergyRechargeRemainderMilliseconds;
+        [Tooltip("Last device wall-clock anchor recorded for offline energy reconciliation.")]
+        public long playerEnergyLastWallClockUtcTicks;
+        [Tooltip("Highest device wall-clock time ever observed, retained to reject clock rollbacks.")]
+        public long playerEnergyHighestWallClockUtcTicks;
+        [Tooltip("Android elapsed realtime anchor when that platform clock is available; -1 elsewhere.")]
+        public long playerEnergyLastDeviceElapsedRealtimeMilliseconds = -1L;
 
         // Kept for backward compatibility with the first menu-profile format.
         public bool musicEnabled = true;
@@ -45,7 +64,7 @@ namespace TAD.Progression
     /// </summary>
     public static class PlayerProfileStore
     {
-        public const int CurrentVersion = 3;
+        public const int CurrentVersion = 5;
 
         private const string ProfileKey = "TAD.PlayerProfile";
 
@@ -120,6 +139,33 @@ namespace TAD.Progression
                 profile.playerLevel = PlayerLevelProgression.StartingLevel;
                 profile.totalPlayerExperience = 0f;
             }
+
+            if (profile.version < 4)
+            {
+                // Existing players begin the new energy system with a full reserve. Clock anchors
+                // are established by PlayerSettingsService on the next application launch.
+                profile.playerEnergy = PlayerEnergyProgression.MaximumEnergy;
+                profile.playerEnergyRechargeRemainderMilliseconds = 0L;
+                profile.playerEnergyLastWallClockUtcTicks = 0L;
+                profile.playerEnergyHighestWallClockUtcTicks = 0L;
+                profile.playerEnergyLastDeviceElapsedRealtimeMilliseconds = -1L;
+            }
+
+            if (profile.version < 5)
+            {
+                // These display controls were already available to existing players. Keep their
+                // preference intact rather than making a profile migration unexpectedly hide UI.
+                PlayerUpgradeProgression.GrantUpgradeForMigration(
+                    profile,
+                    PlayerUpgradeProgression.GetGeneralUpgradeId(GeneralPlayerUpgrade.AttackerHealthDisplay));
+                PlayerUpgradeProgression.GrantUpgradeForMigration(
+                    profile,
+                    PlayerUpgradeProgression.GetGeneralUpgradeId(GeneralPlayerUpgrade.DefenderExperienceDisplay));
+
+                // Account levels earned before the tree was introduced still deserve their
+                // rewards. The persistent queue lets players work through those choices safely.
+                PlayerUpgradeProgression.EnqueueChoicesThroughLevel(profile, profile.playerLevel);
+            }
         }
 
         private static void Sanitize(PlayerProfileData profile)
@@ -128,9 +174,31 @@ namespace TAD.Progression
             profile.lastPlayedLevelId ??= string.Empty;
             profile.metaCurrency = Mathf.Max(0, profile.metaCurrency);
             profile.playerExp = PlayerLevelProgression.RoundToNearestTenth(Mathf.Max(0f, profile.playerExp));
-            profile.playerLevel = Mathf.Max(PlayerLevelProgression.StartingLevel, profile.playerLevel);
+            profile.playerLevel = Mathf.Clamp(
+                profile.playerLevel,
+                PlayerLevelProgression.StartingLevel,
+                PlayerLevelProgression.MaximumLevel);
+            if (profile.playerLevel >= PlayerLevelProgression.MaximumLevel)
+            {
+                profile.playerExp = 0f;
+            }
             profile.totalPlayerExperience = PlayerLevelProgression.RoundToNearestTenth(
                 Mathf.Max(profile.playerExp, profile.totalPlayerExperience));
+            profile.playerEnergy = Mathf.Clamp(profile.playerEnergy, 0, PlayerEnergyProgression.MaximumEnergy);
+            profile.playerEnergyRechargeRemainderMilliseconds = profile.playerEnergy >= PlayerEnergyProgression.MaximumEnergy
+                ? 0L
+                : Math.Max(
+                    0L,
+                    Math.Min(
+                        PlayerEnergyProgression.RechargeIntervalMilliseconds - 1L,
+                        profile.playerEnergyRechargeRemainderMilliseconds));
+            profile.playerEnergyLastWallClockUtcTicks = Math.Max(0L, profile.playerEnergyLastWallClockUtcTicks);
+            profile.playerEnergyHighestWallClockUtcTicks = Math.Max(
+                profile.playerEnergyLastWallClockUtcTicks,
+                profile.playerEnergyHighestWallClockUtcTicks);
+            profile.playerEnergyLastDeviceElapsedRealtimeMilliseconds = Math.Max(
+                -1L,
+                profile.playerEnergyLastDeviceElapsedRealtimeMilliseconds);
             profile.musicVolume = Mathf.Clamp01(profile.musicVolume);
             profile.masterVolume = Mathf.Clamp01(profile.masterVolume);
             profile.attackerVolume = Mathf.Clamp01(profile.attackerVolume);
@@ -138,6 +206,7 @@ namespace TAD.Progression
             profile.projectileVolume = Mathf.Clamp01(profile.projectileVolume);
             profile.ambientGameVolume = Mathf.Clamp01(profile.ambientGameVolume);
             profile.videoQuality = GetSafeQualityIndex(profile.videoQuality);
+            PlayerUpgradeProgression.Sanitize(profile);
         }
 
         private static int GetSafeQualityIndex(int qualityIndex)

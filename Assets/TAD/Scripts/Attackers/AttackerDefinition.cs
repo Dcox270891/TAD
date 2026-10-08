@@ -19,7 +19,7 @@ namespace TAD.Attackers
 
         [Header("Roster")]
         [SerializeField] private AttackerArchetype archetype = AttackerArchetype.Basic;
-        [SerializeField, Range(1, 3)] private int challengeTier = 1;
+        [SerializeField, Range(1, 10)] private int challengeTier = 1;
         [SerializeField] private AttackerTraversalProfile traversalProfile = AttackerTraversalProfile.Ground;
 
         [Header("Visuals")]
@@ -60,7 +60,7 @@ namespace TAD.Attackers
             expGiven = Mathf.Max(0, expGiven);
             killGain = Mathf.Max(0, killGain);
             sendSize = Mathf.Max(0, sendSize);
-            challengeTier = Mathf.Clamp(challengeTier, 1, 3);
+            challengeTier = Mathf.Clamp(challengeTier, 1, 10);
         }
 #endif
     }

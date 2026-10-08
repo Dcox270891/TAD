@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 237d8eff0daf65146b0d321cf6fb020f, type: 3}
+  m_Name: FarmHandOutfit_GreenJacket
+  m_EditorClassIdentifier: TAD.Runtime::TAD.Defenders.FarmHandOutfitVisualDefinition
+  movementSprites:
+  - {fileID: -26274162, guid: acb21db3803940c40a63208545d9bdff, type: 3}
+  - {fileID: 715008051, guid: acb21db3803940c40a63208545d9bdff, type: 3}
+  - {fileID: 1527408372, guid: acb21db3803940c40a63208545d9bdff, type: 3}
+  - {fileID: 155633445, guid: acb21db3803940c40a63208545d9bdff, type: 3}
+  - {fileID: -1646046982, guid: acb21db3803940c40a63208545d9bdff, type: 3}
+  - {fileID: -1192936739, guid: acb21db3803940c40a63208545d9bdff, type: 3}
+  - {fileID: 1506640914, guid: acb21db3803940c40a63208545d9bdff, type: 3}
+  - {fileID: 767002973, guid: acb21db3803940c40a63208545d9bdff, type: 3}
+  - {fileID: 1246946961, guid: acb21db3803940c40a63208545d9bdff, type: 3}
+  - {fileID: 891753020, guid: acb21db3803940c40a63208545d9bdff, type: 3}
+  - {fileID: -1707082904, guid: acb21db3803940c40a63208545d9bdff, type: 3}
+  - {fileID: -116727860, guid: acb21db3803940c40a63208545d9bdff, type: 3}
+  - {fileID: 1571794344, guid: acb21db3803940c40a63208545d9bdff, type: 3}
+  - {fileID: 1469003661, guid: acb21db3803940c40a63208545d9bdff, type: 3}
+  - {fileID: -1263969518, guid: acb21db3803940c40a63208545d9bdff, type: 3}
+  - {fileID: -693505176, guid: acb21db3803940c40a63208545d9bdff, type: 3}
+  - {fileID: 499313764, guid: acb21db3803940c40a63208545d9bdff, type: 3}
+  - {fileID: 1468082810, guid: acb21db3803940c40a63208545d9bdff, type: 3}
+  - {fileID: -1599842000, guid: acb21db3803940c40a63208545d9bdff, type: 3}
+  - {fileID: -983820639, guid: acb21db3803940c40a63208545d9bdff, type: 3}
+  - {fileID: -267928878, guid: acb21db3803940c40a63208545d9bdff, type: 3}
+  - {fileID: -192569884, guid: acb21db3803940c40a63208545d9bdff, type: 3}
+  - {fileID: -2011279071, guid: acb21db3803940c40a63208545d9bdff, type: 3}
+  - {fileID: -1088274317, guid: acb21db3803940c40a63208545d9bdff, type: 3}
+  - {fileID: -154424983, guid: acb21db3803940c40a63208545d9bdff, type: 3}
+  - {fileID: -823648622, guid: acb21db3803940c40a63208545d9bdff, type: 3}
+  - {fileID: -1776824284, guid: acb21db3803940c40a63208545d9bdff, type: 3}
+  - {fileID: -1327456286, guid: acb21db3803940c40a63208545d9bdff, type: 3}
+  - {fileID: 1973804222, guid: acb21db3803940c40a63208545d9bdff, type: 3}
+  - {fileID: -1700421266, guid: acb21db3803940c40a63208545d9bdff, type: 3}
+  - {fileID: 703012863, guid: acb21db3803940c40a63208545d9bdff, type: 3}
+  - {fileID: 847229742, guid: acb21db3803940c40a63208545d9bdff, type: 3}
+  movementFrameDuration: 0.16

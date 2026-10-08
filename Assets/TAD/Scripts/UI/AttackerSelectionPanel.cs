@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using TAD.Attackers;
 using TAD.Economy;
+using TAD.Match;
 using TAD.Pooling;
+using TAD.Progression;
 using TAD.Waves;
 using UnityEngine;
 
@@ -41,9 +43,13 @@ namespace TAD.UI
 
             spawnPool.CopyAvailableAttackerDefinitions(definitions);
             definitions.Sort(CompareForDisplay);
+            var unlockedChallengeTier = MatchRoleSelection.IsPlayerAttacker
+                ? PlayerUpgradeProgression.GetUnlockedChallengeTier(PlayerSettingsService.Instance.Profile.playerLevel)
+                : int.MaxValue;
             foreach (var definition in definitions)
             {
-                if (definition == null || !spawnPool.TryGetAttackerPrefab(definition, out var attackerPrefab))
+                if (definition == null || definition.ChallengeTier > unlockedChallengeTier ||
+                    !spawnPool.TryGetAttackerPrefab(definition, out var attackerPrefab))
                 {
                     continue;
                 }

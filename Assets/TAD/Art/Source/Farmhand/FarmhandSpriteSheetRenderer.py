@@ -40,9 +40,19 @@ RENDER_BUFFER_PATH = os.path.join(
 PALETTE = {
     "skin": (0.86, 0.43, 0.23, 1.0),
     "skin_light": (1.0, 0.66, 0.38, 1.0),
+    "skin_medium": (0.48, 0.20, 0.09, 1.0),
+    "skin_medium_light": (0.72, 0.38, 0.18, 1.0),
+    "skin_deep": (0.18, 0.065, 0.025, 1.0),
+    "skin_deep_light": (0.36, 0.14, 0.055, 1.0),
     "hair": (0.13, 0.055, 0.025, 1.0),
+    "hair_black": (0.025, 0.02, 0.018, 1.0),
     "shirt": (0.12, 0.33, 0.52, 1.0),
     "overalls": (0.055, 0.17, 0.32, 1.0),
+    "plaid_red": (0.54, 0.105, 0.065, 1.0),
+    "plaid_cream": (0.98, 0.76, 0.40, 1.0),
+    "field_green": (0.16, 0.34, 0.12, 1.0),
+    "field_green_light": (0.39, 0.58, 0.18, 1.0),
+    "trouser_tan": (0.35, 0.24, 0.11, 1.0),
     "boot": (0.09, 0.055, 0.025, 1.0),
     "wood": (0.34, 0.16, 0.055, 1.0),
     "wood_light": (0.58, 0.30, 0.10, 1.0),
@@ -260,7 +270,17 @@ def add_torus(name, location, major_radius, minor_radius, material, collection, 
     return obj
 
 
-def create_character(direction_index, phase, materials, weapon_key=None, fire_frame=None, reload_frame=None):
+def create_character(
+    direction_index,
+    phase,
+    materials,
+    weapon_key=None,
+    fire_frame=None,
+    reload_frame=None,
+    body_variant="Default",
+    hair_variant="ShortBrown",
+    outfit_variant="BlueOveralls",
+):
     body = new_collection("Render_Body")
     hair = new_collection("Render_Hair")
     outfit = new_collection("Render_Outfit")
@@ -275,22 +295,60 @@ def create_character(direction_index, phase, materials, weapon_key=None, fire_fr
 
     # The body collection deliberately includes the full neutral silhouette so it remains a usable
     # selection and placement-preview anchor even when cosmetic overlays are later swapped.
-    add_ico("Head", (0.0, 0.0, 2.45), (0.47, 0.43, 0.52), materials["skin_light"], body, root)
-    add_ico("Nose", (0.0, -0.42, 2.42), (0.09, 0.12, 0.10), materials["skin"], body, root)
-    add_cylinder_between("LeftArm", (-0.48, 0.0, 1.82), (-0.64, step, 1.24), 0.105, materials["skin"], body, root, 6)
-    add_cylinder_between("RightArm", (0.48, 0.0, 1.82), (0.64, opposite_step, 1.24), 0.105, materials["skin"], body, root, 6)
-    add_ico("LeftHand", (-0.65, step, 1.18), (0.13, 0.13, 0.15), materials["skin_light"], body, root)
-    add_ico("RightHand", (0.65, opposite_step, 1.18), (0.13, 0.13, 0.15), materials["skin_light"], body, root)
+    body_materials = {
+        "Default": ("skin_light", "skin"),
+        "Medium": ("skin_medium_light", "skin_medium"),
+        "Deep": ("skin_deep_light", "skin_deep"),
+    }
+    skin_light_key, skin_shadow_key = body_materials.get(body_variant, body_materials["Default"])
+    add_ico("Head", (0.0, 0.0, 2.45), (0.47, 0.43, 0.52), materials[skin_light_key], body, root)
+    add_ico("Nose", (0.0, -0.42, 2.42), (0.09, 0.12, 0.10), materials[skin_shadow_key], body, root)
+    add_cylinder_between("LeftArm", (-0.48, 0.0, 1.82), (-0.64, step, 1.24), 0.105, materials[skin_shadow_key], body, root, 6)
+    add_cylinder_between("RightArm", (0.48, 0.0, 1.82), (0.64, opposite_step, 1.24), 0.105, materials[skin_shadow_key], body, root, 6)
+    add_ico("LeftHand", (-0.65, step, 1.18), (0.13, 0.13, 0.15), materials[skin_light_key], body, root)
+    add_ico("RightHand", (0.65, opposite_step, 1.18), (0.13, 0.13, 0.15), materials[skin_light_key], body, root)
 
-    # Hair is its own layer so future farmhands can choose a hairstyle independently of clothing.
-    add_uv("HairCap", (0.0, 0.055, 2.72), (0.49, 0.45, 0.27), materials["hair"], hair, root)
-    add_ico("HairLock", (-0.16, -0.36, 2.62), (0.19, 0.12, 0.18), materials["hair"], hair, root)
+    # Hair/hat stays in its own renderer layer so it can be independently combined with every
+    # skin tone and outfit. A broad brim makes the hat read clearly in the top-down game camera.
+    if hair_variant == "CurlyBlack":
+        add_uv("CurlyHairCap", (0.0, 0.055, 2.70), (0.50, 0.46, 0.25), materials["hair_black"], hair, root)
+        for lock_index, offset in enumerate(((-0.28, -0.27), (-0.10, -0.38), (0.10, -0.38), (0.28, -0.27))):
+            add_ico(
+                "CurlyLock" + str(lock_index),
+                (offset[0], offset[1], 2.61),
+                (0.16, 0.14, 0.18),
+                materials["hair_black"],
+                hair,
+                root,
+            )
+    elif hair_variant == "StrawHat":
+        add_cone("HatBrim", (0.0, 0.02, 2.73), 0.70, 0.64, 0.10, materials["straw"], hair, root, 8)
+        add_cone("HatCrown", (0.0, 0.04, 2.89), 0.42, 0.36, 0.28, materials["straw"], hair, root, 8)
+        add_torus("HatBand", (0.0, 0.04, 2.80), 0.40, 0.035, materials["wood"], hair, root)
+    else:
+        add_uv("HairCap", (0.0, 0.055, 2.72), (0.49, 0.45, 0.27), materials["hair"], hair, root)
+        add_ico("HairLock", (-0.16, -0.36, 2.62), (0.19, 0.12, 0.18), materials["hair"], hair, root)
 
-    # Outfit layer: blue work shirt, dark overalls and boots. It can be entirely replaced later.
-    add_cone("WorkShirt", (0.0, 0.0, 1.70), 0.49, 0.38, 0.92, materials["shirt"], outfit, root, 6)
-    add_cube("OverallsBib", (0.0, -0.42, 1.91), (0.30, 0.055, 0.31), materials["overalls"], outfit, root)
-    add_cylinder_between("LeftLeg", (-0.22, 0.0, 1.22), (-0.23, step, 0.42), 0.17, materials["overalls"], outfit, root, 6)
-    add_cylinder_between("RightLeg", (0.22, 0.0, 1.22), (0.23, opposite_step, 0.42), 0.17, materials["overalls"], outfit, root, 6)
+    # Outfit layer: every option shares the same outside silhouette so placement and movement
+    # collision remain faithful to the visible farmhand while preserving gameplay balance.
+    if outfit_variant == "RedPlaid":
+        add_cone("PlaidShirt", (0.0, 0.0, 1.70), 0.49, 0.38, 0.92, materials["plaid_red"], outfit, root, 6)
+        add_cube("PlaidStripeVertical", (0.0, -0.43, 1.70), (0.075, 0.045, 0.72), materials["plaid_cream"], outfit, root)
+        add_cube("PlaidStripeHorizontal", (0.0, -0.44, 1.80), (0.68, 0.045, 0.065), materials["plaid_cream"], outfit, root)
+        leg_material = materials["trouser_tan"]
+    elif outfit_variant == "GreenJacket":
+        add_cone("FieldJacket", (0.0, 0.0, 1.70), 0.51, 0.39, 0.94, materials["field_green"], outfit, root, 6)
+        add_cube("JacketZip", (0.0, -0.44, 1.70), (0.045, 0.045, 0.64), materials["field_green_light"], outfit, root)
+        add_cube("JacketPocketLeft", (-0.22, -0.43, 1.48), (0.14, 0.045, 0.12), materials["field_green_light"], outfit, root)
+        add_cube("JacketPocketRight", (0.22, -0.43, 1.48), (0.14, 0.045, 0.12), materials["field_green_light"], outfit, root)
+        leg_material = materials["trouser_tan"]
+    else:
+        add_cone("WorkShirt", (0.0, 0.0, 1.70), 0.49, 0.38, 0.92, materials["shirt"], outfit, root, 6)
+        add_cube("OverallsBib", (0.0, -0.42, 1.91), (0.30, 0.055, 0.31), materials["overalls"], outfit, root)
+        leg_material = materials["overalls"]
+
+    add_cylinder_between("LeftLeg", (-0.22, 0.0, 1.22), (-0.23, step, 0.42), 0.17, leg_material, outfit, root, 6)
+    add_cylinder_between("RightLeg", (0.22, 0.0, 1.22), (0.23, opposite_step, 0.42), 0.17, leg_material, outfit, root, 6)
     add_cube("LeftBoot", (-0.23, step - 0.08, 0.25), (0.22, 0.34, 0.15), materials["boot"], outfit, root)
     add_cube("RightBoot", (0.23, opposite_step - 0.08, 0.25), (0.22, 0.34, 0.15), materials["boot"], outfit, root)
 
@@ -525,29 +583,42 @@ def save_sheet(image, pixels, filepath):
 
 
 def render_directional_move_layers(materials):
-    sheets = {}
-    for layer in ("body", "hair", "outfit"):
-        sheets[layer] = create_sheet("Farmhand_" + layer + "_Move", MOVEMENT_COLUMNS, 4)
-
-    for direction in range(DIRECTION_COUNT):
-        for frame in range(MOVEMENT_FRAME_COUNT):
-            clear_model_collections()
-            layers = create_character(direction, frame, materials)
-            index = direction * MOVEMENT_FRAME_COUNT + frame
-            column = index % MOVEMENT_COLUMNS
-            row = index // MOVEMENT_COLUMNS
-            for layer in ("body", "hair", "outfit"):
-                hide_character_layers(layers, layer)
-                image, pixels = sheets[layer]
-                blit(pixels, image.size[0], 4, capture_render_pixels(), column, row)
-
-    filenames = {
-        "body": "FarmhandBody_Default_Move.png",
-        "hair": "FarmhandHair_ShortBrown_Move.png",
-        "outfit": "FarmhandOutfit_BlueOveralls_Move.png",
-    }
-    for layer, (image, pixels) in sheets.items():
-        save_sheet(image, pixels, os.path.join(DIRECTIONAL_ROOT, filenames[layer]))
+    layer_specs = (
+        ("body", "FarmhandBody", ("Default", "Medium", "Deep")),
+        ("hair", "FarmhandHair", ("ShortBrown", "CurlyBlack", "StrawHat")),
+        ("outfit", "FarmhandOutfit", ("BlueOveralls", "RedPlaid", "GreenJacket")),
+    )
+    for layer, filename_prefix, variants in layer_specs:
+        for variant in variants:
+            image, pixels = create_sheet(
+                filename_prefix + "_" + variant + "_Move",
+                MOVEMENT_COLUMNS,
+                4,
+            )
+            for direction in range(DIRECTION_COUNT):
+                for frame in range(MOVEMENT_FRAME_COUNT):
+                    clear_model_collections()
+                    layers = create_character(
+                        direction,
+                        frame,
+                        materials,
+                        **{layer + "_variant": variant},
+                    )
+                    hide_character_layers(layers, layer)
+                    index = direction * MOVEMENT_FRAME_COUNT + frame
+                    blit(
+                        pixels,
+                        image.size[0],
+                        4,
+                        capture_render_pixels(),
+                        index % MOVEMENT_COLUMNS,
+                        index // MOVEMENT_COLUMNS,
+                    )
+            save_sheet(
+                image,
+                pixels,
+                os.path.join(DIRECTIONAL_ROOT, filename_prefix + "_" + variant + "_Move.png"),
+            )
 
 
 def render_weapon_sheets(materials):
@@ -882,7 +953,11 @@ def main():
     setup_scene()
     materials = make_materials()
     upgrade_only = os.environ.get("TAD_RENDER_UPGRADES_ONLY") == "1"
-    if upgrade_only:
+    cosmetics_only = os.environ.get("TAD_RENDER_COSMETICS_ONLY") == "1"
+    if cosmetics_only:
+        print("TAD farmhand render: body, hair and outfit cosmetic frames", flush=True)
+        render_directional_move_layers(materials)
+    elif upgrade_only:
         print("TAD farmhand render: level-two and final-upgrade weapon animations", flush=True)
         render_upgrade_weapon_sheets(materials)
         print("TAD farmhand render: upgrade projectile artwork and effect frames", flush=True)
@@ -894,8 +969,9 @@ def main():
         render_weapon_sheets(materials)
         print("TAD farmhand render: base projectile artwork", flush=True)
         render_projectile_sheet(materials)
-    print("TAD farmhand render: saving editable source", flush=True)
-    save_editable_source(materials)
+    if os.environ.get("TAD_SAVE_EDITABLE_SOURCE", "1") != "0":
+        print("TAD farmhand render: saving editable source", flush=True)
+        save_editable_source(materials)
     if os.path.exists(RENDER_BUFFER_PATH):
         os.remove(RENDER_BUFFER_PATH)
     print("TAD Farmhand low-poly sprite sheets rendered to " + ART_ROOT)

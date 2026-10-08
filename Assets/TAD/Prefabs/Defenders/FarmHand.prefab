@@ -45,7 +45,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 639259968b46b91498688e7d13978b9b, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::TAD.Defenders.FarmHandExperienceBar
   farmHand: {fileID: 5875131552720761380}
   backgroundRenderer: {fileID: 5447919735070491941}
@@ -163,6 +163,7 @@ GameObject:
   - component: {fileID: 7376161628610800881}
   - component: {fileID: 2515115941203810951}
   - component: {fileID: 8253082098564435016}
+  - component: {fileID: 6370860902805379013}
   m_Layer: 11
   m_Name: FarmHand
   m_TagString: Untagged
@@ -261,7 +262,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7c2418682a0a69b49b34ab8261f38612, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::TAD.Defenders.FarmHand
   visual: {fileID: 8549633154260348502}
   visualController: {fileID: 7376161628610800881}
@@ -283,7 +284,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 180665ca1d68c8e458d9855617c80e47, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::TAD.Pooling.PooledInstance
 --- !u!58 &7503971524455403412
 CircleCollider2D:
@@ -358,7 +359,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 29f7293ba5af5a947b813f8a3b3e7fb7, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::TAD.Defenders.FarmHandVisualController
   bodyRenderer: {fileID: 8549633154260348502}
   hairRenderer: {fileID: 3594397879927783037}
@@ -404,11 +405,78 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ad4bde9ffe5d8e54e9447349495a5da0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TAD.Runtime::TAD.Defenders.FarmHandAudioController
   placementGreeting: {fileID: 8300000, guid: cc42504be2007fc4b96acccccf2f7ff1, type: 3}
   relocationLine: {fileID: 8300000, guid: e939567b6979e90428f24672153029cc, type: 3}
   levelUpLine: {fileID: 8300000, guid: 05ccac3790fd8504a9e0b04de862d59a, type: 3}
+--- !u!114 &6370860902805379013
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1396477453823266386}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f4d56c997c5af846bae7ca6a641173d, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: TAD.Runtime::TAD.Defenders.FarmHandAppearanceRandomizer
+  appearances:
+  - {fileID: 11400000, guid: 888726ab98066fa43a467ea37c5eaf73, type: 2}
+  - {fileID: 11400000, guid: 8915474b184f4a742baf14a882e1c675, type: 2}
+  - {fileID: 11400000, guid: 5195337c4e9cd354696710252938808a, type: 2}
+  - {fileID: 11400000, guid: 4010fb890b764f84a93412184d20062e, type: 2}
+  - {fileID: 11400000, guid: 62226ccb942da22438f0a1f9939d3eea, type: 2}
+  - {fileID: 11400000, guid: 1b884af4ea53be340847d3919dc5f899, type: 2}
+  - {fileID: 11400000, guid: 02c0171b1f8b2da40a0c4f130ec89720, type: 2}
+  - {fileID: 11400000, guid: 1dfc600a8116c034da1804fd2c965282, type: 2}
+  - {fileID: 11400000, guid: 9d384b88cf1597e48ba86eed7c9648de, type: 2}
+  - {fileID: 11400000, guid: 69b50c03733f0ab4d823001e2cf9c26a, type: 2}
+  - {fileID: 11400000, guid: 47c63b68da0c278439f25afc76829194, type: 2}
+  - {fileID: 11400000, guid: b96f189c8106d0b41be05b0db707bbec, type: 2}
+  - {fileID: 11400000, guid: 82909cb3a7301b54797020338ee6f3db, type: 2}
+  - {fileID: 11400000, guid: 5da5508982a44c64d9bd1728b81d5d91, type: 2}
+  - {fileID: 11400000, guid: 681ac1d9305479c4abe201539f5e9c1a, type: 2}
+  - {fileID: 11400000, guid: 0d91a2503602bfe469f0e585ee9edc5d, type: 2}
+  - {fileID: 11400000, guid: 256b1c8dfbfb34449b04d53c27b626e7, type: 2}
+  - {fileID: 11400000, guid: 58705120438da754698e1d2730b15f71, type: 2}
+  - {fileID: 11400000, guid: 1eb4271616a61584b83faa2484d95bb7, type: 2}
+  - {fileID: 11400000, guid: 25eed44f7c7151f41a1af515b88e6143, type: 2}
+  - {fileID: 11400000, guid: 611afa4e3063cb3478dab8319fa67e7c, type: 2}
+  - {fileID: 11400000, guid: 765417394c76ae14289a227b9125d2e9, type: 2}
+  - {fileID: 11400000, guid: d94727c857b39b541b76e846320f2509, type: 2}
+  - {fileID: 11400000, guid: 6195eafafa242ed418986b979e9a6348, type: 2}
+  - {fileID: 11400000, guid: 023c14edac7545549bb96f468c96cb52, type: 2}
+  - {fileID: 11400000, guid: 017122f87b54c6b4a90860aa4016e862, type: 2}
+  - {fileID: 11400000, guid: 8c30ff78df85551438aab17763130689, type: 2}
+  displayNames:
+  - Ada
+  - Bram
+  - Clover
+  - Daisy
+  - Ellis
+  - Finn
+  - Hazel
+  - Ivy
+  - June
+  - Lena
+  - Mabel
+  - Milo
+  - Nell
+  - Otis
+  - Poppy
+  - Rowan
+  - Rufus
+  - Sage
+  - Tilly
+  - Toby
+  - Wren
+  - Eddie
+  - Moss
+  - Betsy
+  farmHand: {fileID: 5875131552720761380}
+  visualController: {fileID: 7376161628610800881}
 --- !u!1 &1961148835843387005
 GameObject:
   m_ObjectHideFlags: 0
@@ -512,7 +580,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fc54a1a2c17c42e4da0991f4ab83a25b, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::TAD.Defenders.DefenderRangeVisual
   visual: {fileID: 1983049312015617948}
   worldRadius: 0

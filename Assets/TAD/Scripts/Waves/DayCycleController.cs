@@ -511,7 +511,11 @@ namespace TAD.Waves
         {
             if (!IsComplete)
             {
-                matchExperienceLedger.RecordAttackerDispatched(definition);
+                var profile = MatchRoleSelection.IsPlayerAttacker
+                    ? PlayerSettingsService.Instance.Profile
+                    : null;
+                var experienceGiven = PlayerUpgradeProgression.GetEffectiveAttackerExperienceGiven(profile, definition);
+                matchExperienceLedger.RecordAttackerDispatched(definition, experienceGiven);
             }
         }
 

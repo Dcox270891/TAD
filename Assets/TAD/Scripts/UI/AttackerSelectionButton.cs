@@ -1,5 +1,7 @@
 using TAD.Attackers;
 using TAD.Economy;
+using TAD.Match;
+using TAD.Progression;
 using TAD.Waves;
 using UnityEngine;
 
@@ -97,12 +99,12 @@ namespace TAD.UI
 
             if (costText != null)
             {
-                costText.text = definition != null ? $"Cost: {definition.SendCost}" : string.Empty;
+                costText.text = definition != null ? $"Cost: {GetEffectiveCost()}" : string.Empty;
             }
 
             if (incomeText != null)
             {
-                incomeText.text = definition != null ? $"Income: +{definition.WaveIncome}" : string.Empty;
+                incomeText.text = definition != null ? $"Income: +{GetEffectiveIncome()}" : string.Empty;
             }
         }
 
@@ -177,8 +179,38 @@ namespace TAD.UI
             selectionButton.interactable = definition != null &&
                                            attackerBank != null &&
                                            attackerWaveQueue != null &&
-                                           attackerBank.CanAfford(definition.SendCost) &&
+                                           attackerBank.CanAfford(GetEffectiveCost()) &&
+                                           IsChallengeTierUnlocked() &&
                                            attackerWaveQueue.CanQueueAttackers;
+        }
+
+        private int GetEffectiveCost()
+        {
+            return definition == null
+                ? 0
+                : PlayerUpgradeProgression.GetEffectiveAttackerCost(GetPlayerAttackerProfile(), definition);
+        }
+
+        private int GetEffectiveIncome()
+        {
+            return definition == null
+                ? 0
+                : PlayerUpgradeProgression.GetEffectiveAttackerIncome(GetPlayerAttackerProfile(), definition);
+        }
+
+        private bool IsChallengeTierUnlocked()
+        {
+            return definition == null || !MatchRoleSelection.IsPlayerAttacker ||
+                   PlayerUpgradeProgression.IsChallengeTierUnlocked(
+                       PlayerSettingsService.Instance.Profile.playerLevel,
+                       definition.ChallengeTier);
+        }
+
+        private static PlayerProfileData GetPlayerAttackerProfile()
+        {
+            return MatchRoleSelection.IsPlayerAttacker
+                ? PlayerSettingsService.Instance.Profile
+                : null;
         }
     }
 }

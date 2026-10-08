@@ -37,6 +37,8 @@ namespace TAD.Defenders
         protected ProjectileDefinition Definition { get; private set; }
         protected float AttackRange { get; private set; }
         protected float Damage { get; private set; }
+        /// <summary>Account-level projectile-effects bonus captured at launch for pooled safety.</summary>
+        protected float ProjectileEffectsMultiplier { get; private set; } = 1f;
         protected Rigidbody2D Body => body;
         protected Collider2D HitCollider => hitCollider;
         protected Vector3 BaseLocalScale => baseLocalScale;
@@ -113,6 +115,7 @@ namespace TAD.Defenders
             Definition = definition;
             AttackRange = Mathf.Max(0f, attackRange);
             Damage = damageAmount;
+            ProjectileEffectsMultiplier = Mathf.Max(0f, sourceFarmHand.ProjectileEffectsMultiplier);
             body.position = origin;
             body.linearVelocity = Vector2.zero;
             body.angularVelocity = 0f;
@@ -236,12 +239,12 @@ namespace TAD.Defenders
 
             var areaDamage = areaDamageOverride >= 0f
                 ? areaDamageOverride
-                : Definition.ImpactAreaDamage;
+                : Definition.ImpactAreaDamage * ProjectileEffectsMultiplier;
 
             areaImpactTargets.Clear();
             var resultCount = Physics2D.OverlapCircle(
                 impactPosition,
-                Definition.ImpactAreaRadius,
+                Definition.ImpactAreaRadius * ProjectileEffectsMultiplier,
                 default,
                 impactOverlapResults);
             for (var index = 0; index < resultCount; index++)
@@ -318,8 +321,8 @@ namespace TAD.Defenders
                 attacker.ApplyBleed(
                     SourceFarmHand,
                     SourceActivationSessionId,
-                    Definition.BleedDamagePerSecond,
-                    Definition.BleedDuration);
+                    Definition.BleedDamagePerSecond * ProjectileEffectsMultiplier,
+                    Definition.BleedDuration * ProjectileEffectsMultiplier);
                 applied = true;
             }
 
@@ -328,20 +331,24 @@ namespace TAD.Defenders
                 attacker.ApplyPoison(
                     SourceFarmHand,
                     SourceActivationSessionId,
-                    Definition.PoisonDamagePerSecond,
-                    Definition.PoisonDuration);
+                    Definition.PoisonDamagePerSecond * ProjectileEffectsMultiplier,
+                    Definition.PoisonDuration * ProjectileEffectsMultiplier);
                 applied = true;
             }
 
             if (Definition.StunDuration > 0f)
             {
-                attacker.ApplyStun(Definition.StunDuration);
+                attacker.ApplyStun(Definition.StunDuration * ProjectileEffectsMultiplier);
                 applied = true;
             }
 
             if (Definition.SlowDuration > 0f && Definition.SlowMovementMultiplier < 0.999f)
             {
-                attacker.ApplySlow(Definition.SlowMovementMultiplier, Definition.SlowDuration);
+                var strengthenedSlowMultiplier = 1f -
+                    ((1f - Definition.SlowMovementMultiplier) * ProjectileEffectsMultiplier);
+                attacker.ApplySlow(
+                    Mathf.Clamp(strengthenedSlowMultiplier, 0.05f, 1f),
+                    Definition.SlowDuration * ProjectileEffectsMultiplier);
                 applied = true;
             }
 
@@ -529,6 +536,7 @@ namespace TAD.Defenders
             Definition = null;
             AttackRange = 0f;
             Damage = 0f;
+            ProjectileEffectsMultiplier = 1f;
             areaImpactTargets.Clear();
 
             if (body != null)

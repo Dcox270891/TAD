@@ -1,6 +1,7 @@
 using System;
 using TAD.Attackers;
 using TAD.Match;
+using TAD.Progression;
 using TAD.Waves;
 using UnityEngine;
 using UnityEngine.UI;
@@ -243,13 +244,20 @@ namespace TAD.UI
                 var routeRule = definition.TraversalProfile == AttackerTraversalProfile.IgnoresHalfCover
                     ? "Ignores half cover"
                     : "Ground route";
+                var profile = MatchRoleSelection.IsPlayerAttacker
+                    ? PlayerSettingsService.Instance.Profile
+                    : null;
+                var health = PlayerUpgradeProgression.GetEffectiveAttackerHealth(profile, definition);
+                var speed = PlayerUpgradeProgression.GetEffectiveAttackerSpeed(profile, definition);
+                var cost = PlayerUpgradeProgression.GetEffectiveAttackerCost(profile, definition);
+                var income = PlayerUpgradeProgression.GetEffectiveAttackerIncome(profile, definition);
                 statsText.text =
-                    "Health: " + definition.MaximumHealth.ToString("0.#") +
-                    "    Speed: " + definition.MovementSpeed.ToString("0.#") + System.Environment.NewLine +
+                    "Health: " + health.ToString("0.#") +
+                    "    Speed: " + speed.ToString("0.#") + System.Environment.NewLine +
                     "Size: " + definition.Size.ToString("0.#") +
                     "    Send: " + definition.SendSize + System.Environment.NewLine +
-                    "Cost: " + definition.SendCost +
-                    "    Income: +" + definition.WaveIncome + System.Environment.NewLine +
+                    "Cost: " + cost +
+                    "    Income: +" + income + System.Environment.NewLine +
                     "Type: " + definition.Archetype +
                     "    Tier: " + definition.ChallengeTier + System.Environment.NewLine +
                     "Route: " + routeRule + System.Environment.NewLine +

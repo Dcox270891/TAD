@@ -833,7 +833,7 @@ namespace TAD.Defenders
         private int GetFarmHandCost()
         {
             return farmHandPrefab != null && farmHandPrefab.WeaponDefinition != null
-                ? farmHandPrefab.WeaponDefinition.Cost
+                ? farmHandPrefab.GetEffectiveWeaponCost(farmHandPrefab.WeaponDefinition)
                 : 0;
         }
 

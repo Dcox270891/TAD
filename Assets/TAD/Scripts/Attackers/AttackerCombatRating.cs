@@ -1,4 +1,5 @@
 using UnityEngine;
+using TAD.Progression;
 
 namespace TAD.Attackers
 {
@@ -39,6 +40,19 @@ namespace TAD.Attackers
                     definition.MovementSpeed,
                     definition.SendCost,
                     definition.WaveIncome,
+                    definition.SendSize);
+        }
+
+        /// <summary>Calculates the card value from the player's effective attacker stats.</summary>
+        public static float Calculate(AttackerDefinition definition, PlayerProfileData profile)
+        {
+            return definition == null
+                ? 0f
+                : Calculate(
+                    PlayerUpgradeProgression.GetEffectiveAttackerHealth(profile, definition),
+                    PlayerUpgradeProgression.GetEffectiveAttackerSpeed(profile, definition),
+                    PlayerUpgradeProgression.GetEffectiveAttackerCost(profile, definition),
+                    PlayerUpgradeProgression.GetEffectiveAttackerIncome(profile, definition),
                     definition.SendSize);
         }
     }

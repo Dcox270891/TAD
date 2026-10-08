@@ -1,0 +1,1137 @@
+fileFormatVersion: 2
+guid: d55fd62674bc56c4794f6fa9353e07fe
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -220247677707987785
+    second: FarmhandBody_Deep_Move_0
+  - first:
+      213: -9018776447328664156
+    second: FarmhandBody_Deep_Move_1
+  - first:
+      213: -7433282596294870214
+    second: FarmhandBody_Deep_Move_2
+  - first:
+      213: -8942590190569200015
+    second: FarmhandBody_Deep_Move_3
+  - first:
+      213: 5837659623214679189
+    second: FarmhandBody_Deep_Move_4
+  - first:
+      213: 7098203704484391047
+    second: FarmhandBody_Deep_Move_5
+  - first:
+      213: 7299258224368423890
+    second: FarmhandBody_Deep_Move_6
+  - first:
+      213: 7574947345998903100
+    second: FarmhandBody_Deep_Move_7
+  - first:
+      213: -2849224145414006563
+    second: FarmhandBody_Deep_Move_8
+  - first:
+      213: -1987461400164699097
+    second: FarmhandBody_Deep_Move_9
+  - first:
+      213: -5044418611473649619
+    second: FarmhandBody_Deep_Move_10
+  - first:
+      213: 6299254028012575057
+    second: FarmhandBody_Deep_Move_11
+  - first:
+      213: -4547423141541543444
+    second: FarmhandBody_Deep_Move_12
+  - first:
+      213: 6571826244363037155
+    second: FarmhandBody_Deep_Move_13
+  - first:
+      213: 8145548778132119092
+    second: FarmhandBody_Deep_Move_14
+  - first:
+      213: -4710568958987396077
+    second: FarmhandBody_Deep_Move_15
+  - first:
+      213: 1681143828817476782
+    second: FarmhandBody_Deep_Move_16
+  - first:
+      213: -3884385518054367388
+    second: FarmhandBody_Deep_Move_17
+  - first:
+      213: -7418557114745907482
+    second: FarmhandBody_Deep_Move_18
+  - first:
+      213: -8829024128185568739
+    second: FarmhandBody_Deep_Move_19
+  - first:
+      213: 4161097328766150612
+    second: FarmhandBody_Deep_Move_20
+  - first:
+      213: -6921688241811241501
+    second: FarmhandBody_Deep_Move_21
+  - first:
+      213: -980966071839808490
+    second: FarmhandBody_Deep_Move_22
+  - first:
+      213: -1394476882993390199
+    second: FarmhandBody_Deep_Move_23
+  - first:
+      213: -4571837730147529981
+    second: FarmhandBody_Deep_Move_24
+  - first:
+      213: 7034875027305029115
+    second: FarmhandBody_Deep_Move_25
+  - first:
+      213: 984242849293284776
+    second: FarmhandBody_Deep_Move_26
+  - first:
+      213: -3676973271680400169
+    second: FarmhandBody_Deep_Move_27
+  - first:
+      213: 8563640503685735634
+    second: FarmhandBody_Deep_Move_28
+  - first:
+      213: 7985707690058078203
+    second: FarmhandBody_Deep_Move_29
+  - first:
+      213: -4954711897137096702
+    second: FarmhandBody_Deep_Move_30
+  - first:
+      213: -608095300926490979
+    second: FarmhandBody_Deep_Move_31
+  - first:
+      213: 1119630982475434941
+    second: FarmhandBody_Deep_Move_32
+  - first:
+      213: 408386643354491923
+    second: FarmhandBody_Deep_Move_33
+  - first:
+      213: -5225942977790063391
+    second: FarmhandBody_Deep_Move_34
+  - first:
+      213: -8122881908121939768
+    second: FarmhandBody_Deep_Move_35
+  - first:
+      213: -7653024698242642502
+    second: FarmhandBody_Deep_Move_36
+  - first:
+      213: 7698649135345171962
+    second: FarmhandBody_Deep_Move_37
+  - first:
+      213: -2181564656057807302
+    second: FarmhandBody_Deep_Move_38
+  - first:
+      213: 5268953468110276494
+    second: FarmhandBody_Deep_Move_39
+  - first:
+      213: -6956781008203938630
+    second: FarmhandBody_Deep_Move_40
+  - first:
+      213: 3055524116967774984
+    second: FarmhandBody_Deep_Move_41
+  - first:
+      213: -8722214797573822241
+    second: FarmhandBody_Deep_Move_42
+  - first:
+      213: 6323324114849435210
+    second: FarmhandBody_Deep_Move_43
+  - first:
+      213: -3710129417363540611
+    second: FarmhandBody_Deep_Move_44
+  - first:
+      213: 4837327524707526715
+    second: FarmhandBody_Deep_Move_45
+  - first:
+      213: 2052802031316164452
+    second: FarmhandBody_Deep_Move_46
+  - first:
+      213: 1357679576402391195
+    second: FarmhandBody_Deep_Move_47
+  - first:
+      213: 5341676859197767146
+    second: FarmhandBody_Deep_Move_48
+  - first:
+      213: -8247330547670209819
+    second: FarmhandBody_Deep_Move_49
+  - first:
+      213: 5795676243048877021
+    second: FarmhandBody_Deep_Move_50
+  - first:
+      213: -5978820955668916182
+    second: FarmhandBody_Deep_Move_51
+  - first:
+      213: 6305018194312981832
+    second: FarmhandBody_Deep_Move_52
+  - first:
+      213: 6304678516724124347
+    second: FarmhandBody_Deep_Move_53
+  - first:
+      213: 284626057379024647
+    second: FarmhandBody_Deep_Move_54
+  - first:
+      213: 5197312260360307863
+    second: FarmhandBody_Deep_Move_55
+  - first:
+      213: 2304638758901345074
+    second: FarmhandBody_Deep_Move_56
+  - first:
+      213: 1158421772240520657
+    second: FarmhandBody_Deep_Move_57
+  - first:
+      213: -5878724005345415717
+    second: FarmhandBody_Deep_Move_58
+  - first:
+      213: 7771098268758581720
+    second: FarmhandBody_Deep_Move_59
+  - first:
+      213: 1411860518575620254
+    second: FarmhandBody_Deep_Move_60
+  - first:
+      213: 2783019720723483561
+    second: FarmhandBody_Deep_Move_61
+  - first:
+      213: 568941793511159549
+    second: FarmhandBody_Deep_Move_62
+  - first:
+      213: -3786786187364937626
+    second: FarmhandBody_Deep_Move_63
+  - first:
+      213: -6363484619358997574
+    second: FarmhandBody_Deep_Move_64
+  - first:
+      213: 3503440295011443496
+    second: FarmhandBody_Deep_Move_65
+  - first:
+      213: -4474725956926346101
+    second: FarmhandBody_Deep_Move_66
+  - first:
+      213: -4290217194496093553
+    second: FarmhandBody_Deep_Move_67
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 24
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationMethod: 0
+  spriteTessellationDetail: -1
+  spriteGeometrySubdivision: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 75
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: iOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: VisionOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: tvOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WindowsStoreApps
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: farmhand_body_deep_d00_move0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 576
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9b0cf4b4ae25fe147bd43410bdf8a0e1
+      internalID: -1484886081
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farmhand_body_deep_d00_move1
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 576
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 062411c3f3c926747bc3c626bea9833b
+      internalID: -1551944449
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farmhand_body_deep_d01_move0
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 576
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d4178c9e08d5a4f4d80cd05bcb6b44ba
+      internalID: 27132484
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farmhand_body_deep_d01_move1
+      rect:
+        serializedVersion: 2
+        x: 576
+        y: 576
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9d36c94936e2dfc4480a30ca23fa5f3d
+      internalID: 955873552
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farmhand_body_deep_d02_move0
+      rect:
+        serializedVersion: 2
+        x: 768
+        y: 576
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: cc2d54bd761ffa7488040ec672358b77
+      internalID: -2119016916
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farmhand_body_deep_d02_move1
+      rect:
+        serializedVersion: 2
+        x: 960
+        y: 576
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 51074e10253466e47ab07df0f089fcae
+      internalID: -673388593
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farmhand_body_deep_d03_move0
+      rect:
+        serializedVersion: 2
+        x: 1152
+        y: 576
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 37ce8d31d5453ec459341162067a9c3d
+      internalID: -1328342325
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farmhand_body_deep_d03_move1
+      rect:
+        serializedVersion: 2
+        x: 1344
+        y: 576
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: eb2058fa9ffdb7b4c934351a38113b70
+      internalID: 69268352
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farmhand_body_deep_d04_move0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 384
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 1010a14ea203ceb4abcd2ee5fb670262
+      internalID: -1507049870
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farmhand_body_deep_d04_move1
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 384
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 166da62a50fb0294a9610fede3ea6909
+      internalID: 960159124
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farmhand_body_deep_d05_move0
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 384
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 4313bdce7aa91b3439924dfc1ec841e7
+      internalID: 846156357
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farmhand_body_deep_d05_move1
+      rect:
+        serializedVersion: 2
+        x: 576
+        y: 384
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 23135a22736a5994aac23169462f1845
+      internalID: -1688679181
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farmhand_body_deep_d06_move0
+      rect:
+        serializedVersion: 2
+        x: 768
+        y: 384
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: da8dbff2f6d708b468fb5210fd7734d2
+      internalID: -914884969
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farmhand_body_deep_d06_move1
+      rect:
+        serializedVersion: 2
+        x: 960
+        y: 384
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 6849266610eba6549b495faf2962ae5f
+      internalID: -267927328
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farmhand_body_deep_d07_move0
+      rect:
+        serializedVersion: 2
+        x: 1152
+        y: 384
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 83c5e1200e343dd4f9d9594a18381555
+      internalID: -1719363686
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farmhand_body_deep_d07_move1
+      rect:
+        serializedVersion: 2
+        x: 1344
+        y: 384
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7c92c7017ada86748ad84a2c3a29e2fa
+      internalID: -1288152841
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farmhand_body_deep_d08_move0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 192
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 6b176da4fca74f143b7d63aac8cff0cf
+      internalID: -1578920390
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farmhand_body_deep_d08_move1
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 192
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 42738416508aaed47b9af2b8adc7a2fb
+      internalID: 37123704
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farmhand_body_deep_d09_move0
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 192
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 8ba786c2fca7985409ba6130f232b9b1
+      internalID: 1015624400
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farmhand_body_deep_d09_move1
+      rect:
+        serializedVersion: 2
+        x: 576
+        y: 192
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e42655e7ec9ff15429a4e9ee6bb6b638
+      internalID: 1513471604
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farmhand_body_deep_d10_move0
+      rect:
+        serializedVersion: 2
+        x: 768
+        y: 192
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 82082ebfa3aacfe408310588b1ead115
+      internalID: 1438173081
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farmhand_body_deep_d10_move1
+      rect:
+        serializedVersion: 2
+        x: 960
+        y: 192
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f2223651223f14f4b95323db08bac5e8
+      internalID: 988655454
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farmhand_body_deep_d11_move0
+      rect:
+        serializedVersion: 2
+        x: 1152
+        y: 192
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7b1d2b5f889318240b72d4dadc1c229d
+      internalID: 941325350
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farmhand_body_deep_d11_move1
+      rect:
+        serializedVersion: 2
+        x: 1344
+        y: 192
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 53aedb1bb34ce3f4086fd410eac6d10e
+      internalID: -1770269516
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farmhand_body_deep_d12_move0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 6d3eb18aafb41944db173c7f6979fd20
+      internalID: 495246403
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farmhand_body_deep_d12_move1
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3108266391fb2624ba2ecf033bd22827
+      internalID: -1790639830
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farmhand_body_deep_d13_move0
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 0e156f5d2f75dfb469b0852d7fe6cec6
+      internalID: 1645679163
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farmhand_body_deep_d13_move1
+      rect:
+        serializedVersion: 2
+        x: 576
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ae03f5521e8d80b4e8a3ace81bae6d37
+      internalID: -990775004
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farmhand_body_deep_d14_move0
+      rect:
+        serializedVersion: 2
+        x: 768
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f1b58a6d36dcf644ca9ea99d4e444146
+      internalID: 1747469704
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farmhand_body_deep_d14_move1
+      rect:
+        serializedVersion: 2
+        x: 960
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d8f6e563589832a40b2faee010307325
+      internalID: 996599837
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farmhand_body_deep_d15_move0
+      rect:
+        serializedVersion: 2
+        x: 1152
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 12562e05eb2e0f646a45ee21d90fb782
+      internalID: 520330752
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farmhand_body_deep_d15_move1
+      rect:
+        serializedVersion: 2
+        x: 1344
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 0b833368ebc009545b040d5be9f3523f
+      internalID: -653558663
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    outline: []
+    customData:
+    physicsShape: []
+    bones: []
+    spriteID: ed282b7ca4af8ff43bdc533d9d595cbc
+    internalID: 0
+    vertices: []
+    indices:
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      farmhand_body_deep_d00_move0: -1484886081
+      farmhand_body_deep_d00_move1: -1551944449
+      farmhand_body_deep_d01_move0: 27132484
+      farmhand_body_deep_d01_move1: 955873552
+      farmhand_body_deep_d02_move0: -2119016916
+      farmhand_body_deep_d02_move1: -673388593
+      farmhand_body_deep_d03_move0: -1328342325
+      farmhand_body_deep_d03_move1: 69268352
+      farmhand_body_deep_d04_move0: -1507049870
+      farmhand_body_deep_d04_move1: 960159124
+      farmhand_body_deep_d05_move0: 846156357
+      farmhand_body_deep_d05_move1: -1688679181
+      farmhand_body_deep_d06_move0: -914884969
+      farmhand_body_deep_d06_move1: -267927328
+      farmhand_body_deep_d07_move0: -1719363686
+      farmhand_body_deep_d07_move1: -1288152841
+      farmhand_body_deep_d08_move0: -1578920390
+      farmhand_body_deep_d08_move1: 37123704
+      farmhand_body_deep_d09_move0: 1015624400
+      farmhand_body_deep_d09_move1: 1513471604
+      farmhand_body_deep_d10_move0: 1438173081
+      farmhand_body_deep_d10_move1: 988655454
+      farmhand_body_deep_d11_move0: 941325350
+      farmhand_body_deep_d11_move1: -1770269516
+      farmhand_body_deep_d12_move0: 495246403
+      farmhand_body_deep_d12_move1: -1790639830
+      farmhand_body_deep_d13_move0: 1645679163
+      farmhand_body_deep_d13_move1: -990775004
+      farmhand_body_deep_d14_move0: 1747469704
+      farmhand_body_deep_d14_move1: 996599837
+      farmhand_body_deep_d15_move0: 520330752
+      farmhand_body_deep_d15_move1: -653558663
+  mipmapLimitGroupName:
+  pSDRemoveMatte: 0
+  userData:
+  assetBundleName:
+  assetBundleVariant:

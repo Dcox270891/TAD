@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using TAD.Match;
 using TAD.Pooling;
+using TAD.Progression;
 using TAD.Waves;
 using UnityEngine;
 
@@ -23,6 +25,7 @@ namespace TAD.UI
         [SerializeField] private AttackerQueueGroupButton groupButtonPrefab;
 
         private readonly Dictionary<long, AttackerQueueGroupButton> groupButtons = new();
+        private readonly Dictionary<long, AttackerRoutePreview> allQueuedRoutePreviews = new();
         private readonly List<long> staleGroupIds = new();
         private readonly List<AttackerQueuedGroupInfo> displayGroups = new();
         private AttackerWaveQueue attackerWaveQueue;
@@ -116,6 +119,8 @@ namespace TAD.UI
             {
                 Destroy(routePreview.gameObject);
             }
+
+            ClearAllQueuedRoutePreviews();
 
             ClearButtons();
         }
@@ -223,6 +228,8 @@ namespace TAD.UI
 
                 groupButtons.Remove(staleGroupId);
             }
+
+            RefreshAllQueuedRoutePreviews();
 
             if (selectedGroupId != 0)
             {
@@ -346,6 +353,66 @@ namespace TAD.UI
 
             var previewObject = new GameObject("Queued Attacker Route Preview", typeof(AttackerRoutePreview));
             routePreview = previewObject.GetComponent<AttackerRoutePreview>();
+        }
+
+        /// <summary>
+        /// The General Route Scouting account upgrade turns the selected-route helper into a
+        /// persistent overview. These previews are presentation-only and are refreshed whenever
+        /// the authoritative queue changes, so removals and dispatches cannot leave stale paths.
+        /// </summary>
+        private void RefreshAllQueuedRoutePreviews()
+        {
+            var shouldShowAllRoutes = MatchRoleSelection.IsPlayerAttacker &&
+                                      PlayerSettingsService.Instance.HasQueuedRouteDisplayUpgrade;
+            if (!shouldShowAllRoutes || spawnPool == null || waveController == null)
+            {
+                ClearAllQueuedRoutePreviews();
+                return;
+            }
+
+            var stalePreviewIds = new List<long>(allQueuedRoutePreviews.Keys);
+            for (var index = 0; index < displayGroups.Count; index++)
+            {
+                var group = displayGroups[index];
+                if (group.Definition == null)
+                {
+                    continue;
+                }
+
+                stalePreviewIds.Remove(group.Id);
+                if (!allQueuedRoutePreviews.TryGetValue(group.Id, out var preview) || preview == null)
+                {
+                    var previewObject = new GameObject("Queued Attacker Route " + group.Id, typeof(AttackerRoutePreview));
+                    preview = previewObject.GetComponent<AttackerRoutePreview>();
+                    allQueuedRoutePreviews[group.Id] = preview;
+                }
+
+                preview.Show(spawnPool.RouteMapper, waveController.SpawnPosition, group.Definition);
+            }
+
+            for (var index = 0; index < stalePreviewIds.Count; index++)
+            {
+                var id = stalePreviewIds[index];
+                if (allQueuedRoutePreviews.TryGetValue(id, out var stalePreview) && stalePreview != null)
+                {
+                    Destroy(stalePreview.gameObject);
+                }
+
+                allQueuedRoutePreviews.Remove(id);
+            }
+        }
+
+        private void ClearAllQueuedRoutePreviews()
+        {
+            foreach (var preview in allQueuedRoutePreviews.Values)
+            {
+                if (preview != null)
+                {
+                    Destroy(preview.gameObject);
+                }
+            }
+
+            allQueuedRoutePreviews.Clear();
         }
 
         private void ClearButtons()

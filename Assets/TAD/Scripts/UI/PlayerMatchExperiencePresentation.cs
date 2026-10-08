@@ -38,6 +38,8 @@ namespace TAD.UI
         private UnityEngine.UI.Text levelUpFutureChoicesText;
         private UnityEngine.UI.Button skipButton;
         private UnityEngine.UI.Button levelUpContinueButton;
+        private UnityEngine.UI.Button levelUpButtonTemplate;
+        private PlayerUpgradeChoiceOverlay upgradeChoiceOverlay;
         private CombatRatingStarGraphic playerLevelStarGraphic;
         private Font font;
         private Sprite outlineSprite;
@@ -110,6 +112,11 @@ namespace TAD.UI
                 levelUpModalRoot.SetActive(false);
             }
 
+            if (upgradeChoiceOverlay != null)
+            {
+                upgradeChoiceOverlay.gameObject.SetActive(false);
+            }
+
             earnedText.text = BuildEarnedText(reward);
             startText.text = $"START: LV {reward.StartingLevel}  {reward.StartingExperience:0.#} / " +
                              $"{Mathf.Max(0f, reward.StartingExperienceRequired):0.#} XP";
@@ -154,6 +161,11 @@ namespace TAD.UI
             {
                 levelUpModalRoot.SetActive(false);
             }
+
+            if (upgradeChoiceOverlay != null)
+            {
+                upgradeChoiceOverlay.gameObject.SetActive(false);
+            }
         }
 
         private void Update()
@@ -194,6 +206,7 @@ namespace TAD.UI
 
             font = ResolveFont(buttonTemplate);
             outlineSprite = GetComponent<FarmUiSkin>()?.ThinWoodOutlineSprite;
+            levelUpButtonTemplate = buttonTemplate;
             BuildResultsBar(buttonTemplate);
             BuildLevelUpModal(buttonTemplate);
             Dismiss();
@@ -447,7 +460,7 @@ namespace TAD.UI
                 FontStyle.Bold,
                 TextAnchor.MiddleCenter,
                 InkBrown);
-            levelUpFutureChoicesText.text = "Future player upgrades will appear on this card.";
+            levelUpFutureChoicesText.text = "Choose an Attacker, Defender, and Random reward for this level.";
             levelUpFutureChoicesText.horizontalOverflow = HorizontalWrapMode.Wrap;
             SetStretch(levelUpFutureChoicesText.rectTransform, new Vector2(0f, 0.28f), new Vector2(1f, 0.48f),
                 new Vector2(48f, 0f), new Vector2(-48f, 0f));
@@ -456,14 +469,14 @@ namespace TAD.UI
                 "ContinueLevelUpButton",
                 cardObject.transform,
                 buttonTemplate,
-                "CONTINUE",
+                "CHOOSE UPGRADES",
                 new Vector2(240f, 58f));
             var continueRect = levelUpContinueButton.GetComponent<RectTransform>();
             continueRect.anchorMin = new Vector2(0.5f, 0f);
             continueRect.anchorMax = new Vector2(0.5f, 0f);
             continueRect.pivot = new Vector2(0.5f, 0f);
             continueRect.anchoredPosition = new Vector2(0f, 30f);
-            levelUpContinueButton.onClick.AddListener(ContinueAfterLevelUp);
+            levelUpContinueButton.onClick.AddListener(OpenPlayerUpgradeChoices);
             levelUpModalRoot.SetActive(false);
         }
 
@@ -529,6 +542,13 @@ namespace TAD.UI
             SetSkipButtonVisible(false);
             levelUpTitleText.text = "LEVEL UP!";
             levelUpDescriptionText.text = $"You reached Player Level {pendingLevel}.";
+            levelUpFutureChoicesText.text = PlayerSettingsService.Instance.PendingPlayerUpgradeChoiceCount > 0
+                ? "Your permanent account rewards are ready."
+                : "All available rewards for this level have already been collected.";
+            SetLevelUpContinueLabel(
+                PlayerSettingsService.Instance.PendingPlayerUpgradeChoiceCount > 0
+                    ? "CHOOSE UPGRADES"
+                    : "CONTINUE");
             levelUpModalRoot.SetActive(true);
             levelUpModalRoot.transform.SetAsLastSibling();
             Select(levelUpContinueButton != null ? levelUpContinueButton.gameObject : null);
@@ -567,6 +587,40 @@ namespace TAD.UI
             }
         }
 
+        private void OpenPlayerUpgradeChoices()
+        {
+            if (!isWaitingForLevelUp)
+            {
+                return;
+            }
+
+            var pendingChoices = new System.Collections.Generic.List<PendingPlayerUpgradeChoiceData>();
+            PlayerSettingsService.Instance.CopyPendingPlayerUpgradeChoices(pendingLevel, pendingChoices);
+            if (pendingChoices.Count == 0)
+            {
+                ContinueAfterLevelUp();
+                return;
+            }
+
+            upgradeChoiceOverlay = PlayerUpgradeChoiceOverlay.Show(
+                transform,
+                levelUpButtonTemplate,
+                levelUpContinueButton != null ? levelUpContinueButton.gameObject : null,
+                pendingLevel,
+                ContinueAfterLevelUp);
+        }
+
+        private void SetLevelUpContinueLabel(string label)
+        {
+            var text = levelUpContinueButton != null
+                ? levelUpContinueButton.GetComponentInChildren<UnityEngine.UI.Text>(true)
+                : null;
+            if (text != null)
+            {
+                text.text = label;
+            }
+        }
+
         private void CompleteAnimation()
         {
             displayedLevel = Mathf.Max(PlayerLevelProgression.StartingLevel, reward.ResultingLevel);
@@ -589,13 +643,17 @@ namespace TAD.UI
             var requirement = PlayerLevelProgression.GetExperienceRequiredForNextLevel(displayedLevel);
             var normalizedProgress = requirement > ProgressEpsilon
                 ? Mathf.Clamp01(displayedExperience / requirement)
-                : 0f;
+                : 1f;
             progressFill.fillAmount = normalizedProgress;
-            progressText.text = $"{displayedExperience:0.#} / {requirement:0.#} XP";
+            progressText.text = requirement > ProgressEpsilon
+                ? $"{displayedExperience:0.#} / {requirement:0.#} XP"
+                : "MAX LEVEL";
             starLevelText.text = $"LV\n{displayedLevel}";
             if (currentText != null)
             {
-                currentText.text = $"CURRENT: LV {displayedLevel}  {displayedExperience:0.#} / {requirement:0.#} XP";
+                currentText.text = requirement > ProgressEpsilon
+                    ? $"CURRENT: LV {displayedLevel}  {displayedExperience:0.#} / {requirement:0.#} XP"
+                    : $"CURRENT: LV {displayedLevel}  MAX LEVEL";
             }
 
             ApplyPresentationPalette();

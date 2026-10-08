@@ -275,7 +275,7 @@ namespace TAD.UI
             return string.IsNullOrWhiteSpace(selectionError) ? string.Empty : $"\n{selectionError}";
         }
 
-        private static string BuildOptionText(
+        private string BuildOptionText(
             WeaponDefinition definition,
             int defenderGold,
             bool hasDefenderBank,
@@ -286,12 +286,15 @@ namespace TAD.UI
                 return "Unavailable";
             }
 
+            var effectiveCost = targetFarmHand != null
+                ? targetFarmHand.GetEffectiveWeaponCost(definition)
+                : definition.Cost;
             var costText = isFreeChoice
                 ? "Cost: Free"
                 : hasDefenderBank
-                ? definition.Cost <= defenderGold
-                    ? $"Cost: {definition.Cost} Gold"
-                    : $"Cost: {definition.Cost} Gold\nNeed {definition.Cost - defenderGold} more Gold"
+                ? effectiveCost <= defenderGold
+                    ? $"Cost: {effectiveCost} Gold"
+                    : $"Cost: {effectiveCost} Gold\nNeed {effectiveCost - defenderGold} more Gold"
                 : "Cost: Defender Gold unavailable";
 
             var reloadText = definition.UsesReload

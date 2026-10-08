@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using NUnit.Framework;
 using TAD.Progression;
 using TAD.UI;
@@ -16,9 +17,19 @@ namespace TAD.Tests.PlayMode
         public IEnumerator MatchExperiencePresentation_SkipPausesForLevelUpThenSettlesAtSavedProgress()
         {
             GameObject canvasObject = null;
+            PlayerSettingsService settingsService = null;
+            List<PendingPlayerUpgradeChoiceData> pendingChoicesBeforeTest = null;
 
             try
             {
+                // This presentation test supplies its own match reward and needs the Continue
+                // control to exercise the no-card path. Preserve any real account choices that
+                // happen to be loaded into the persistent service so a local playtest profile
+                // cannot change the test's control flow or be modified by the test.
+                settingsService = PlayerSettingsService.Instance;
+                pendingChoicesBeforeTest = settingsService.Profile.pendingPlayerUpgradeChoices;
+                settingsService.Profile.pendingPlayerUpgradeChoices = new List<PendingPlayerUpgradeChoiceData>();
+
                 var profile = new PlayerProfileData
                 {
                     playerLevel = 1,
@@ -76,6 +87,11 @@ namespace TAD.Tests.PlayMode
             }
             finally
             {
+                if (settingsService != null)
+                {
+                    settingsService.Profile.pendingPlayerUpgradeChoices = pendingChoicesBeforeTest;
+                }
+
                 if (canvasObject != null)
                 {
                     Object.Destroy(canvasObject);

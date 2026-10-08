@@ -33,6 +33,7 @@ namespace TAD.UI
         {
             ResolveReferences();
             playerProfile = PlayerSettingsService.Instance.Profile;
+            EnsurePlayerEnergyPanel();
         }
 
         private void OnEnable()
@@ -92,7 +93,7 @@ namespace TAD.UI
             var randomRole = UnityEngine.Random.value < 0.5f
                 ? PlayerRole.Attacker
                 : PlayerRole.Defender;
-            LoadLevel(level, randomRole);
+            LoadLevel(level, randomRole, playButton);
         }
 
         public void OpenSettings()
@@ -110,7 +111,15 @@ namespace TAD.UI
 
         public void OpenPlayerUpgrades()
         {
-            ShowNotImplemented(playerUpgradesButton, "PLAYER UPGRADES");
+            var canvas = GetComponentInParent<Canvas>();
+            if (canvas == null ||
+                PlayerUpgradesOverlay.Show(
+                    canvas.transform,
+                    playerUpgradesButton,
+                    playerUpgradesButton != null ? playerUpgradesButton.gameObject : null) == null)
+            {
+                Debug.LogError("Main Menu could not show the Player Upgrades overlay.", this);
+            }
         }
 
         public void ExitGame()
@@ -148,21 +157,26 @@ namespace TAD.UI
             {
                 Subscribe();
             }
+
+            EnsurePlayerEnergyPanel();
         }
 
         private void ChooseRoleForLevel(LevelDefinition level)
         {
             if (levelSelectionOverlay == null ||
                 !levelSelectionOverlay.ShowRoleChoice(
-                    level,
-                    selectedRole => LoadLevel(level, selectedRole),
+                level,
+                    selectedRole => LoadLevel(level, selectedRole, selectLevelButton),
                     selectLevelButton != null ? selectLevelButton.gameObject : null))
             {
                 Debug.LogError("Main Menu could not show the Attack or Defend choice.", this);
             }
         }
 
-        private void LoadLevel(LevelDefinition level, PlayerRole playerRole)
+        private void LoadLevel(
+            LevelDefinition level,
+            PlayerRole playerRole,
+            UnityEngine.UI.Button energySourceButton)
         {
             if (isLoadingLevel)
             {
@@ -188,22 +202,36 @@ namespace TAD.UI
                 return;
             }
 
+            if (!MatchStartEnergyGate.TryPayForNewMatch(
+                    transform,
+                    energySourceButton,
+                    energySourceButton != null ? energySourceButton.gameObject : null,
+                    out MatchStartEnergyCharge energyCharge))
+            {
+                return;
+            }
+
             playerProfile = PlayerSettingsService.Instance.Profile;
 
             playerProfile.lastPlayedLevelId = level.Id;
             SaveProfile();
             MatchRoleSelection.Select(playerRole);
             Time.timeScale = 1f;
-            isLoadingLevel = levelLoadingOverlay.TryLoadScene(sceneBuildIndex, level.SceneName, HandleLevelLoadFailed);
+            isLoadingLevel = levelLoadingOverlay.TryLoadScene(
+                sceneBuildIndex,
+                level.SceneName,
+                () => HandleLevelLoadFailed(energyCharge));
             if (!isLoadingLevel)
             {
+                energyCharge.Refund();
                 Debug.LogError($"Main Menu could not begin loading level scene '{level.SceneName}'.", this);
             }
         }
 
-        private void HandleLevelLoadFailed()
+        private void HandleLevelLoadFailed(MatchStartEnergyCharge energyCharge)
         {
             isLoadingLevel = false;
+            energyCharge?.Refund();
         }
 
         private void ShowNotImplemented(UnityEngine.UI.Button sourceButton, string title)
@@ -321,6 +349,15 @@ namespace TAD.UI
             if (levelLoadingOverlay == null)
             {
                 levelLoadingOverlay = UnityEngine.Object.FindAnyObjectByType<LevelLoadingOverlay>(FindObjectsInactive.Include);
+            }
+        }
+
+        private void EnsurePlayerEnergyPanel()
+        {
+            var canvas = GetComponent<Canvas>();
+            if (canvas != null)
+            {
+                PlayerEnergyMenuPanel.Ensure(canvas.transform, playButton);
             }
         }
 

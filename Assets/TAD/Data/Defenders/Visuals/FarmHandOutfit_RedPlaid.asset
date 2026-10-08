@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 237d8eff0daf65146b0d321cf6fb020f, type: 3}
+  m_Name: FarmHandOutfit_RedPlaid
+  m_EditorClassIdentifier: TAD.Runtime::TAD.Defenders.FarmHandOutfitVisualDefinition
+  movementSprites:
+  - {fileID: -1593738043, guid: 6bbfb689554cf2544b61f5562facebed, type: 3}
+  - {fileID: -1821289722, guid: 6bbfb689554cf2544b61f5562facebed, type: 3}
+  - {fileID: 1591745991, guid: 6bbfb689554cf2544b61f5562facebed, type: 3}
+  - {fileID: -1034835097, guid: 6bbfb689554cf2544b61f5562facebed, type: 3}
+  - {fileID: -1170293646, guid: 6bbfb689554cf2544b61f5562facebed, type: 3}
+  - {fileID: -1189864518, guid: 6bbfb689554cf2544b61f5562facebed, type: 3}
+  - {fileID: 1801364483, guid: 6bbfb689554cf2544b61f5562facebed, type: 3}
+  - {fileID: -1630323273, guid: 6bbfb689554cf2544b61f5562facebed, type: 3}
+  - {fileID: 1303354309, guid: 6bbfb689554cf2544b61f5562facebed, type: 3}
+  - {fileID: -227272414, guid: 6bbfb689554cf2544b61f5562facebed, type: 3}
+  - {fileID: -462199864, guid: 6bbfb689554cf2544b61f5562facebed, type: 3}
+  - {fileID: -854499839, guid: 6bbfb689554cf2544b61f5562facebed, type: 3}
+  - {fileID: 1740344627, guid: 6bbfb689554cf2544b61f5562facebed, type: 3}
+  - {fileID: 1040875385, guid: 6bbfb689554cf2544b61f5562facebed, type: 3}
+  - {fileID: -746787863, guid: 6bbfb689554cf2544b61f5562facebed, type: 3}
+  - {fileID: -867126297, guid: 6bbfb689554cf2544b61f5562facebed, type: 3}
+  - {fileID: 41176139, guid: 6bbfb689554cf2544b61f5562facebed, type: 3}
+  - {fileID: 2019093725, guid: 6bbfb689554cf2544b61f5562facebed, type: 3}
+  - {fileID: -5830384, guid: 6bbfb689554cf2544b61f5562facebed, type: 3}
+  - {fileID: 1617948128, guid: 6bbfb689554cf2544b61f5562facebed, type: 3}
+  - {fileID: -199676075, guid: 6bbfb689554cf2544b61f5562facebed, type: 3}
+  - {fileID: -499223480, guid: 6bbfb689554cf2544b61f5562facebed, type: 3}
+  - {fileID: -2139818493, guid: 6bbfb689554cf2544b61f5562facebed, type: 3}
+  - {fileID: -1152899386, guid: 6bbfb689554cf2544b61f5562facebed, type: 3}
+  - {fileID: 1412727879, guid: 6bbfb689554cf2544b61f5562facebed, type: 3}
+  - {fileID: 1567760185, guid: 6bbfb689554cf2544b61f5562facebed, type: 3}
+  - {fileID: 2089087818, guid: 6bbfb689554cf2544b61f5562facebed, type: 3}
+  - {fileID: 1752310189, guid: 6bbfb689554cf2544b61f5562facebed, type: 3}
+  - {fileID: -721136122, guid: 6bbfb689554cf2544b61f5562facebed, type: 3}
+  - {fileID: -1861934862, guid: 6bbfb689554cf2544b61f5562facebed, type: 3}
+  - {fileID: 545122276, guid: 6bbfb689554cf2544b61f5562facebed, type: 3}
+  - {fileID: 319910516, guid: 6bbfb689554cf2544b61f5562facebed, type: 3}
+  movementFrameDuration: 0.16

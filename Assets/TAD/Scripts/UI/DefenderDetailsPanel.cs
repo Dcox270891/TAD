@@ -530,7 +530,7 @@ namespace TAD.UI
             var projectile = weapon != null ? weapon.ProjectileDefinition : null;
             if (headingText != null)
             {
-                headingText.text = $"Farmhand  •  Level {target.CurrentLevel}/{target.MaxLevel}";
+                headingText.text = $"{target.DisplayName}  •  Level {target.CurrentLevel}/{target.MaxLevel}";
             }
 
             if (defenderImage != null)
@@ -557,8 +557,8 @@ namespace TAD.UI
                     : projectile.UsesTimedLifetime
                         ? $"{projectile.ProjectileLifetime:0.##} sec"
                         : "Until activated";
-                var attackSpeed = weapon != null ? weapon.AttackSpeed.ToString("0.##") : "0";
-                var weaponCost = weapon != null ? weapon.Cost.ToString() : "0";
+                var attackSpeed = target.AttackSpeed.ToString("0.##");
+                var weaponCost = weapon != null ? target.GetEffectiveWeaponCost(weapon).ToString() : "0";
 
                 statsText.text =
                     $"Damage: {target.Damage:0.##}    Range: {target.Range:0.##}\n" +

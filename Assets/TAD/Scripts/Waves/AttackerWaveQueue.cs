@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using TAD.Attackers;
 using TAD.Economy;
+using TAD.Match;
+using TAD.Progression;
 using UnityEngine;
 
 namespace TAD.Waves
@@ -19,13 +21,13 @@ namespace TAD.Waves
         {
             private readonly HashSet<long> spawnedAttackerIds = new();
 
-            public QueuedAttackerGroup(long id, AttackerDefinition definition)
+            public QueuedAttackerGroup(long id, AttackerDefinition definition, int cost, int income)
             {
                 Id = id;
                 Definition = definition;
                 Count = definition != null ? definition.SendSize : 0;
-                Cost = definition != null ? definition.SendCost : 0;
-                Income = definition != null ? definition.WaveIncome : 0;
+                Cost = Mathf.Max(0, cost);
+                Income = Mathf.Max(0, income);
                 RemainingAlive = Count;
             }
 
@@ -228,16 +230,32 @@ namespace TAD.Waves
         /// </summary>
         public bool TryQueueAttackers(AttackerDefinition definition)
         {
-            if (definition == null ||
-                definition.SendSize <= 0 ||
-                attackerBank == null ||
-                !CanQueueAttackers ||
-                !attackerBank.TrySpendGold(definition.SendCost))
+            if (definition == null || definition.SendSize <= 0 || attackerBank == null || !CanQueueAttackers)
             {
                 return false;
             }
 
-            var group = new QueuedAttackerGroup(AllocateGroupId(), definition);
+            // The AI uses this same authoritative queue while the player defends. Challenge-tier
+            // progression applies only to the human attacker's card tray and cannot restrict AI plans.
+            if (MatchRoleSelection.IsPlayerAttacker &&
+                !PlayerUpgradeProgression.IsChallengeTierUnlocked(
+                    PlayerSettingsService.Instance.Profile.playerLevel,
+                    definition.ChallengeTier))
+            {
+                return false;
+            }
+
+            var profile = MatchRoleSelection.IsPlayerAttacker
+                ? PlayerSettingsService.Instance.Profile
+                : null;
+            var cost = PlayerUpgradeProgression.GetEffectiveAttackerCost(profile, definition);
+            var income = PlayerUpgradeProgression.GetEffectiveAttackerIncome(profile, definition);
+            if (!attackerBank.TrySpendGold(cost))
+            {
+                return false;
+            }
+
+            var group = new QueuedAttackerGroup(AllocateGroupId(), definition, cost, income);
             queuedGroups.Enqueue(group);
             attackerBank.AddIncome(group.Income);
             RaiseQueueChanged();

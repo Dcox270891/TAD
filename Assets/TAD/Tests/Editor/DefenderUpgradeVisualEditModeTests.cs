@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using NUnit.Framework;
 using TAD.Defenders;
 using TAD.Pooling;
@@ -127,6 +128,61 @@ namespace TAD.Tests.Editor
 
                 Assert.That(found, Is.True,
                     $"FarmHand prefab does not register the {expectation.Title} visual for runtime equipment changes.");
+            }
+        }
+
+        [Test]
+        public void FarmHandPrefab_AutomaticallyRandomizesThreeCosmeticTypesAndNames()
+        {
+            var prefab = LoadAsset<GameObject>("Assets/TAD/Prefabs/Defenders/FarmHand.prefab");
+            var randomizer = prefab.GetComponent<FarmHandAppearanceRandomizer>();
+            Assert.That(randomizer, Is.Not.Null,
+                "The reusable farmhand prefab needs an automatic identity randomizer.");
+            Assert.That(randomizer.AppearanceCount, Is.EqualTo(27),
+                "Three body tones, three hair/hat styles, and three outfits should create every reusable combination.");
+            Assert.That(randomizer.NameCount, Is.GreaterThanOrEqualTo(12),
+                "Placed farmhands need a useful variety of friendly generated names.");
+
+            var serialized = new SerializedObject(randomizer);
+            var appearances = serialized.FindProperty("appearances");
+            Assert.That(appearances, Is.Not.Null);
+            var bodies = new HashSet<FarmHandBodyVisualDefinition>();
+            var hairs = new HashSet<FarmHandHairVisualDefinition>();
+            var outfits = new HashSet<FarmHandOutfitVisualDefinition>();
+            for (var index = 0; index < appearances.arraySize; index++)
+            {
+                var appearance = appearances.GetArrayElementAtIndex(index)
+                    .objectReferenceValue as FarmHandAppearanceDefinition;
+                Assert.That(appearance, Is.Not.Null, $"Cosmetic appearance {index} is missing.");
+                Assert.That(appearance.Body, Is.Not.Null);
+                Assert.That(appearance.Hair, Is.Not.Null);
+                Assert.That(appearance.Outfit, Is.Not.Null);
+                bodies.Add(appearance.Body);
+                hairs.Add(appearance.Hair);
+                outfits.Add(appearance.Outfit);
+            }
+
+            Assert.That(bodies.Count, Is.EqualTo(3));
+            Assert.That(hairs.Count, Is.EqualTo(3));
+            Assert.That(outfits.Count, Is.EqualTo(3));
+
+            var instance = Object.Instantiate(prefab);
+            try
+            {
+                var instanceFarmHand = instance.GetComponent<FarmHand>();
+                var instanceRandomizer = instance.GetComponent<FarmHandAppearanceRandomizer>();
+                var instanceVisuals = instance.GetComponent<FarmHandVisualController>();
+                ((IPoolLifecycle)instanceRandomizer).OnTakenFromPool();
+
+                Assert.That(instanceRandomizer.AssignedAppearance, Is.Not.Null);
+                Assert.That(instanceVisuals.Appearance, Is.EqualTo(instanceRandomizer.AssignedAppearance));
+                Assert.That(instanceFarmHand.DisplayName, Is.Not.Empty);
+                Assert.That(instanceFarmHand.DisplayName, Is.Not.EqualTo("Farmhand"),
+                    "A configured pooled placement should receive a generated farmhand name.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(instance);
             }
         }
 

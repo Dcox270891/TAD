@@ -116,6 +116,15 @@ namespace TAD.UI
                 return;
             }
 
+            if (!MatchStartEnergyGate.TryPayForNewMatch(
+                    transform,
+                    nextLevelButton,
+                    nextLevelButton != null ? nextLevelButton.gameObject : null,
+                    out MatchStartEnergyCharge energyCharge))
+            {
+                return;
+            }
+
             resumeSelectionTarget = null;
             modalOverlay?.Hide();
             Time.timeScale = 1f;
@@ -124,10 +133,10 @@ namespace TAD.UI
             isLoadingNextLevel = loadingOverlay.TryLoadScene(
                 sceneBuildIndex,
                 nextLevel.SceneName,
-                () => HandleNextLevelLoadFailed(loadingOverlay));
+                () => HandleNextLevelLoadFailed(loadingOverlay, energyCharge));
             if (!isLoadingNextLevel)
             {
-                HandleNextLevelLoadFailed(loadingOverlay);
+                HandleNextLevelLoadFailed(loadingOverlay, energyCharge);
             }
         }
 
@@ -173,6 +182,15 @@ namespace TAD.UI
                 return;
             }
 
+            if (!MatchStartEnergyGate.TryPayForNewMatch(
+                    transform,
+                    restartButton,
+                    restartButton != null ? restartButton.gameObject : null,
+                    out _))
+            {
+                return;
+            }
+
             MatchRoleSelection.Select(role);
             isRestarting = true;
             resumeSelectionTarget = null;
@@ -181,9 +199,12 @@ namespace TAD.UI
             SceneManager.LoadScene(activeScene.buildIndex);
         }
 
-        private void HandleNextLevelLoadFailed(LevelLoadingOverlay loadingOverlay)
+        private void HandleNextLevelLoadFailed(
+            LevelLoadingOverlay loadingOverlay,
+            MatchStartEnergyCharge energyCharge)
         {
             isLoadingNextLevel = false;
+            energyCharge?.Refund();
             if (loadingOverlay != null)
             {
                 Destroy(loadingOverlay.gameObject);

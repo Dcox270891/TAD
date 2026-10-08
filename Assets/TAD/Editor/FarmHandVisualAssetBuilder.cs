@@ -33,8 +33,40 @@ namespace TAD.Editor
         private const string ProjectileArtDirectory = "Assets/TAD/Art/Farmhands/Projectiles";
         private const string UpgradeProjectileArtPath = ProjectileArtDirectory + "/DefenderUpgradeProjectiles.png";
         private const string VisualDataDirectory = "Assets/TAD/Data/Defenders/Visuals";
+        private const string AppearanceDataDirectory = VisualDataDirectory + "/Appearances";
         private const string FarmHandPrefabPath = "Assets/TAD/Prefabs/Defenders/FarmHand.prefab";
         private const string UpgradeProjectilePrefabDirectory = "Assets/TAD/Prefabs/Projectiles/Upgrades";
+
+        // Each layer remains independently authored. The builder composes the small, reusable
+        // layer library into every valid look so runtime randomisation stays allocation-free and
+        // future artists can add another body, hair/hat, or outfit without touching combat code.
+        private static readonly CosmeticLayerSpec[] BodySpecs =
+        {
+            new("Default", "farmhand_body", "Light skin"),
+            new("Medium", "farmhand_body_medium", "Warm skin"),
+            new("Deep", "farmhand_body_deep", "Deep skin")
+        };
+
+        private static readonly CosmeticLayerSpec[] HairSpecs =
+        {
+            new("ShortBrown", "farmhand_hair", "Short brown hair"),
+            new("CurlyBlack", "farmhand_hair_curly", "Curly black hair"),
+            new("StrawHat", "farmhand_hair_straw_hat", "Straw hat")
+        };
+
+        private static readonly CosmeticLayerSpec[] OutfitSpecs =
+        {
+            new("BlueOveralls", "farmhand_outfit", "Blue overalls"),
+            new("RedPlaid", "farmhand_outfit_plaid", "Red plaid workwear"),
+            new("GreenJacket", "farmhand_outfit_jacket", "Green field jacket")
+        };
+
+        private static readonly string[] FarmHandNames =
+        {
+            "Ada", "Bram", "Clover", "Daisy", "Ellis", "Finn", "Hazel", "Ivy",
+            "June", "Lena", "Mabel", "Milo", "Nell", "Otis", "Poppy", "Rowan",
+            "Rufus", "Sage", "Tilly", "Toby", "Wren", "Eddie", "Moss", "Betsy"
+        };
 
         private static readonly WeaponVisualSpec[] WeaponSpecs =
         {
@@ -185,38 +217,20 @@ namespace TAD.Editor
             EnsureFolder(VisualDataDirectory);
             EnsureRequiredFiles();
 
-            var bodySprites = ImportDirectionalSheet(
-                ArtDirectory + "/FarmhandBody_Default_Move.png",
-                "farmhand_body",
-                "move",
-                MovementFrameCount,
-                DirectionalRows);
-            var hairSprites = ImportDirectionalSheet(
-                ArtDirectory + "/FarmhandHair_ShortBrown_Move.png",
-                "farmhand_hair",
-                "move",
-                MovementFrameCount,
-                DirectionalRows);
-            var outfitSprites = ImportDirectionalSheet(
-                ArtDirectory + "/FarmhandOutfit_BlueOveralls_Move.png",
-                "farmhand_outfit",
-                "move",
-                MovementFrameCount,
-                DirectionalRows);
-
-            var body = CreateOrUpdateLayerDefinition<FarmHandBodyVisualDefinition>(
-                VisualDataDirectory + "/FarmHandBody_Default.asset",
-                "farmhand_body",
-                bodySprites);
-            var hair = CreateOrUpdateLayerDefinition<FarmHandHairVisualDefinition>(
-                VisualDataDirectory + "/FarmHandHair_ShortBrown.asset",
-                "farmhand_hair",
-                hairSprites);
-            var outfit = CreateOrUpdateLayerDefinition<FarmHandOutfitVisualDefinition>(
-                VisualDataDirectory + "/FarmHandOutfit_BlueOveralls.asset",
-                "farmhand_outfit",
-                outfitSprites);
-            var appearance = CreateOrUpdateAppearance(body, hair, outfit);
+            var bodies = ImportCosmeticLayers<FarmHandBodyVisualDefinition>(
+                BodySpecs,
+                "FarmhandBody",
+                "FarmHandBody");
+            var hairs = ImportCosmeticLayers<FarmHandHairVisualDefinition>(
+                HairSpecs,
+                "FarmhandHair",
+                "FarmHandHair");
+            var outfits = ImportCosmeticLayers<FarmHandOutfitVisualDefinition>(
+                OutfitSpecs,
+                "FarmhandOutfit",
+                "FarmHandOutfit");
+            var appearances = CreateOrUpdateAppearances(bodies, hairs, outfits);
+            var defaultAppearance = appearances[0];
 
             var weaponVisuals = new List<FarmHandWeaponVisualDefinition>();
             foreach (var spec in WeaponSpecs)
@@ -246,7 +260,7 @@ namespace TAD.Editor
 
             var projectileSprites = ImportProjectileSheet();
             var upgradeProjectileSprites = ImportUpgradeProjectileSheet();
-            UpdateFarmHandPrefab(appearance, weaponVisuals);
+            UpdateFarmHandPrefab(defaultAppearance, appearances, weaponVisuals);
             UpdateProjectilePrefabs(projectileSprites);
             UpdateUpgradeProjectilePrefabs(upgradeProjectileSprites);
 
@@ -269,12 +283,13 @@ namespace TAD.Editor
         {
             var requiredPaths = new List<string>
             {
-                ArtDirectory + "/FarmhandBody_Default_Move.png",
-                ArtDirectory + "/FarmhandHair_ShortBrown_Move.png",
-                ArtDirectory + "/FarmhandOutfit_BlueOveralls_Move.png",
                 ProjectileArtDirectory + "/FarmhandProjectiles.png",
                 UpgradeProjectileArtPath
             };
+
+            AddCosmeticSourcePaths(requiredPaths, "FarmhandBody", BodySpecs);
+            AddCosmeticSourcePaths(requiredPaths, "FarmhandHair", HairSpecs);
+            AddCosmeticSourcePaths(requiredPaths, "FarmhandOutfit", OutfitSpecs);
 
             foreach (var spec in WeaponSpecs)
             {
@@ -294,6 +309,22 @@ namespace TAD.Editor
                     throw new FileNotFoundException("Required farmhand visual source is missing.", path);
                 }
             }
+        }
+
+        private static void AddCosmeticSourcePaths(
+            ICollection<string> requiredPaths,
+            string sheetPrefix,
+            IReadOnlyList<CosmeticLayerSpec> specs)
+        {
+            foreach (var spec in specs)
+            {
+                requiredPaths.Add(GetCosmeticSheetPath(sheetPrefix, spec));
+            }
+        }
+
+        private static string GetCosmeticSheetPath(string sheetPrefix, CosmeticLayerSpec spec)
+        {
+            return ArtDirectory + $"/{sheetPrefix}_{spec.SheetTitle}_Move.png";
         }
 
         private static Dictionary<string, Sprite> ImportDirectionalSheet(
@@ -473,21 +504,70 @@ namespace TAD.Editor
             return layer;
         }
 
-        private static FarmHandAppearanceDefinition CreateOrUpdateAppearance(
-            FarmHandBodyVisualDefinition body,
-            FarmHandHairVisualDefinition hair,
-            FarmHandOutfitVisualDefinition outfit)
+        private static List<T> ImportCosmeticLayers<T>(
+            IReadOnlyList<CosmeticLayerSpec> specs,
+            string sheetPrefix,
+            string assetPrefix)
+            where T : FarmHandDirectionalLayerDefinition
         {
-            var assetPath = VisualDataDirectory + "/FarmHandAppearance_Default.asset";
-            var appearance = LoadOrCreateAsset<FarmHandAppearanceDefinition>(assetPath);
-            var serialized = new SerializedObject(appearance);
-            serialized.FindProperty("displayName").stringValue = "Default Farmhand";
-            serialized.FindProperty("body").objectReferenceValue = body;
-            serialized.FindProperty("hair").objectReferenceValue = hair;
-            serialized.FindProperty("outfit").objectReferenceValue = outfit;
-            serialized.ApplyModifiedPropertiesWithoutUndo();
-            EditorUtility.SetDirty(appearance);
-            return appearance;
+            var layers = new List<T>(specs.Count);
+            foreach (var spec in specs)
+            {
+                var sprites = ImportDirectionalSheet(
+                    GetCosmeticSheetPath(sheetPrefix, spec),
+                    spec.Key,
+                    "move",
+                    MovementFrameCount,
+                    DirectionalRows);
+                layers.Add(CreateOrUpdateLayerDefinition<T>(
+                    VisualDataDirectory + $"/{assetPrefix}_{spec.SheetTitle}.asset",
+                    spec.Key,
+                    sprites));
+            }
+
+            return layers;
+        }
+
+        private static List<FarmHandAppearanceDefinition> CreateOrUpdateAppearances(
+            IReadOnlyList<FarmHandBodyVisualDefinition> bodies,
+            IReadOnlyList<FarmHandHairVisualDefinition> hairs,
+            IReadOnlyList<FarmHandOutfitVisualDefinition> outfits)
+        {
+            if (bodies.Count != BodySpecs.Length || hairs.Count != HairSpecs.Length || outfits.Count != OutfitSpecs.Length)
+            {
+                throw new InvalidOperationException("Farmhand cosmetic layer counts no longer match their authored specifications.");
+            }
+
+            EnsureFolder(AppearanceDataDirectory);
+            var appearances = new List<FarmHandAppearanceDefinition>(bodies.Count * hairs.Count * outfits.Count);
+            for (var bodyIndex = 0; bodyIndex < bodies.Count; bodyIndex++)
+            {
+                for (var hairIndex = 0; hairIndex < hairs.Count; hairIndex++)
+                {
+                    for (var outfitIndex = 0; outfitIndex < outfits.Count; outfitIndex++)
+                    {
+                        var isDefault = bodyIndex == 0 && hairIndex == 0 && outfitIndex == 0;
+                        var path = isDefault
+                            ? VisualDataDirectory + "/FarmHandAppearance_Default.asset"
+                            : AppearanceDataDirectory + $"/FarmHandAppearance_{BodySpecs[bodyIndex].SheetTitle}_" +
+                              $"{HairSpecs[hairIndex].SheetTitle}_{OutfitSpecs[outfitIndex].SheetTitle}.asset";
+                        var appearance = LoadOrCreateAsset<FarmHandAppearanceDefinition>(path);
+                        var serialized = new SerializedObject(appearance);
+                        serialized.FindProperty("displayName").stringValue = isDefault
+                            ? "Default Farmhand"
+                            : $"{BodySpecs[bodyIndex].DisplayName} / {HairSpecs[hairIndex].DisplayName} / " +
+                              OutfitSpecs[outfitIndex].DisplayName;
+                        serialized.FindProperty("body").objectReferenceValue = bodies[bodyIndex];
+                        serialized.FindProperty("hair").objectReferenceValue = hairs[hairIndex];
+                        serialized.FindProperty("outfit").objectReferenceValue = outfits[outfitIndex];
+                        serialized.ApplyModifiedPropertiesWithoutUndo();
+                        EditorUtility.SetDirty(appearance);
+                        appearances.Add(appearance);
+                    }
+                }
+            }
+
+            return appearances;
         }
 
         private static FarmHandWeaponVisualDefinition CreateOrUpdateWeaponVisual(
@@ -565,7 +645,8 @@ namespace TAD.Editor
         }
 
         private static void UpdateFarmHandPrefab(
-            FarmHandAppearanceDefinition appearance,
+            FarmHandAppearanceDefinition defaultAppearance,
+            IReadOnlyList<FarmHandAppearanceDefinition> appearances,
             IReadOnlyList<FarmHandWeaponVisualDefinition> weaponVisuals)
         {
             var root = PrefabUtility.LoadPrefabContents(FarmHandPrefabPath);
@@ -578,13 +659,13 @@ namespace TAD.Editor
                     throw new InvalidOperationException("FarmHand prefab no longer has its root FarmHand and SpriteRenderer.");
                 }
 
-                bodyRenderer.sprite = appearance.Body.GetMovementSprite(0, 0);
+                bodyRenderer.sprite = defaultAppearance.Body.GetMovementSprite(0, 0);
                 bodyRenderer.enabled = true;
                 var hairRenderer = GetOrCreateLayerRenderer(root.transform, "HairVisual", bodyRenderer, 1);
                 var outfitRenderer = GetOrCreateLayerRenderer(root.transform, "OutfitVisual", bodyRenderer, 2);
                 var weaponRenderer = GetOrCreateLayerRenderer(root.transform, "WeaponVisual", bodyRenderer, 3);
-                hairRenderer.sprite = appearance.Hair.GetMovementSprite(0, 0);
-                outfitRenderer.sprite = appearance.Outfit.GetMovementSprite(0, 0);
+                hairRenderer.sprite = defaultAppearance.Hair.GetMovementSprite(0, 0);
+                outfitRenderer.sprite = defaultAppearance.Outfit.GetMovementSprite(0, 0);
                 weaponRenderer.sprite = weaponVisuals[0].GetMovementSprite(0, 0);
                 hairRenderer.enabled = hairRenderer.sprite != null;
                 outfitRenderer.enabled = outfitRenderer.sprite != null;
@@ -606,7 +687,7 @@ namespace TAD.Editor
                 controllerSerialized.FindProperty("hairRenderer").objectReferenceValue = hairRenderer;
                 controllerSerialized.FindProperty("outfitRenderer").objectReferenceValue = outfitRenderer;
                 controllerSerialized.FindProperty("weaponRenderer").objectReferenceValue = weaponRenderer;
-                controllerSerialized.FindProperty("appearance").objectReferenceValue = appearance;
+                controllerSerialized.FindProperty("appearance").objectReferenceValue = defaultAppearance;
                 var weaponVisualsProperty = controllerSerialized.FindProperty("weaponVisuals");
                 weaponVisualsProperty.arraySize = weaponVisuals.Count;
                 for (var index = 0; index < weaponVisuals.Count; index++)
@@ -616,9 +697,23 @@ namespace TAD.Editor
 
                 controllerSerialized.FindProperty("aimTransitionDuration").floatValue = 0.16f;
                 controllerSerialized.ApplyModifiedPropertiesWithoutUndo();
+
+                var randomizer = root.GetComponent<FarmHandAppearanceRandomizer>();
+                if (randomizer == null)
+                {
+                    randomizer = root.AddComponent<FarmHandAppearanceRandomizer>();
+                }
+
+                var randomizerSerialized = new SerializedObject(randomizer);
+                SetObjectReference(randomizerSerialized, "farmHand", farmHand);
+                SetObjectReference(randomizerSerialized, "visualController", controller);
+                AssignObjectReferenceArray(randomizerSerialized.FindProperty("appearances"), appearances);
+                AssignStringArray(randomizerSerialized.FindProperty("displayNames"), FarmHandNames);
+                randomizerSerialized.ApplyModifiedPropertiesWithoutUndo();
                 EditorUtility.SetDirty(bodyRenderer);
                 EditorUtility.SetDirty(farmHand);
                 EditorUtility.SetDirty(controller);
+                EditorUtility.SetDirty(randomizer);
                 PrefabUtility.SaveAsPrefabAsset(root, FarmHandPrefabPath);
             }
             finally
@@ -990,6 +1085,37 @@ namespace TAD.Editor
             }
         }
 
+        private static void AssignObjectReferenceArray<T>(
+            SerializedProperty property,
+            IReadOnlyList<T> values)
+            where T : UnityEngine.Object
+        {
+            if (property == null)
+            {
+                throw new InvalidOperationException("Expected serialized object-reference array was not found.");
+            }
+
+            property.arraySize = values.Count;
+            for (var index = 0; index < values.Count; index++)
+            {
+                property.GetArrayElementAtIndex(index).objectReferenceValue = values[index];
+            }
+        }
+
+        private static void AssignStringArray(SerializedProperty property, IReadOnlyList<string> values)
+        {
+            if (property == null)
+            {
+                throw new InvalidOperationException("Expected serialized string array was not found.");
+            }
+
+            property.arraySize = values.Count;
+            for (var index = 0; index < values.Count; index++)
+            {
+                property.GetArrayElementAtIndex(index).stringValue = values[index] ?? string.Empty;
+            }
+        }
+
         private static void SetObjectReference(SerializedObject serialized, string propertyName, UnityEngine.Object value)
         {
             var property = serialized.FindProperty(propertyName);
@@ -1065,6 +1191,20 @@ namespace TAD.Editor
             public string Name { get; }
             public int Column { get; }
             public int Row { get; }
+        }
+
+        private readonly struct CosmeticLayerSpec
+        {
+            public CosmeticLayerSpec(string sheetTitle, string key, string displayName)
+            {
+                SheetTitle = sheetTitle;
+                Key = key;
+                DisplayName = displayName;
+            }
+
+            public string SheetTitle { get; }
+            public string Key { get; }
+            public string DisplayName { get; }
         }
 
         private readonly struct WeaponVisualSpec

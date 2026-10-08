@@ -1,4 +1,6 @@
 using TAD.Attackers;
+using TAD.Match;
+using TAD.Progression;
 using UnityEngine;
 
 namespace TAD.UI
@@ -77,7 +79,10 @@ namespace TAD.UI
                 return;
             }
 
-            ratingText.text = "CR:" + definition.CombatRating.ToString("0.#");
+            var profile = MatchRoleSelection.IsPlayerAttacker
+                ? PlayerSettingsService.Instance.Profile
+                : null;
+            ratingText.text = "CR:" + AttackerCombatRating.Calculate(definition, profile).ToString("0.#");
             sendSizeText.text = "x" + definition.SendSize;
         }
 

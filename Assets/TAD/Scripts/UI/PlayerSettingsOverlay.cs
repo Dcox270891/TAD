@@ -514,17 +514,23 @@ namespace TAD.UI
         {
             CreatePageHeading("GAMEPLAY DISPLAY", "Choose which combat information is visible while you play.");
             var settings = PlayerSettingsService.Instance;
-            var firstToggle = CreateToggleRow(
+            var healthToggle = CreateToggleRow(
                 "Show attacker health bars",
-                "Displays the health bar above each animal.",
-                settings.Profile.showAttackerHealthBars,
+                settings.HasAttackerHealthDisplayUpgrade
+                    ? "Displays the health bar above each animal."
+                    : "Locked — choose Animal Health from a General Upgrade reward.",
+                settings.AreAttackerHealthBarsVisible,
                 settings.SetAttackerHealthBarsVisible);
-            CreateToggleRow(
+            healthToggle.interactable = settings.HasAttackerHealthDisplayUpgrade;
+            var experienceToggle = CreateToggleRow(
                 "Show defender experience",
-                "Displays each farmhand's level and experience bar.",
-                settings.Profile.showDefenderExperience,
+                settings.HasDefenderExperienceDisplayUpgrade
+                    ? "Displays each farmhand's level and experience bar."
+                    : "Locked — choose Farmhand Progress from a General Upgrade reward.",
+                settings.IsDefenderExperienceVisible,
                 settings.SetDefenderExperienceVisible);
-            return firstToggle;
+            experienceToggle.interactable = settings.HasDefenderExperienceDisplayUpgrade;
+            return healthToggle.interactable ? healthToggle : experienceToggle.interactable ? experienceToggle : null;
         }
 
         private UnityEngine.UI.Selectable BuildAudioPage()

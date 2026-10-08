@@ -1,8 +1,10 @@
 using System.Collections.Generic;
 using TAD.Defenders;
 using TAD.Environment;
+using TAD.Match;
 using TAD.Navigation;
 using TAD.Pooling;
+using TAD.Progression;
 using UnityEngine;
 
 namespace TAD.Attackers
@@ -97,8 +99,12 @@ namespace TAD.Attackers
         public long InstanceId => pooledInstance != null ? pooledInstance.RuntimeInstanceId : 0L;
 
         public float RemainingHealth => currentHealth;
-        public float MaximumHealth => definition != null ? definition.MaximumHealth : 0f;
-        public float MovementSpeed => definition != null ? definition.MovementSpeed : 0f;
+        public float MaximumHealth => definition != null
+            ? PlayerUpgradeProgression.GetEffectiveAttackerHealth(GetPlayerAttackerUpgradeProfile(), definition)
+            : 0f;
+        public float MovementSpeed => definition != null
+            ? PlayerUpgradeProgression.GetEffectiveAttackerSpeed(GetPlayerAttackerUpgradeProfile(), definition)
+            : 0f;
         /// <summary>Current movement speed after active stun and slow effects are applied.</summary>
         public float EffectiveMovementSpeed => IsStunned
             ? 0f
@@ -111,10 +117,18 @@ namespace TAD.Attackers
         public event System.Action<float, float> HealthChanged;
         public bool IsDefeated => isDefeated;
         public float Size => definition != null ? definition.Size : 0f;
-        public int SendCost => definition != null ? definition.SendCost : 0;
-        public int WaveIncome => definition != null ? definition.WaveIncome : 0;
-        public float CombatRating => definition != null ? definition.CombatRating : 0f;
-        public int ExpGiven => definition != null ? definition.ExpGiven : 0;
+        public int SendCost => definition != null
+            ? PlayerUpgradeProgression.GetEffectiveAttackerCost(GetPlayerAttackerUpgradeProfile(), definition)
+            : 0;
+        public int WaveIncome => definition != null
+            ? PlayerUpgradeProgression.GetEffectiveAttackerIncome(GetPlayerAttackerUpgradeProfile(), definition)
+            : 0;
+        public float CombatRating => definition != null
+            ? AttackerCombatRating.Calculate(definition, GetPlayerAttackerUpgradeProfile())
+            : 0f;
+        public int ExpGiven => definition != null
+            ? PlayerUpgradeProgression.GetEffectiveAttackerExperienceGiven(GetPlayerAttackerUpgradeProfile(), definition)
+            : 0;
         public int KillGain => definition != null ? definition.KillGain : 0;
         public int SendSize => definition != null ? definition.SendSize : 0;
         /// <summary>True when this animal is airborne and therefore requires a defender projectile that can target airborne animals.</summary>
@@ -539,7 +553,7 @@ namespace TAD.Attackers
 
         private void ResetRuntimeState()
         {
-            currentHealth = definition != null ? definition.MaximumHealth : 0f;
+            currentHealth = MaximumHealth;
             hasReachedFoodStore = false;
             isDefeated = false;
             moveDirection = startingMoveDirection.sqrMagnitude > 0f ? startingMoveDirection.normalized : Vector2.right;
@@ -564,6 +578,17 @@ namespace TAD.Attackers
 
             ConfigureTraversalCollisions();
             NotifyHealthChanged();
+        }
+
+        /// <summary>
+        /// Account attacker bonuses belong only to the human attacker. The same pooled creature
+        /// prefab is used by the defender-side AI, which must continue to use authored values.
+        /// </summary>
+        private static PlayerProfileData GetPlayerAttackerUpgradeProfile()
+        {
+            return MatchRoleSelection.IsPlayerAttacker
+                ? PlayerSettingsService.Instance.Profile
+                : null;
         }
 
         private void NotifyHealthChanged()

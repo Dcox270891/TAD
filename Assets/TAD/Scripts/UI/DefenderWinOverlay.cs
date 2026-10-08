@@ -127,6 +127,15 @@ namespace TAD.UI
                 return;
             }
 
+            if (!MatchStartEnergyGate.TryPayForNewMatch(
+                    transform,
+                    restartButton,
+                    restartButton != null ? restartButton.gameObject : null,
+                    out MatchStartEnergyCharge energyCharge))
+            {
+                return;
+            }
+
             MatchRoleSelection.Select(role);
             HideMatchExperiencePresentation();
             modalOverlay?.Hide();
@@ -136,10 +145,10 @@ namespace TAD.UI
             isRestarting = loadingOverlay.TryLoadScene(
                 activeScene.buildIndex,
                 activeScene.name,
-                () => HandleRestartLoadFailed(loadingOverlay));
+                () => HandleRestartLoadFailed(loadingOverlay, energyCharge));
             if (!isRestarting)
             {
-                HandleRestartLoadFailed(loadingOverlay);
+                HandleRestartLoadFailed(loadingOverlay, energyCharge);
             }
         }
 
@@ -169,6 +178,15 @@ namespace TAD.UI
                 return;
             }
 
+            if (!MatchStartEnergyGate.TryPayForNewMatch(
+                    transform,
+                    nextLevelButton,
+                    nextLevelButton != null ? nextLevelButton.gameObject : null,
+                    out MatchStartEnergyCharge energyCharge))
+            {
+                return;
+            }
+
             HideMatchExperiencePresentation();
             modalOverlay?.Hide();
             Time.timeScale = 1f;
@@ -177,10 +195,10 @@ namespace TAD.UI
             isLoadingNextLevel = loadingOverlay.TryLoadScene(
                 sceneBuildIndex,
                 nextLevel.SceneName,
-                () => HandleNextLevelLoadFailed(loadingOverlay));
+                () => HandleNextLevelLoadFailed(loadingOverlay, energyCharge));
             if (!isLoadingNextLevel)
             {
-                HandleNextLevelLoadFailed(loadingOverlay);
+                HandleNextLevelLoadFailed(loadingOverlay, energyCharge);
             }
         }
 
@@ -190,9 +208,12 @@ namespace TAD.UI
             SelectRestartButton();
         }
 
-        private void HandleNextLevelLoadFailed(LevelLoadingOverlay loadingOverlay)
+        private void HandleNextLevelLoadFailed(
+            LevelLoadingOverlay loadingOverlay,
+            MatchStartEnergyCharge energyCharge)
         {
             isLoadingNextLevel = false;
+            energyCharge?.Refund();
             if (loadingOverlay != null)
             {
                 Destroy(loadingOverlay.gameObject);
@@ -204,9 +225,12 @@ namespace TAD.UI
             SelectNextLevelOrRestartButton();
         }
 
-        private void HandleRestartLoadFailed(LevelLoadingOverlay loadingOverlay)
+        private void HandleRestartLoadFailed(
+            LevelLoadingOverlay loadingOverlay,
+            MatchStartEnergyCharge energyCharge)
         {
             isRestarting = false;
+            energyCharge?.Refund();
             if (loadingOverlay != null)
             {
                 Destroy(loadingOverlay.gameObject);

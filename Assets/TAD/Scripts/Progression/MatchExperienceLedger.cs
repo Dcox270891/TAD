@@ -23,18 +23,21 @@ namespace TAD.Progression
 
         /// <summary>
         /// Adds the exact amount of combat experience a lone eligible defender would receive
-        /// from this dispatched animal. This mirrors the existing combat reward calculation,
-        /// including its send-size and test-balance multiplier rules.
+        /// from this dispatched animal. Callers may supply the account-modified experience value
+        /// so attacker reward, defender combat XP, and the end-of-match player XP ledger agree.
         /// </summary>
-        public void RecordAttackerDispatched(AttackerDefinition definition)
+        public void RecordAttackerDispatched(AttackerDefinition definition, int effectiveExperienceGiven = -1)
         {
             if (definition == null)
             {
                 return;
             }
 
+            var experienceGiven = effectiveExperienceGiven >= 0
+                ? effectiveExperienceGiven
+                : definition.ExpGiven;
             var perAttackerExperience = DefenderRewardCalculator.Calculate(
-                definition.ExpGiven,
+                experienceGiven,
                 definition.SendSize,
                 eligibleAssistCount: 0).TotalExperience;
             AttackerExperienceSent = PlayerLevelProgression.RoundToNearestTenth(

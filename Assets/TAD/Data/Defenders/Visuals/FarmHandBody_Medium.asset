@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f108f9b7163aa5c46beaafa245420576, type: 3}
+  m_Name: FarmHandBody_Medium
+  m_EditorClassIdentifier: TAD.Runtime::TAD.Defenders.FarmHandBodyVisualDefinition
+  movementSprites:
+  - {fileID: 576403767, guid: d5429e237c8e9a14fbd14a328456a7e0, type: 3}
+  - {fileID: -1441790787, guid: d5429e237c8e9a14fbd14a328456a7e0, type: 3}
+  - {fileID: 1473985900, guid: d5429e237c8e9a14fbd14a328456a7e0, type: 3}
+  - {fileID: -1767299827, guid: d5429e237c8e9a14fbd14a328456a7e0, type: 3}
+  - {fileID: 549598368, guid: d5429e237c8e9a14fbd14a328456a7e0, type: 3}
+  - {fileID: 828543156, guid: d5429e237c8e9a14fbd14a328456a7e0, type: 3}
+  - {fileID: -1166499811, guid: d5429e237c8e9a14fbd14a328456a7e0, type: 3}
+  - {fileID: 1778354387, guid: d5429e237c8e9a14fbd14a328456a7e0, type: 3}
+  - {fileID: 1465527396, guid: d5429e237c8e9a14fbd14a328456a7e0, type: 3}
+  - {fileID: 1242824960, guid: d5429e237c8e9a14fbd14a328456a7e0, type: 3}
+  - {fileID: 653623333, guid: d5429e237c8e9a14fbd14a328456a7e0, type: 3}
+  - {fileID: 1277792476, guid: d5429e237c8e9a14fbd14a328456a7e0, type: 3}
+  - {fileID: 1938948870, guid: d5429e237c8e9a14fbd14a328456a7e0, type: 3}
+  - {fileID: 1288176549, guid: d5429e237c8e9a14fbd14a328456a7e0, type: 3}
+  - {fileID: -152146448, guid: d5429e237c8e9a14fbd14a328456a7e0, type: 3}
+  - {fileID: -1348571753, guid: d5429e237c8e9a14fbd14a328456a7e0, type: 3}
+  - {fileID: -1313358431, guid: d5429e237c8e9a14fbd14a328456a7e0, type: 3}
+  - {fileID: -1545580088, guid: d5429e237c8e9a14fbd14a328456a7e0, type: 3}
+  - {fileID: 1484758931, guid: d5429e237c8e9a14fbd14a328456a7e0, type: 3}
+  - {fileID: 1273129279, guid: d5429e237c8e9a14fbd14a328456a7e0, type: 3}
+  - {fileID: 1190692389, guid: d5429e237c8e9a14fbd14a328456a7e0, type: 3}
+  - {fileID: 1250731947, guid: d5429e237c8e9a14fbd14a328456a7e0, type: 3}
+  - {fileID: 1582849725, guid: d5429e237c8e9a14fbd14a328456a7e0, type: 3}
+  - {fileID: 246731774, guid: d5429e237c8e9a14fbd14a328456a7e0, type: 3}
+  - {fileID: 832347642, guid: d5429e237c8e9a14fbd14a328456a7e0, type: 3}
+  - {fileID: 209056862, guid: d5429e237c8e9a14fbd14a328456a7e0, type: 3}
+  - {fileID: -1169598372, guid: d5429e237c8e9a14fbd14a328456a7e0, type: 3}
+  - {fileID: -1305113133, guid: d5429e237c8e9a14fbd14a328456a7e0, type: 3}
+  - {fileID: 202498950, guid: d5429e237c8e9a14fbd14a328456a7e0, type: 3}
+  - {fileID: -803951385, guid: d5429e237c8e9a14fbd14a328456a7e0, type: 3}
+  - {fileID: -1281959133, guid: d5429e237c8e9a14fbd14a328456a7e0, type: 3}
+  - {fileID: -1540972988, guid: d5429e237c8e9a14fbd14a328456a7e0, type: 3}
+  movementFrameDuration: 0.16

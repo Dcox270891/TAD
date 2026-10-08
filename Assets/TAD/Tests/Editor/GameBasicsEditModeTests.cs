@@ -448,6 +448,8 @@ namespace TAD.Tests.Editor
                 Assert.That(profile.playerLevel, Is.EqualTo(PlayerLevelProgression.StartingLevel));
                 Assert.That(profile.playerExp, Is.EqualTo(0f));
                 Assert.That(profile.totalPlayerExperience, Is.EqualTo(0f));
+                Assert.That(profile.playerEnergy, Is.EqualTo(PlayerEnergyProgression.MaximumEnergy));
+                Assert.That(profile.playerEnergyRechargeRemainderMilliseconds, Is.EqualTo(0L));
                 Assert.That(profile.notificationsEnabled, Is.False);
                 Assert.That(profile.controlHintsEnabled, Is.False);
                 Assert.That(profile.videoQuality, Is.InRange(0, Mathf.Max(0, QualitySettings.names.Length - 1)));
@@ -478,6 +480,8 @@ namespace TAD.Tests.Editor
                 Assert.That(profile.playerLevel, Is.EqualTo(PlayerLevelProgression.StartingLevel));
                 Assert.That(profile.playerExp, Is.EqualTo(0f));
                 Assert.That(profile.totalPlayerExperience, Is.EqualTo(0f));
+                Assert.That(profile.playerEnergy, Is.EqualTo(PlayerEnergyProgression.MaximumEnergy));
+                Assert.That(profile.playerEnergyRechargeRemainderMilliseconds, Is.EqualTo(0L));
             }
             finally
             {
@@ -501,6 +505,8 @@ namespace TAD.Tests.Editor
                     playerExp = 24.56f,
                     playerLevel = 4,
                     totalPlayerExperience = 456.78f,
+                    playerEnergy = 99,
+                    playerEnergyRechargeRemainderMilliseconds = PlayerEnergyProgression.RechargeIntervalMilliseconds + 9L,
                     showAttackerHealthBars = false,
                     showDefenderExperience = false,
                     notificationsEnabled = false,
@@ -518,6 +524,8 @@ namespace TAD.Tests.Editor
                 Assert.That(profile.playerExp, Is.EqualTo(24.6f));
                 Assert.That(profile.playerLevel, Is.EqualTo(4));
                 Assert.That(profile.totalPlayerExperience, Is.EqualTo(456.8f));
+                Assert.That(profile.playerEnergy, Is.EqualTo(PlayerEnergyProgression.MaximumEnergy));
+                Assert.That(profile.playerEnergyRechargeRemainderMilliseconds, Is.EqualTo(0L));
                 Assert.That(profile.showAttackerHealthBars, Is.False);
                 Assert.That(profile.showDefenderExperience, Is.False);
                 Assert.That(profile.notificationsEnabled, Is.False);

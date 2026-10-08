@@ -93,5 +93,22 @@ namespace TAD.Tests.Editor
 
             Object.DestroyImmediate(attacker);
         }
+
+        [Test]
+        public void MatchExperienceLedger_UsesTheEffectiveAttackerExperienceWhenProvided()
+        {
+            var attacker = ScriptableObject.CreateInstance<AttackerDefinition>();
+            var ledger = new MatchExperienceLedger();
+            const int effectiveExperienceGiven = 6;
+            var expectedPerAttacker = DefenderRewardCalculator.Calculate(
+                effectiveExperienceGiven,
+                attacker.SendSize,
+                eligibleAssistCount: 0).TotalExperience;
+
+            ledger.RecordAttackerDispatched(attacker, effectiveExperienceGiven);
+
+            Assert.That(ledger.AttackerExperienceSent, Is.EqualTo(expectedPerAttacker));
+            Object.DestroyImmediate(attacker);
+        }
     }
 }

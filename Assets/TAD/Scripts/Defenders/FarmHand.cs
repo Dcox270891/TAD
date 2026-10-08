@@ -2,7 +2,9 @@ using System.Collections.Generic;
 using TAD.Attackers;
 using TAD.Economy;
 using TAD.Environment;
+using TAD.Match;
 using TAD.Pooling;
+using TAD.Progression;
 using UnityEngine;
 
 namespace TAD.Defenders
@@ -65,6 +67,7 @@ namespace TAD.Defenders
         [System.NonSerialized] private float currentExp;
         [System.NonSerialized] private float totalExperience;
         [System.NonSerialized] private int currentLevel = 1;
+        [System.NonSerialized] private string displayName = "Farmhand";
         [System.NonSerialized] private WeaponDefinition baseWeaponDefinition;
         [System.NonSerialized] private int pendingWeaponUpgradeLevel;
         [System.NonSerialized] private bool hasSelectedFirstWeaponUpgrade;
@@ -99,6 +102,12 @@ namespace TAD.Defenders
 
         /// <summary>Visual used by the placement system to create a non-interactive preview.</summary>
         public SpriteRenderer Visual => visual;
+
+        /// <summary>
+        /// Automatically assigned presentation name for the current pooled placement. It is not a
+        /// gameplay identifier and is deliberately retained while this farmhand relocates.
+        /// </summary>
+        public string DisplayName => string.IsNullOrWhiteSpace(displayName) ? "Farmhand" : displayName;
 
         /// <summary>Shared weapon data currently assigned to this farmhand.</summary>
         public WeaponDefinition WeaponDefinition => weaponDefinition;
@@ -169,7 +178,7 @@ namespace TAD.Defenders
             }
 
             var bank = ResolveDefenderBank();
-            return bank != null && bank.CanAfford(definition.Cost);
+            return bank != null && bank.CanAfford(GetEffectiveWeaponCost(definition));
         }
 
         /// <summary>True while this farmhand has reached an upgrade level and is waiting for a player or AI choice.</summary>
@@ -265,10 +274,29 @@ namespace TAD.Defenders
 
         /// <summary>Per-farmhand damage after this farmhand's level multiplier is applied.</summary>
         public float Damage => weaponDefinition != null
-            ? weaponDefinition.Damage * DefenderLevelProgression.GetLevelMultiplier(
+            ? PlayerUpgradeProgression.GetEffectiveDefenderDamage(
+                GetPlayerDefenderUpgradeProfile(),
+                weaponDefinition) * DefenderLevelProgression.GetLevelMultiplier(
                 currentLevel,
                 LevelDamageMultiplier)
             : 0f;
+
+        /// <summary>Live shots per second after player account bonuses and per-farmhand level scaling.</summary>
+        public float AttackSpeed => weaponDefinition != null
+            ? PlayerUpgradeProgression.GetEffectiveDefenderAttackSpeed(
+                GetPlayerDefenderUpgradeProfile(),
+                weaponDefinition)
+            : 0f;
+
+        /// <summary>Live delay between shots after account-level firing-rate upgrades.</summary>
+        public float FireInterval => 1f / Mathf.Max(0.01f, AttackSpeed);
+
+        /// <summary>Multiplier captured by spawned projectiles for status, splash, and slow effects.</summary>
+        public float ProjectileEffectsMultiplier => weaponDefinition != null
+            ? PlayerUpgradeProgression.GetDefenderProjectileEffectsMultiplier(
+                GetPlayerDefenderUpgradeProfile(),
+                weaponDefinition)
+            : 1f;
 
         /// <summary>Persistent target-order policy for this placed farmhand.</summary>
         public DefenderTargetingMode TargetingMode => targetingMode;
@@ -318,10 +346,18 @@ namespace TAD.Defenders
 
         /// <summary>World-space attack range supplied by the currently assigned weapon.</summary>
         public float Range => weaponDefinition != null
-            ? weaponDefinition.Range * DefenderLevelProgression.GetLevelMultiplier(
+            ? PlayerUpgradeProgression.GetEffectiveDefenderRange(
+                GetPlayerDefenderUpgradeProfile(),
+                weaponDefinition) * DefenderLevelProgression.GetLevelMultiplier(
                 currentLevel,
                 LevelRangeMultiplier)
             : 0f;
+
+        /// <summary>Account-discounted price for this farmhand's active or proposed weapon.</summary>
+        public int GetEffectiveWeaponCost(WeaponDefinition definition)
+        {
+            return PlayerUpgradeProgression.GetEffectiveDefenderCost(GetPlayerDefenderUpgradeProfile(), definition);
+        }
 
         /// <summary>Last valid aiming direction, used only by directional farmhand presentation.</summary>
         public Vector2 FacingDirection => facingDirection.sqrMagnitude > 0.0001f ? facingDirection : Vector2.right;
@@ -345,6 +381,12 @@ namespace TAD.Defenders
 
             targetingMode = normalizedMode;
             TargetingModeChanged?.Invoke(targetingMode);
+        }
+
+        /// <summary>Sets the automatically generated name shown on defender information cards.</summary>
+        public void SetDisplayName(string value)
+        {
+            displayName = string.IsNullOrWhiteSpace(value) ? "Farmhand" : value.Trim();
         }
 
         /// <summary>Returns a concise label suitable for both the defender selector and attacker read-only details card.</summary>
@@ -469,12 +511,13 @@ namespace TAD.Defenders
             if (!isFreeChoice)
             {
                 var bank = ResolveDefenderBank();
-                if (bank == null || !bank.TrySpendGold(definition.Cost))
+                var weaponCost = GetEffectiveWeaponCost(definition);
+                if (bank == null || !bank.TrySpendGold(weaponCost))
                 {
                     return false;
                 }
 
-                investedGold += Mathf.Max(0, definition.Cost);
+                investedGold += Mathf.Max(0, weaponCost);
             }
 
             pendingWeaponUpgradeLevel = 0;
@@ -841,7 +884,7 @@ namespace TAD.Defenders
             var projectileObject = pool.SpawnProjectile(projectileDefinition.ProjectilePrefab, origin, Quaternion.identity);
             if (projectileObject == null)
             {
-                nextFireTime = Time.time + weapon.FireInterval;
+                nextFireTime = Time.time + FireInterval;
                 return;
             }
 
@@ -855,7 +898,7 @@ namespace TAD.Defenders
                     damage))
             {
                 ReturnProjectileToPool(projectileObject);
-                nextFireTime = Time.time + weapon.FireInterval;
+                nextFireTime = Time.time + FireInterval;
                 return;
             }
 
@@ -907,7 +950,7 @@ namespace TAD.Defenders
                 return;
             }
 
-            nextFireTime = Time.time + weapon.FireInterval;
+            nextFireTime = Time.time + FireInterval;
             if (!weapon.UsesReload)
             {
                 return;
@@ -1542,7 +1585,7 @@ namespace TAD.Defenders
             ResetWeaponFiringState();
             ApplyLevelPresentation();
             var startingWeapon = baseWeaponDefinition ?? weaponDefinition;
-            investedGold = startingWeapon != null ? Mathf.Max(0, startingWeapon.Cost) : 0;
+            investedGold = startingWeapon != null ? Mathf.Max(0, GetEffectiveWeaponCost(startingWeapon)) : 0;
             facingDirection = Vector2.right;
             var modeChanged = targetingMode != DefenderTargetingMode.FirstEnemyInRange;
             targetingMode = DefenderTargetingMode.FirstEnemyInRange;
@@ -1571,6 +1614,18 @@ namespace TAD.Defenders
             transform.localScale = Vector3.Scale(
                 baseLocalScale,
                 Vector3.one * VisualScaleMultiplier);
+        }
+
+        /// <summary>
+        /// Defender account upgrades strengthen only the player-owned side. Defender AI farmhands
+        /// share this prefab while the player attacks, so they intentionally continue using the
+        /// authored weapon values.
+        /// </summary>
+        private static PlayerProfileData GetPlayerDefenderUpgradeProfile()
+        {
+            return MatchRoleSelection.IsPlayerDefender
+                ? PlayerSettingsService.Instance.Profile
+                : null;
         }
 
         private static DefenderTargetingMode NormalizeTargetingMode(DefenderTargetingMode mode)

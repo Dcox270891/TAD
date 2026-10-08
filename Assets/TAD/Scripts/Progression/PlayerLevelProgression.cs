@@ -12,6 +12,7 @@ namespace TAD.Progression
     public static class PlayerLevelProgression
     {
         public const int StartingLevel = 1;
+        public const int MaximumLevel = 100;
         public const float StandardWinExperience = 100f;
         public const float WinRewardMultiplier = 1f;
         public const float LossRewardMultiplier = 0.25f;
@@ -26,7 +27,11 @@ namespace TAD.Progression
         /// </summary>
         public static float GetExperienceRequiredForNextLevel(int currentLevel)
         {
-            var normalizedLevel = Mathf.Max(StartingLevel, currentLevel);
+            var normalizedLevel = Mathf.Clamp(currentLevel, StartingLevel, MaximumLevel);
+            if (normalizedLevel >= MaximumLevel)
+            {
+                return 0f;
+            }
             if (normalizedLevel == StartingLevel)
             {
                 return StandardWinExperience * LossRewardMultiplier * LossesForFirstLevel;
@@ -54,19 +59,29 @@ namespace TAD.Progression
             var eligibleExperience = RoundToNearestTenth(Mathf.Max(0f, matchExperience));
             var rewardMultiplier = playerWon ? WinRewardMultiplier : LossRewardMultiplier;
             var awardedExperience = RoundToNearestTenth(eligibleExperience * rewardMultiplier);
-            var startingLevel = Mathf.Max(StartingLevel, profile.playerLevel);
-            var startingProgress = RoundToNearestTenth(Mathf.Max(0f, profile.playerExp));
+            var startingLevel = Mathf.Clamp(profile.playerLevel, StartingLevel, MaximumLevel);
+            var startingProgress = startingLevel >= MaximumLevel
+                ? 0f
+                : RoundToNearestTenth(Mathf.Max(0f, profile.playerExp));
             var startingExperienceRequired = GetExperienceRequiredForNextLevel(startingLevel);
             var currentLevel = startingLevel;
             var currentProgress = RoundToNearestTenth(startingProgress + awardedExperience);
             var levelsGained = 0;
 
-            while (currentProgress + 0.0001f >= GetExperienceRequiredForNextLevel(currentLevel))
+            while (currentLevel < MaximumLevel &&
+                   currentProgress + 0.0001f >= GetExperienceRequiredForNextLevel(currentLevel))
             {
                 currentProgress = RoundToNearestTenth(
                     currentProgress - GetExperienceRequiredForNextLevel(currentLevel));
                 currentLevel++;
                 levelsGained++;
+            }
+
+            if (currentLevel >= MaximumLevel)
+            {
+                // The account cap intentionally keeps lifetime XP, but has no hidden rollover
+                // progress that could imply a level beyond one hundred.
+                currentProgress = 0f;
             }
 
             profile.playerLevel = currentLevel;
