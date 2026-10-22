@@ -348,11 +348,36 @@ namespace TAD.UI
             savedLabel.SetSiblingIndex(1);
             closeButton.SetSiblingIndex(2);
 
+            var portrait = MobileUiLayoutController.UsesPortraitLayout(header);
+            // The short save hint is useful on wide screens, but competes with the title and
+            // action on a phone. The action itself remains top-right and clearly communicates
+            // that it saves before closing.
+            if (savedLabel.gameObject.activeSelf == portrait)
+            {
+                savedLabel.gameObject.SetActive(!portrait);
+            }
+
+            var headerLayout = header.GetComponent<UnityEngine.UI.LayoutElement>();
+            if (headerLayout != null)
+            {
+                headerLayout.minHeight = portrait ? 82f : 70f;
+                headerLayout.preferredHeight = portrait ? 82f : 70f;
+            }
+
             var titleLayout = title.GetComponent<UnityEngine.UI.LayoutElement>();
             if (titleLayout != null)
             {
                 titleLayout.flexibleWidth = 1f;
                 titleLayout.minWidth = 0f;
+            }
+
+            var closeLayout = closeButton.GetComponent<UnityEngine.UI.LayoutElement>();
+            if (closeLayout != null)
+            {
+                // The rounded display face needs a little more horizontal breathing room than
+                // the old system font did, especially at the larger portrait button size.
+                closeLayout.minWidth = portrait ? 230f : 190f;
+                closeLayout.preferredWidth = portrait ? 230f : 190f;
             }
 
             var buttonLabel = closeButton.GetComponentInChildren<UnityEngine.UI.Text>(true);
@@ -498,6 +523,10 @@ namespace TAD.UI
                 _ => null
             };
 
+            // Each tab rebuilds its rows. Reapply the shared skin here so freshly-created text
+            // always keeps the same rounded bold type and readable mobile sizing as the rest of
+            // the game instead of briefly falling back to the legacy font.
+            FarmUiSkin.ApplyFromCanvas(transform.parent, transform);
             ForceLayoutUpdate();
             if (contentScrollRect != null)
             {
@@ -644,7 +673,9 @@ namespace TAD.UI
             var label = CreateText(
                 row.transform,
                 "Label",
-                $"{title}\n<size=17><color=#BBD2D7>{description}</color></size>",
+                // Keep helper copy in the same high-contrast ink as its heading. A previous
+                // pale rich-text treatment was too faint against parchment on a phone screen.
+                $"{title}\n{description}",
                 22,
                 FontStyle.Normal,
                 TextAnchor.MiddleLeft,
@@ -791,7 +822,12 @@ namespace TAD.UI
                 typeof(UnityEngine.UI.LayoutElement));
             row.layer = gameObject.layer;
             row.transform.SetParent(contentRoot, false);
-            row.GetComponent<UnityEngine.UI.LayoutElement>().preferredHeight = preferredHeight;
+            var layoutElement = row.GetComponent<UnityEngine.UI.LayoutElement>();
+            var responsiveHeight = MobileUiLayoutController.UsesPortraitLayout(transform)
+                ? Mathf.Max(preferredHeight, preferredHeight >= DescriptiveRowHeight ? 92f : 76f)
+                : preferredHeight;
+            layoutElement.minHeight = responsiveHeight;
+            layoutElement.preferredHeight = responsiveHeight;
 
             var layout = row.GetComponent<UnityEngine.UI.HorizontalLayoutGroup>();
             layout.spacing = 16f;
@@ -864,7 +900,11 @@ namespace TAD.UI
                 element = button.gameObject.AddComponent<UnityEngine.UI.LayoutElement>();
             }
 
-            element.preferredHeight = preferredHeight;
+            var responsiveHeight = MobileUiLayoutController.UsesPortraitLayout(transform)
+                ? Mathf.Max(preferredHeight, 72f)
+                : preferredHeight;
+            element.minHeight = Mathf.Max(element.minHeight, responsiveHeight);
+            element.preferredHeight = responsiveHeight;
             if (preferredWidth > 0f)
             {
                 element.preferredWidth = preferredWidth;
@@ -896,7 +936,9 @@ namespace TAD.UI
             var text = textObject.GetComponent<UnityEngine.UI.Text>();
             text.font = font;
             text.text = value;
-            text.fontSize = fontSize;
+            text.fontSize = MobileUiLayoutController.UsesPortraitLayout(transform)
+                ? Mathf.Max(fontSize, 26)
+                : fontSize;
             text.fontStyle = fontStyle;
             text.alignment = alignment;
             text.color = color;
@@ -975,7 +1017,15 @@ namespace TAD.UI
                 return;
             }
 
-            var availableSize = overlayRect.rect.size - new Vector2(PanelScreenMargin * 2f, PanelScreenMargin * 2f);
+            var portraitController = GetComponentInParent<MobileUiLayoutController>();
+            var usesPortraitLayout = portraitController != null && portraitController.IsPortraitLayout;
+            ConfigureHeaderLayout(panelRect.Find("Header"));
+            var safeContent = usesPortraitLayout
+                ? portraitController.GetSafeContentRect(PanelScreenMargin)
+                : overlayRect.rect;
+            var availableSize = usesPortraitLayout
+                ? safeContent.size
+                : safeContent.size - new Vector2(PanelScreenMargin * 2f, PanelScreenMargin * 2f);
             if (availableSize.x <= 0f || availableSize.y <= 0f)
             {
                 return;
@@ -983,14 +1033,19 @@ namespace TAD.UI
 
             var targetSize = new Vector2(
                 Mathf.Min(PanelWidth, availableSize.x),
-                Mathf.Min(PanelHeight, availableSize.y));
+                // A scrollable body keeps every settings page usable at this compact card size,
+                // while retaining the illustrated farm backdrop around the menu on phones.
+                Mathf.Min(usesPortraitLayout ? Mathf.Max(PanelHeight, 1100f) : PanelHeight, availableSize.y));
+            var targetPosition = usesPortraitLayout ? safeContent.center : Vector2.zero;
             if (Mathf.Approximately(panelRect.sizeDelta.x, targetSize.x) &&
-                Mathf.Approximately(panelRect.sizeDelta.y, targetSize.y))
+                Mathf.Approximately(panelRect.sizeDelta.y, targetSize.y) &&
+                Vector2.Distance(panelRect.anchoredPosition, targetPosition) < 0.01f)
             {
                 return;
             }
 
             panelRect.sizeDelta = targetSize;
+            panelRect.anchoredPosition = targetPosition;
         }
 
         private void ForceLayoutUpdate()

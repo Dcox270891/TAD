@@ -5,7 +5,9 @@ using TAD.Attackers;
 using TAD.Defenders;
 using TAD.Economy;
 using TAD.Environment;
+using TAD.Waves;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 
 namespace TAD.Tests.Editor
@@ -24,24 +26,24 @@ namespace TAD.Tests.Editor
         private const string UnarmedWeaponPath = "Assets/TAD/Data/Defenders/UnarmedWeaponDefinition.asset";
 
         [Test]
-        public void ProductionBalance_DefenderHasOpeningSafetyAndEveryArchetypeHasThreeTiers()
+        public void ProductionBalance_DefenderHasOpeningSafetyAndEveryArchetypeHasTenTiers()
         {
             var attackers = LoadProductionAttackers();
             var foodStore = LoadComponent<FoodStore>(FoodStorePrefabPath);
             var waveController = AssetDatabase.LoadAssetAtPath<GameObject>(WaveControllerPrefabPath);
             var unarmedWeapon = AssetDatabase.LoadAssetAtPath<WeaponDefinition>(UnarmedWeaponPath);
 
-            Assert.That(attackers, Has.Count.EqualTo(12));
+            Assert.That(attackers, Has.Count.EqualTo(40));
             Assert.That(foodStore, Is.Not.Null);
             Assert.That(waveController, Is.Not.Null);
             Assert.That(unarmedWeapon, Is.Not.Null);
 
-            AssertThreeProgressiveTiers(attackers, AttackerArchetype.Basic);
-            AssertThreeProgressiveTiers(attackers, AttackerArchetype.Fast);
-            AssertThreeProgressiveTiers(attackers, AttackerArchetype.Strong);
-            AssertThreeProgressiveTiers(attackers, AttackerArchetype.Flying);
+            AssertTenProgressiveTiers(attackers, AttackerArchetype.Basic);
+            AssertTenProgressiveTiers(attackers, AttackerArchetype.Fast);
+            AssertTenProgressiveTiers(attackers, AttackerArchetype.Strong);
+            AssertTenProgressiveTiers(attackers, AttackerArchetype.Flying);
 
-            for (var tier = 1; tier <= 3; tier++)
+            for (var tier = 1; tier <= 10; tier++)
             {
                 var basic = FindTier(attackers, AttackerArchetype.Basic, tier);
                 var fast = FindTier(attackers, AttackerArchetype.Fast, tier);
@@ -90,9 +92,70 @@ namespace TAD.Tests.Editor
 
             // Even if every animal reached the food untouched, spending the whole opening attacker
             // budget on the most food-efficient card cannot immediately deplete the store.
-            var maximumOpeningFoodPressure = attackerBank.StartingGold * attackers.Max(
-                definition => definition.MaximumHealth * definition.SendSize / definition.SendCost);
+            var maximumOpeningFoodPressure = attackers
+                .Where(definition => definition.SendCost <= attackerBank.StartingGold)
+                .Max(definition =>
+                    (attackerBank.StartingGold / definition.SendCost) *
+                    definition.MaximumHealth *
+                    definition.SendSize);
             Assert.That(maximumOpeningFoodPressure, Is.LessThan(foodStore.StartingFood));
+        }
+
+        [TestCase("Assets/Scenes/Levels/Level2.unity")]
+        [TestCase("Assets/Scenes/Levels/Level3.unity")]
+        [TestCase("Assets/Scenes/Levels/Level4.unity")]
+        public void AuthoredLevelWavesKeepResolvedProductionAttackerDefinitions(string scenePath)
+        {
+            var productionAttackers = new HashSet<AttackerDefinition>(LoadProductionAttackers());
+            var originalSetup = EditorSceneManager.GetSceneManagerSetup();
+            try
+            {
+                // Open the complete level by itself. Loading it additively beside the test runner's
+                // current scene can register two URP 2D global lights and turn a valid data check
+                // into an unrelated rendering error.
+                var scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
+                var waveControllers = scene.GetRootGameObjects()
+                    .SelectMany(root => root.GetComponentsInChildren<WaveController>(true))
+                    .ToArray();
+                Assert.That(waveControllers, Is.Not.Empty, scenePath + " needs a wave controller.");
+
+                var configuredGroups = 0;
+                foreach (var controller in waveControllers)
+                {
+                    var waves = new SerializedObject(controller).FindProperty("waves");
+                    Assert.That(waves, Is.Not.Null, controller.name + " has no serialized waves collection.");
+                    for (var waveIndex = 0; waveIndex < waves.arraySize; waveIndex++)
+                    {
+                        var groups = waves.GetArrayElementAtIndex(waveIndex)
+                            .FindPropertyRelative("attackerGroups");
+                        if (groups == null)
+                        {
+                            continue;
+                        }
+
+                        for (var groupIndex = 0; groupIndex < groups.arraySize; groupIndex++)
+                        {
+                            configuredGroups++;
+                            var definition = groups.GetArrayElementAtIndex(groupIndex)
+                                .FindPropertyRelative("attackerDefinition")
+                                .objectReferenceValue as AttackerDefinition;
+                            Assert.That(definition, Is.Not.Null,
+                                $"{scenePath} wave {waveIndex + 1}, group {groupIndex + 1} lost its attacker definition.");
+                            Assert.That(productionAttackers.Contains(definition), Is.True,
+                                $"{scenePath} wave {waveIndex + 1}, group {groupIndex + 1} must reference the production roster.");
+                        }
+                    }
+                }
+
+                Assert.That(configuredGroups, Is.GreaterThan(0), scenePath + " needs at least one authored attacker group.");
+            }
+            finally
+            {
+                if (originalSetup != null && originalSetup.Length > 0)
+                {
+                    EditorSceneManager.RestoreSceneManagerSetup(originalSetup);
+                }
+            }
         }
 
         private static List<AttackerDefinition> LoadProductionAttackers()
@@ -104,7 +167,7 @@ namespace TAD.Tests.Editor
                 .ToList();
         }
 
-        private static void AssertThreeProgressiveTiers(
+        private static void AssertTenProgressiveTiers(
             IReadOnlyCollection<AttackerDefinition> attackers,
             AttackerArchetype archetype)
         {
@@ -113,8 +176,8 @@ namespace TAD.Tests.Editor
                 .OrderBy(definition => definition.ChallengeTier)
                 .ToArray();
 
-            Assert.That(tiers, Has.Length.EqualTo(3), $"{archetype} needs exactly three challenge tiers.");
-            CollectionAssert.AreEqual(new[] { 1, 2, 3 }, tiers.Select(definition => definition.ChallengeTier));
+            Assert.That(tiers, Has.Length.EqualTo(10), $"{archetype} needs exactly ten challenge tiers.");
+            CollectionAssert.AreEqual(Enumerable.Range(1, 10), tiers.Select(definition => definition.ChallengeTier));
 
             for (var index = 1; index < tiers.Length; index++)
             {
@@ -130,31 +193,37 @@ namespace TAD.Tests.Editor
 
         private static void AssertAttackerEconomyAndExperience(IReadOnlyCollection<AttackerDefinition> attackers)
         {
-            var expectedValues = new Dictionary<string, (int Cost, int Income, int Experience)>
-            {
-                ["Chicken"] = (6, 1, 2),
-                ["Duck"] = (11, 2, 3),
-                ["Ram"] = (17, 4, 5),
-                ["Hare"] = (7, 1, 2),
-                ["Fox"] = (12, 2, 3),
-                ["Greyhound"] = (19, 4, 5),
-                ["Boar"] = (11, 2, 2),
-                ["Bull"] = (18, 4, 4),
-                ["Bison"] = (28, 6, 6),
-                ["Crow"] = (8, 1, 2),
-                ["Hawk"] = (14, 3, 4),
-                ["Eagle"] = (22, 5, 6)
-            };
+            var expectedIds = Enumerable.Range(1, 40)
+                .Select(value => value.ToString("D3"))
+                .ToArray();
+            CollectionAssert.AreEqual(
+                expectedIds,
+                attackers.Select(definition => definition.AttackerId).OrderBy(id => id));
+            Assert.That(attackers.Select(definition => definition.DisplayName).Distinct().Count(), Is.EqualTo(40));
 
-            Assert.That(attackers.Select(definition => definition.DisplayName),
-                Is.EquivalentTo(expectedValues.Keys));
+            var displaySizeBuckets = new[] { 0.75f, 1f, 1.25f, 1.5f, 1.75f };
+            var routeCacheSizes = new[] { 0.225f, 0.3f, 0.375f, 0.45f, 0.525f };
+            Assert.That(attackers.Select(definition => definition.Size).Distinct().Count(), Is.LessThanOrEqualTo(5));
+
             foreach (var definition in attackers)
             {
-                var expected = expectedValues[definition.DisplayName];
-                Assert.That(definition.SendCost, Is.EqualTo(expected.Cost), definition.DisplayName + " send cost");
-                Assert.That(definition.WaveIncome, Is.EqualTo(expected.Income), definition.DisplayName + " wave income");
-                Assert.That(definition.ExpGiven, Is.EqualTo(expected.Experience), definition.DisplayName + " experience reward");
+                Assert.That(definition.MaximumHealth, Is.GreaterThan(0f), definition.DisplayName + " health");
+                Assert.That(definition.MovementSpeed, Is.GreaterThan(0f), definition.DisplayName + " speed");
+                Assert.That(definition.SendCost, Is.GreaterThan(0), definition.DisplayName + " send cost");
+                Assert.That(definition.WaveIncome, Is.GreaterThan(0), definition.DisplayName + " wave income");
+                Assert.That(definition.ExpGiven, Is.GreaterThan(0), definition.DisplayName + " experience reward");
+                Assert.That(definition.KillGain, Is.GreaterThan(0), definition.DisplayName + " kill reward");
+                Assert.That(definition.SendSize, Is.GreaterThan(0), definition.DisplayName + " send size");
+                Assert.That(displaySizeBuckets.Any(size => Mathf.Approximately(size, definition.Size)), Is.True,
+                    definition.DisplayName + " must use a shared display-size bucket.");
+                Assert.That(routeCacheSizes.Any(size => Mathf.Approximately(size, definition.NavigationDiameter)), Is.True,
+                    definition.DisplayName + " must use a shared route-clearance bucket.");
             }
+
+            Assert.That(FindTier(attackers, AttackerArchetype.Fast, 10).DisplayName, Is.EqualTo("Ostrich"));
+            Assert.That(attackers.Any(definition =>
+                definition.DisplayName is "Crow" or "Hawk" or "Eagle"), Is.False,
+                "Wild birds were replaced by farm-raised flying animals in the playable roster.");
         }
 
         private static AttackerDefinition FindTier(

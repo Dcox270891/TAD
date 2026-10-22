@@ -26,8 +26,8 @@ Transform:
   m_GameObject: {fileID: 462166577827488004}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalPosition: {x: 0, y: -6.4999995, z: 0}
+  m_LocalScale: {x: 10, y: 10, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 8243539621307238435}
@@ -45,11 +45,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 639259968b46b91498688e7d13978b9b, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TAD.Defenders.FarmHandExperienceBar
   farmHand: {fileID: 5875131552720761380}
   backgroundRenderer: {fileID: 5447919735070491941}
   fillRenderer: {fileID: 1750800397183061585}
+  barFrameSprite: {fileID: 21300000, guid: e4be74bd281384744be9725a680c83e3, type: 3}
+  barFillSprite: {fileID: 21300000, guid: 51ee6e5d2a600cf4cbeaa3ba65e9470a, type: 3}
   valueText: {fileID: 6794631464438964861}
   backgroundColor: {r: 0, g: 0, b: 0, a: 1}
   fillColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
@@ -262,7 +264,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7c2418682a0a69b49b34ab8261f38612, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TAD.Defenders.FarmHand
   visual: {fileID: 8549633154260348502}
   visualController: {fileID: 7376161628610800881}
@@ -284,7 +286,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 180665ca1d68c8e458d9855617c80e47, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TAD.Pooling.PooledInstance
 --- !u!58 &7503971524455403412
 CircleCollider2D:
@@ -359,7 +361,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 29f7293ba5af5a947b813f8a3b3e7fb7, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TAD.Defenders.FarmHandVisualController
   bodyRenderer: {fileID: 8549633154260348502}
   hairRenderer: {fileID: 3594397879927783037}
@@ -383,6 +385,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: a0549787ed494334bbc86a56e16b1da8, type: 2}
   - {fileID: 11400000, guid: 11525543435da894f83e4cfa109a6f22, type: 2}
   aimTransitionDuration: 0.16
+  walkFrameDuration: 0.16
 --- !u!114 &2515115941203810951
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -395,6 +398,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 50518f42d018cd64a96ea33eef391ff7, type: 3}
   m_Name: FarmHand Upgrade Indicator
   m_EditorClassIdentifier: TAD.Runtime::TAD.Defenders.FarmHandUpgradeIndicator
+  authoredArrowSprite: {fileID: 21300000, guid: 8f17207939fe92247ba503e0225458f9, type: 3}
 --- !u!114 &8253082098564435016
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -405,11 +409,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ad4bde9ffe5d8e54e9447349495a5da0, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: TAD.Runtime::TAD.Defenders.FarmHandAudioController
   placementGreeting: {fileID: 8300000, guid: cc42504be2007fc4b96acccccf2f7ff1, type: 3}
   relocationLine: {fileID: 8300000, guid: e939567b6979e90428f24672153029cc, type: 3}
   levelUpLine: {fileID: 8300000, guid: 05ccac3790fd8504a9e0b04de862d59a, type: 3}
+  relocationFootstep: {fileID: 8300000, guid: 4b39faa117b4a1946b73ee8f9ac140ac, type: 3}
+  upgradeReadyCue: {fileID: 8300000, guid: d373b928ec04f7f4fa64d67437d8f716, type: 3}
+  upgradeSelectedCue: {fileID: 8300000, guid: 6bc06db87da394d46b6469fcf13b1754, type: 3}
+  footstepInterval: 0.36
 --- !u!114 &6370860902805379013
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -420,7 +428,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0f4d56c997c5af846bae7ca6a641173d, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: TAD.Runtime::TAD.Defenders.FarmHandAppearanceRandomizer
   appearances:
   - {fileID: 11400000, guid: 888726ab98066fa43a467ea37c5eaf73, type: 2}
@@ -580,7 +588,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fc54a1a2c17c42e4da0991f4ab83a25b, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TAD.Defenders.DefenderRangeVisual
   visual: {fileID: 1983049312015617948}
   worldRadius: 0
@@ -705,8 +713,8 @@ Transform:
   m_GameObject: {fileID: 4064673489167612286}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalPosition: {x: -0.39499998, y: 0, z: -0.01}
+  m_LocalScale: {x: 0, y: 18.432, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 6056615579818310859}
@@ -719,7 +727,7 @@ SpriteRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4064673489167612286}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
@@ -758,17 +766,17 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 4
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Sprite: {fileID: 21300000, guid: 51ee6e5d2a600cf4cbeaa3ba65e9470a, type: 3}
+  m_Color: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 0.015625, y: 0.00390625}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 0
+  m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
   m_BlendShapeWeights: []
 --- !u!1 &4616493500091287957
@@ -798,7 +806,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 3.394475, y: 1.4702213, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 6056615579818310859}
@@ -850,17 +858,17 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 3
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: e4be74bd281384744be9725a680c83e3, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 0.26513672, y: 0.08842206}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 0
+  m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
   m_BlendShapeWeights: []
 --- !u!1 &5166162060153523360
@@ -982,7 +990,7 @@ Transform:
   m_GameObject: {fileID: 6799905215728226438}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: -0.02}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1034,7 +1042,7 @@ MeshRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 5
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!102 &6794631464438964861

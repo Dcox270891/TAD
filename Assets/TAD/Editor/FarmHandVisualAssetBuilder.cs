@@ -31,6 +31,7 @@ namespace TAD.Editor
 
         private const string ArtDirectory = "Assets/TAD/Art/Farmhands/Directional";
         private const string ProjectileArtDirectory = "Assets/TAD/Art/Farmhands/Projectiles";
+        private const string IndicatorArtPath = "Assets/TAD/Art/Farmhands/Indicators/FarmHandUpgradeReady.png";
         private const string UpgradeProjectileArtPath = ProjectileArtDirectory + "/DefenderUpgradeProjectiles.png";
         private const string VisualDataDirectory = "Assets/TAD/Data/Defenders/Visuals";
         private const string AppearanceDataDirectory = VisualDataDirectory + "/Appearances";
@@ -260,7 +261,8 @@ namespace TAD.Editor
 
             var projectileSprites = ImportProjectileSheet();
             var upgradeProjectileSprites = ImportUpgradeProjectileSheet();
-            UpdateFarmHandPrefab(defaultAppearance, appearances, weaponVisuals);
+            var upgradeIndicatorSprite = ImportUpgradeIndicatorSprite();
+            UpdateFarmHandPrefab(defaultAppearance, appearances, weaponVisuals, upgradeIndicatorSprite);
             UpdateProjectilePrefabs(projectileSprites);
             UpdateUpgradeProjectilePrefabs(upgradeProjectileSprites);
 
@@ -284,6 +286,7 @@ namespace TAD.Editor
             var requiredPaths = new List<string>
             {
                 ProjectileArtDirectory + "/FarmhandProjectiles.png",
+                IndicatorArtPath,
                 UpgradeProjectileArtPath
             };
 
@@ -367,6 +370,40 @@ namespace TAD.Editor
                 specs,
                 ProjectileColumns,
                 1);
+        }
+
+        /// <summary>
+        /// Imports the single polished upgrade-ready badge separately from the atlas sheets. It is
+        /// kept as a Sprite asset so the farmhand indicator can use it without loading an atlas at
+        /// runtime, while the component still carries a procedural fallback for legacy test setups.
+        /// </summary>
+        private static Sprite ImportUpgradeIndicatorSprite()
+        {
+            AssetDatabase.ImportAsset(IndicatorArtPath, ImportAssetOptions.ForceUpdate);
+            var importer = AssetImporter.GetAtPath(IndicatorArtPath) as TextureImporter;
+            if (importer == null)
+            {
+                throw new InvalidOperationException($"{IndicatorArtPath} is not a TextureImporter.");
+            }
+
+            importer.textureType = TextureImporterType.Sprite;
+            importer.spriteImportMode = SpriteImportMode.Single;
+            importer.spritePixelsPerUnit = 128;
+            importer.mipmapEnabled = false;
+            importer.filterMode = FilterMode.Bilinear;
+            importer.alphaIsTransparency = true;
+            importer.textureCompression = TextureImporterCompression.Compressed;
+            importer.compressionQuality = 80;
+            importer.maxTextureSize = 1024;
+            importer.SaveAndReimport();
+
+            var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(IndicatorArtPath);
+            if (sprite == null)
+            {
+                throw new InvalidOperationException($"Unable to import upgrade indicator sprite at {IndicatorArtPath}.");
+            }
+
+            return sprite;
         }
 
         private static Dictionary<string, Sprite> ImportUpgradeProjectileSheet()
@@ -647,7 +684,8 @@ namespace TAD.Editor
         private static void UpdateFarmHandPrefab(
             FarmHandAppearanceDefinition defaultAppearance,
             IReadOnlyList<FarmHandAppearanceDefinition> appearances,
-            IReadOnlyList<FarmHandWeaponVisualDefinition> weaponVisuals)
+            IReadOnlyList<FarmHandWeaponVisualDefinition> weaponVisuals,
+            Sprite upgradeIndicatorSprite)
         {
             var root = PrefabUtility.LoadPrefabContents(FarmHandPrefabPath);
             try
@@ -710,10 +748,21 @@ namespace TAD.Editor
                 AssignObjectReferenceArray(randomizerSerialized.FindProperty("appearances"), appearances);
                 AssignStringArray(randomizerSerialized.FindProperty("displayNames"), FarmHandNames);
                 randomizerSerialized.ApplyModifiedPropertiesWithoutUndo();
+
+                var upgradeIndicator = root.GetComponent<FarmHandUpgradeIndicator>();
+                if (upgradeIndicator == null)
+                {
+                    upgradeIndicator = root.AddComponent<FarmHandUpgradeIndicator>();
+                }
+
+                var indicatorSerialized = new SerializedObject(upgradeIndicator);
+                indicatorSerialized.FindProperty("authoredArrowSprite").objectReferenceValue = upgradeIndicatorSprite;
+                indicatorSerialized.ApplyModifiedPropertiesWithoutUndo();
                 EditorUtility.SetDirty(bodyRenderer);
                 EditorUtility.SetDirty(farmHand);
                 EditorUtility.SetDirty(controller);
                 EditorUtility.SetDirty(randomizer);
+                EditorUtility.SetDirty(upgradeIndicator);
                 PrefabUtility.SaveAsPrefabAsset(root, FarmHandPrefabPath);
             }
             finally

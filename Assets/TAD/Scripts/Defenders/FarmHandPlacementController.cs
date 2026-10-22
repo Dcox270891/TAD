@@ -693,6 +693,14 @@ namespace TAD.Defenders
                 return false;
             }
 
+            // The shared light-wood surround reserves the outer screen for UI. A camera ray can
+            // still be projected from those bands, so explicitly reject it before it becomes a
+            // world position for placement, relocation, or defender selection.
+            if (!mainCamera.pixelRect.Contains(screenPosition))
+            {
+                return false;
+            }
+
             var mapPlane = new Plane(Vector3.forward, routeMapper.transform.position);
             var ray = mainCamera.ScreenPointToRay(screenPosition);
             if (!mapPlane.Raycast(ray, out var distance))
@@ -837,6 +845,16 @@ namespace TAD.Defenders
                 : 0;
         }
 
+        /// <summary>
+        /// Supplies the bank for this level's defender purchase and relocation transactions.
+        /// Scene bootstraps and tests can bind it explicitly when more than one level is loaded;
+        /// ordinary single-level scenes retain the existing automatic fallback.
+        /// </summary>
+        public void BindDefenderBank(ResourceBank bank)
+        {
+            defenderBank = bank != null && bank.BankSide == BankSide.Defender ? bank : null;
+        }
+
         private ResourceBank ResolveDefenderBank()
         {
             if (defenderBank != null && defenderBank.BankSide == BankSide.Defender)
@@ -977,6 +995,11 @@ namespace TAD.Defenders
             }
 
             spawnedFarmHandObject.TryGetComponent(out placedFarmHand);
+
+            // Keep the placed defender on the precise account which funded it. This matters for
+            // upgrades, kill rewards, and relocation when a loading transition briefly has more
+            // than one scene in memory.
+            placedFarmHand?.BindDefenderBank(bank);
 
             // The affordability check above keeps this failure path exceptional, but returning the
             // object protects either player or AI from a charge if the bank changes this frame.

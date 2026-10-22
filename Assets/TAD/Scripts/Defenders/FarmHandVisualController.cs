@@ -28,10 +28,18 @@ namespace TAD.Defenders
         [SerializeField, Min(0.01f)]
         [Tooltip("How long the farmhand briefly shifts into a newly selected aim pose.")]
         private float aimTransitionDuration = 0.08f;
+        [SerializeField, Min(0.01f)]
+        [Tooltip("Fallback cadence for the two-frame walking cycle when an appearance has no authored cadence.")]
+        private float walkFrameDuration = 0.16f;
 
         private FarmHand farmHand;
         private float aimElapsed;
         private float firingElapsed;
+        private float walkElapsed;
+        // Captured by the FarmHand relocation event rather than the first presentation frame.
+        // This keeps the walk cadence tied to gameplay time even when a busy frame delays
+        // LateUpdate (for example during a scene transition or a combined Play Mode suite).
+        private float relocationWalkStartedAt = -1f;
         private int directionIndex;
         private bool isFiring;
         private bool isAiming;
@@ -72,12 +80,30 @@ namespace TAD.Defenders
                 directionIndex = ToDirectionIndex(facing);
             }
 
-            if (isAiming)
+            if (farmHand.IsRelocating)
             {
-                aimElapsed += Time.deltaTime;
-                if (aimElapsed >= aimTransitionDuration)
+                // Relocation is the only time a farmhand walks. This keeps a calm idle pose
+                // while a defender is merely tracking an animal inside its attack range.
+                if (relocationWalkStartedAt < 0f)
                 {
-                    isAiming = false;
+                    relocationWalkStartedAt = Time.time;
+                }
+
+                walkElapsed = Mathf.Max(0f, Time.time - relocationWalkStartedAt);
+                isAiming = false;
+                aimElapsed = 0f;
+            }
+            else
+            {
+                walkElapsed = 0f;
+                relocationWalkStartedAt = -1f;
+                if (isAiming)
+                {
+                    aimElapsed += Time.deltaTime;
+                    if (aimElapsed >= aimTransitionDuration)
+                    {
+                        isAiming = false;
+                    }
                 }
             }
 
@@ -192,6 +218,8 @@ namespace TAD.Defenders
             isAiming = false;
             aimElapsed = 0f;
             firingElapsed = 0f;
+            walkElapsed = 0f;
+            relocationWalkStartedAt = -1f;
         }
 
         private void Subscribe()
@@ -203,6 +231,7 @@ namespace TAD.Defenders
 
             farmHand.Fired += HandleFarmHandFired;
             farmHand.WeaponChanged += HandleWeaponChanged;
+            farmHand.RelocationStarted += HandleRelocationStarted;
             isSubscribed = true;
         }
 
@@ -217,6 +246,7 @@ namespace TAD.Defenders
             {
                 farmHand.Fired -= HandleFarmHandFired;
                 farmHand.WeaponChanged -= HandleWeaponChanged;
+                farmHand.RelocationStarted -= HandleRelocationStarted;
             }
 
             isSubscribed = false;
@@ -242,6 +272,19 @@ namespace TAD.Defenders
             isFiring = false;
             firingElapsed = 0f;
             aimElapsed = 0f;
+            walkElapsed = 0f;
+            isAiming = false;
+            RefreshAllLayers();
+        }
+
+        private void HandleRelocationStarted()
+        {
+            // The FarmHand raises this after it has selected its first route waypoint and facing
+            // direction. Start the walk clock here, rather than waiting for the next visual frame,
+            // so an authored movement pose cannot lag behind a valid relocation.
+            relocationWalkStartedAt = Time.time;
+            walkElapsed = 0f;
+            aimElapsed = 0f;
             isAiming = false;
             RefreshAllLayers();
         }
@@ -251,6 +294,8 @@ namespace TAD.Defenders
             aimElapsed = 0f;
             isAiming = false;
             firingElapsed = 0f;
+            walkElapsed = 0f;
+            relocationWalkStartedAt = -1f;
             isFiring = false;
             directionIndex = farmHand != null && farmHand.FacingDirection.sqrMagnitude > DirectionThreshold
                 ? ToDirectionIndex(farmHand.FacingDirection)
@@ -266,7 +311,7 @@ namespace TAD.Defenders
 
         private void RefreshBodyAndCosmetics()
         {
-            var frameIndex = GetAimFrameIndex();
+            var frameIndex = GetMovementFrameIndex();
             var bodySpriteChanged = SetSprite(bodyRenderer, appearance != null && appearance.Body != null
                 ? appearance.Body.GetMovementSprite(directionIndex, frameIndex)
                 : bodyRenderer != null ? bodyRenderer.sprite : null);
@@ -292,7 +337,7 @@ namespace TAD.Defenders
 
         private Sprite GetBodySprite()
         {
-            var frameIndex = GetAimFrameIndex();
+            var frameIndex = GetMovementFrameIndex();
             return appearance != null && appearance.Body != null
                 ? appearance.Body.GetMovementSprite(directionIndex, frameIndex)
                 : bodyRenderer != null ? bodyRenderer.sprite : null;
@@ -301,14 +346,14 @@ namespace TAD.Defenders
         private Sprite GetHairSprite()
         {
             return appearance != null && appearance.Hair != null
-                ? appearance.Hair.GetMovementSprite(directionIndex, GetAimFrameIndex())
+                ? appearance.Hair.GetMovementSprite(directionIndex, GetMovementFrameIndex())
                 : null;
         }
 
         private Sprite GetOutfitSprite()
         {
             return appearance != null && appearance.Outfit != null
-                ? appearance.Outfit.GetMovementSprite(directionIndex, GetAimFrameIndex())
+                ? appearance.Outfit.GetMovementSprite(directionIndex, GetMovementFrameIndex())
                 : null;
         }
 
@@ -316,12 +361,26 @@ namespace TAD.Defenders
         {
             var weaponVisual = GetWeaponVisual(farmHand != null ? farmHand.WeaponDefinition : null);
             return weaponVisual != null
-                ? weaponVisual.GetMovementSprite(directionIndex, GetAimFrameIndex())
+                ? weaponVisual.GetMovementSprite(directionIndex, GetMovementFrameIndex())
                 : null;
         }
 
-        private int GetAimFrameIndex()
+        /// <summary>
+        /// Chooses a shared frame for every modular layer, so body, hair, attire, and the held
+        /// weapon always take the same step. Firing and reload artwork supersede the held-weapon
+        /// frame later in <see cref="LateUpdate"/>.
+        /// </summary>
+        private int GetMovementFrameIndex()
         {
+            if (farmHand != null && farmHand.IsRelocating)
+            {
+                var cadence = appearance != null && appearance.Body != null
+                    ? appearance.Body.MovementFrameDuration
+                    : walkFrameDuration;
+                return Mathf.FloorToInt(walkElapsed / Mathf.Max(0.01f, cadence)) %
+                       FarmHandDirectionalLayerDefinition.MovementFrameCount;
+            }
+
             return isAiming ? FarmHandDirectionalLayerDefinition.MovementFrameCount - 1 : 0;
         }
 
@@ -340,10 +399,8 @@ namespace TAD.Defenders
                 }
             }
 
-            // Final evolutions inherit the proven directional presentation of their exact level-five
-            // parent until bespoke artwork is authored. This keeps a newly selected Rake, Shovel,
-            // Heavy Roll, Bounce, Semi Automatic, Pistol, Poison Trapper, or Slow Trapper visible
-            // and firing immediately rather than hiding the held-weapon layer.
+            // A future weapon can safely inherit its parent presentation until its own directional
+            // sheet has been authored; the current final evolutions each have dedicated visuals.
             if (weapon.RequiredPreviousWeapon != null && weapon.RequiredPreviousWeapon != weapon)
             {
                 return GetWeaponVisual(weapon.RequiredPreviousWeapon);
@@ -443,6 +500,7 @@ namespace TAD.Defenders
         private void OnValidate()
         {
             aimTransitionDuration = Mathf.Max(0.01f, aimTransitionDuration);
+            walkFrameDuration = Mathf.Max(0.01f, walkFrameDuration);
             ResolveReferences();
         }
 #endif

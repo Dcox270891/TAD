@@ -18,7 +18,8 @@ namespace TAD.UI
         private const float BarBottomInset = 34f;
         private const float BarHeight = 232f;
         private const float StarBadgeWidth = 188f;
-        private const float BarFrameInset = 7f;
+        private const float BarHorizontalFrameInset = 26f;
+        private const float BarVerticalFrameInset = 18f;
 
         private static readonly Color InkBrown = new(0.24f, 0.105f, 0.03f, 1f);
         private static readonly Color Parchment = new(0.94f, 0.86f, 0.66f, 0.98f);
@@ -43,6 +44,10 @@ namespace TAD.UI
         private CombatRatingStarGraphic playerLevelStarGraphic;
         private Font font;
         private Sprite outlineSprite;
+        private Sprite buttonSprite;
+        private Sprite cardSprite;
+        private Sprite statusBarFrameSprite;
+        private Sprite statusBarFillSprite;
 
         private PlayerMatchExperienceReward reward;
         private int displayedLevel;
@@ -205,7 +210,12 @@ namespace TAD.UI
             }
 
             font = ResolveFont(buttonTemplate);
-            outlineSprite = GetComponent<FarmUiSkin>()?.ThinWoodOutlineSprite;
+            var skin = GetComponent<FarmUiSkin>() ?? GetComponentInParent<FarmUiSkin>();
+            outlineSprite = skin?.ThinWoodOutlineSprite;
+            buttonSprite = skin?.WoodPlankButtonSprite;
+            cardSprite = skin?.ParchmentCardSprite;
+            statusBarFrameSprite = skin?.StatusBarFrameSprite;
+            statusBarFillSprite = skin?.StatusBarFillSprite;
             levelUpButtonTemplate = buttonTemplate;
             BuildResultsBar(buttonTemplate);
             BuildLevelUpModal(buttonTemplate);
@@ -232,9 +242,17 @@ namespace TAD.UI
                 typeof(UnityEngine.UI.Image),
                 typeof(UnityEngine.UI.LayoutElement));
             var summaryImage = summaryObject.GetComponent<UnityEngine.UI.Image>();
-            summaryImage.color = Parchment;
+            summaryImage.sprite = cardSprite;
+            summaryImage.type = cardSprite != null
+                ? UnityEngine.UI.Image.Type.Sliced
+                : UnityEngine.UI.Image.Type.Simple;
+            summaryImage.fillCenter = true;
+            summaryImage.color = cardSprite != null ? Color.white : Parchment;
             summaryImage.raycastTarget = false;
-            FarmUiThinWoodOutline.EnsureFrame(summaryImage, outlineSprite);
+            if (cardSprite == null)
+            {
+                FarmUiThinWoodOutline.EnsureFrame(summaryImage, outlineSprite);
+            }
             ConfigureSummaryLayout(summaryObject.GetComponent<RectTransform>(), summaryParent);
 
             earnedText = CreateText(
@@ -277,11 +295,17 @@ namespace TAD.UI
             SetStretch(barRect, Vector2.zero, Vector2.one,
                 new Vector2(0f, 0f), new Vector2(-(StarBadgeWidth + 22f), 0f));
             var barImage = barObject.GetComponent<UnityEngine.UI.Image>();
-            barImage.sprite = null;
-            barImage.type = UnityEngine.UI.Image.Type.Simple;
-            barImage.color = Color.black;
+            barImage.sprite = statusBarFrameSprite;
+            barImage.type = statusBarFrameSprite != null
+                ? UnityEngine.UI.Image.Type.Sliced
+                : UnityEngine.UI.Image.Type.Simple;
+            barImage.fillCenter = true;
+            barImage.color = statusBarFrameSprite != null ? Color.white : Color.black;
             barImage.raycastTarget = false;
-            FarmUiThinWoodOutline.EnsureFrame(barImage, outlineSprite);
+            if (statusBarFrameSprite == null)
+            {
+                FarmUiThinWoodOutline.EnsureFrame(barImage, outlineSprite);
+            }
 
             var fillObject = CreateObject(
                 "PlayerExperienceFill",
@@ -290,7 +314,7 @@ namespace TAD.UI
                 typeof(CanvasRenderer),
                 typeof(UnityEngine.UI.Image));
             progressFill = fillObject.GetComponent<UnityEngine.UI.Image>();
-            progressFill.sprite = GetFallbackFillSprite();
+            progressFill.sprite = statusBarFillSprite != null ? statusBarFillSprite : GetFallbackFillSprite();
             progressFill.type = UnityEngine.UI.Image.Type.Filled;
             progressFill.fillMethod = UnityEngine.UI.Image.FillMethod.Horizontal;
             progressFill.fillOrigin = (int)UnityEngine.UI.Image.OriginHorizontal.Left;
@@ -299,7 +323,8 @@ namespace TAD.UI
             progressFill.color = new Color(0.94f, 0.73f, 0.16f, 1f);
             progressFill.raycastTarget = false;
             SetStretch(progressFill.rectTransform, Vector2.zero, Vector2.one,
-                Vector2.one * BarFrameInset, Vector2.one * -BarFrameInset);
+                new Vector2(BarHorizontalFrameInset, BarVerticalFrameInset),
+                new Vector2(-BarHorizontalFrameInset, -BarVerticalFrameInset));
 
             progressText = CreateText(
                 "PlayerExperienceProgressText",
@@ -428,9 +453,17 @@ namespace TAD.UI
             cardRect.pivot = new Vector2(0.5f, 0.5f);
             cardRect.sizeDelta = new Vector2(680f, 380f);
             var cardImage = cardObject.GetComponent<UnityEngine.UI.Image>();
-            cardImage.color = new Color(0.94f, 0.86f, 0.66f, 1f);
+            cardImage.sprite = cardSprite;
+            cardImage.type = cardSprite != null
+                ? UnityEngine.UI.Image.Type.Sliced
+                : UnityEngine.UI.Image.Type.Simple;
+            cardImage.fillCenter = true;
+            cardImage.color = cardSprite != null ? Color.white : new Color(0.94f, 0.86f, 0.66f, 1f);
             cardImage.raycastTarget = true;
-            FarmUiThinWoodOutline.EnsureFrame(cardImage, outlineSprite);
+            if (cardSprite == null)
+            {
+                FarmUiThinWoodOutline.EnsureFrame(cardImage, outlineSprite);
+            }
 
             levelUpTitleText = CreateText(
                 "TitleText",
@@ -756,7 +789,7 @@ namespace TAD.UI
             text.fontStyle = fontStyle;
             text.alignment = alignment;
             text.color = color;
-            text.horizontalOverflow = HorizontalWrapMode.Overflow;
+            text.horizontalOverflow = HorizontalWrapMode.Wrap;
             text.verticalOverflow = VerticalWrapMode.Truncate;
             text.resizeTextForBestFit = true;
             text.resizeTextMinSize = 12;
@@ -813,11 +846,19 @@ namespace TAD.UI
                 typeof(UnityEngine.UI.Image),
                 typeof(UnityEngine.UI.Button));
             var image = fallback.GetComponent<UnityEngine.UI.Image>();
-            image.color = new Color(0.94f, 0.86f, 0.66f, 1f);
+            image.sprite = buttonSprite;
+            image.type = buttonSprite != null
+                ? UnityEngine.UI.Image.Type.Sliced
+                : UnityEngine.UI.Image.Type.Simple;
+            image.fillCenter = true;
+            image.color = buttonSprite != null ? Color.white : new Color(0.94f, 0.86f, 0.66f, 1f);
             var buttonFallback = fallback.GetComponent<UnityEngine.UI.Button>();
             buttonFallback.targetGraphic = image;
             fallback.GetComponent<RectTransform>().sizeDelta = fallbackSize;
-            FarmUiThinWoodOutline.EnsureFrame(image, outlineSprite);
+            if (buttonSprite == null)
+            {
+                FarmUiThinWoodOutline.EnsureFrame(image, outlineSprite);
+            }
             var labelText = CreateText(
                 "Label",
                 fallback.transform,

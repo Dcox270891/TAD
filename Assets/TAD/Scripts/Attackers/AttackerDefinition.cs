@@ -24,17 +24,42 @@ namespace TAD.Attackers
 
         [Header("Visuals")]
         [SerializeField] private AttackerVisualDefinition visualDefinition;
+        [SerializeField, Min(0f)]
+        [Tooltip("Optional world-space route diameter override. Leave at zero to use the standardized prefab footprint derived from Size.")]
+        private float navigationDiameterOverride;
 
         [Header("Audio")]
         [SerializeField]
-        [Tooltip("Played once after this animal has successfully entered a valid wave route.")]
+        [Tooltip("The animal cry reused when this attacker joins a cue, leaves the spawn point, and reaches the Food Store.")]
         private AudioClip entrySound;
+        [SerializeField]
+        [Tooltip("Played once when this attacker is defeated, before its pooled death animation begins.")]
+        private AudioClip deathSound;
 
         public string AttackerId => attackerId;
         public string DisplayName => displayName;
         public float MaximumHealth => maximumHealth;
         public float MovementSpeed => movementSpeed;
         public float Size => size;
+        /// <summary>
+        /// The world-space diameter needed to keep this attacker's visible hit outline on the farm
+        /// grass and clear of walls. <see cref="Size"/> remains the player-facing display scale;
+        /// the standard multiplier matches the generated attacker prefab/collider scale.
+        /// </summary>
+        public float NavigationDiameter
+        {
+            get
+            {
+                if (cachedNavigationDiameter < 0f)
+                {
+                    cachedNavigationDiameter = navigationDiameterOverride > 0f
+                        ? navigationDiameterOverride
+                        : Mathf.Max(0.01f, size * DefaultNavigationDiameterPerDisplaySize);
+                }
+
+                return cachedNavigationDiameter;
+            }
+        }
         public int SendCost => sendCost;
         public int WaveIncome => waveIncome;
         public int ExpGiven => expGiven;
@@ -47,7 +72,16 @@ namespace TAD.Attackers
         public AttackerTraversalProfile TraversalProfile => traversalProfile;
         public bool IgnoresHalfCover => traversalProfile == AttackerTraversalProfile.IgnoresHalfCover;
         public AttackerVisualDefinition VisualDefinition => visualDefinition;
+        /// <summary>Reusable animal vocalisation for all successful gameplay arrival/entry cues.</summary>
+        public AudioClip AnimalCrySound => entrySound;
+        /// <summary>Legacy name retained for existing scene and gameplay integrations.</summary>
         public AudioClip EntrySound => entrySound;
+        public AudioClip DeathSound => deathSound;
+
+        // Root attacker prefabs are uniformly authored at 0.1 scale and the visual controller
+        // renders them at 4 x Size. The resulting conservative navigation diameter is 0.3 x Size.
+        private const float DefaultNavigationDiameterPerDisplaySize = 0.3f;
+        [System.NonSerialized] private float cachedNavigationDiameter = -1f;
 
 #if UNITY_EDITOR
         private void OnValidate()
@@ -61,6 +95,8 @@ namespace TAD.Attackers
             killGain = Mathf.Max(0, killGain);
             sendSize = Mathf.Max(0, sendSize);
             challengeTier = Mathf.Clamp(challengeTier, 1, 10);
+            navigationDiameterOverride = Mathf.Max(0f, navigationDiameterOverride);
+            cachedNavigationDiameter = -1f;
         }
 #endif
     }

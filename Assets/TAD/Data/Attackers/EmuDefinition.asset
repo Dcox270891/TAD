@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 694892edc0a468b448e49591a6175013, type: 3}
+  m_Name: EmuDefinition
+  m_EditorClassIdentifier: TAD.Runtime::TAD.Attackers.AttackerDefinition
+  attackerId: 023
+  displayName: Emu
+  maximumHealth: 16.5
+  movementSpeed: 5
+  size: 1.25
+  sendCost: 49
+  waveIncome: 14
+  expGiven: 15
+  killGain: 9
+  sendSize: 6
+  archetype: 1
+  challengeTier: 7
+  traversalProfile: 0
+  visualDefinition: {fileID: 11400000, guid: 7137faafe47e40b48a8e752e56007356, type: 2}
+  entrySound: {fileID: 8300000, guid: ac5b16516ff88cd468d79a9e761fb220, type: 3}
+  deathSound: {fileID: 8300000, guid: cebc1d62146bfbb47bc759ccf089fc1c, type: 3}

@@ -17,6 +17,13 @@ namespace TAD.Progression
 
         private static PlayerSettingsService instance;
 
+#if UNITY_EDITOR
+        // PlayMode regression fixtures must not inherit progress from the developer's saved
+        // profile.  This is intentionally editor-only and never writes through to PlayerPrefs;
+        // gameplay builds always read the persistent profile below.
+        private static PlayerProfileData editorTestProfileOverride;
+#endif
+
         private PlayerProfileData profile;
         private long energyStopwatchAnchorMilliseconds;
         private long nextEnergyAnchorPersistenceMilliseconds;
@@ -47,9 +54,33 @@ namespace TAD.Progression
             get
             {
                 EnsureProfile();
+#if UNITY_EDITOR
+                if (editorTestProfileOverride != null)
+                {
+                    return editorTestProfileOverride;
+                }
+#endif
                 return profile;
             }
         }
+
+#if UNITY_EDITOR
+        /// <summary>
+        /// Temporarily supplies deterministic account data to editor PlayMode tests without
+        /// changing a developer's saved profile. Call <see cref="ClearEditorTestProfileOverride"/>
+        /// in fixture teardown.
+        /// </summary>
+        public static void SetEditorTestProfileOverride(PlayerProfileData testProfile)
+        {
+            editorTestProfileOverride = testProfile;
+        }
+
+        /// <summary>Stops using the editor-only test profile override.</summary>
+        public static void ClearEditorTestProfileOverride()
+        {
+            editorTestProfileOverride = null;
+        }
+#endif
 
         public bool HasAttackerHealthDisplayUpgrade => PlayerUpgradeProgression.IsGeneralUpgradeUnlocked(
             Profile,

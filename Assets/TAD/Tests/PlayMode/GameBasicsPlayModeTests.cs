@@ -9,6 +9,7 @@ using TAD.Environment;
 using TAD.Match;
 using TAD.Navigation;
 using TAD.Pooling;
+using TAD.Progression;
 using TAD.UI;
 using TAD.Waves;
 using UnityEngine;
@@ -31,7 +32,11 @@ namespace TAD.Tests.PlayMode
             originalMaximumDeltaTime = Time.maximumDeltaTime;
             Time.timeScale = 1f;
             MatchRoleSelection.Select(PlayerRole.Defender);
-            yield return GameBasicsTestSupport.DestroyAllTestObjects();
+            yield return GameBasicsTestSupport.ResetToIsolatedTestScene();
+            // The production profile is persistent, so override it with a clean in-memory one.
+            // This keeps progression multipliers out of deterministic combat expectations.
+            PlayerSettingsService.SetEditorTestProfileOverride(new PlayerProfileData());
+            yield return null;
         }
 
         [UnityTearDown]
@@ -40,7 +45,8 @@ namespace TAD.Tests.PlayMode
             Time.maximumDeltaTime = originalMaximumDeltaTime;
             Time.timeScale = 1f;
             MatchRoleSelection.Select(PlayerRole.Defender);
-            yield return GameBasicsTestSupport.DestroyAllTestObjects();
+            PlayerSettingsService.ClearEditorTestProfileOverride();
+            yield return GameBasicsTestSupport.ResetToIsolatedTestScene();
         }
 
         [UnityTest]
@@ -470,7 +476,7 @@ namespace TAD.Tests.PlayMode
 
             var attackerDefinitions = new List<AttackerDefinition>();
             pool.CopyAvailableAttackerDefinitions(attackerDefinitions);
-            Assert.That(attackerDefinitions, Has.Count.EqualTo(12),
+            Assert.That(attackerDefinitions, Has.Count.EqualTo(40),
                 "The complete authored attacker roster must be available from the reusable Spawn Pool.");
 
             AttackerDefinition ramDefinition = null;
@@ -558,7 +564,7 @@ namespace TAD.Tests.PlayMode
         public IEnumerator TerrainSpeedModifiers_AffectGroundAttackersButNotFlyingAttackers()
         {
             var chicken = Resources.Load<AttackerDefinition>("TADTests/ChickenDefinition");
-            var eagle = Resources.Load<AttackerDefinition>("TADTests/EagleDefinition");
+            var eagle = Resources.Load<AttackerDefinition>("TADTests/PigeonDefinition");
             Assert.That(chicken, Is.Not.Null);
             Assert.That(eagle, Is.Not.Null);
 
@@ -629,7 +635,7 @@ namespace TAD.Tests.PlayMode
         public IEnumerator FarmRouteMapper_UsesBeneficialIceForGroundButKeepsFlyingTerrainNeutral()
         {
             var chicken = Resources.Load<AttackerDefinition>("TADTests/ChickenDefinition");
-            var eagle = Resources.Load<AttackerDefinition>("TADTests/EagleDefinition");
+            var eagle = Resources.Load<AttackerDefinition>("TADTests/PigeonDefinition");
             Assert.That(chicken, Is.Not.Null);
             Assert.That(eagle, Is.Not.Null);
 
@@ -952,11 +958,11 @@ namespace TAD.Tests.PlayMode
         public IEnumerator DefenderTargeting_PrioritizesLiveValuesAndEntryOrder()
         {
             var bull = Resources.Load<AttackerDefinition>("TADTests/BullDefinition");
-            var greyhound = Resources.Load<AttackerDefinition>("TADTests/GreyhoundDefinition");
-            var eagle = Resources.Load<AttackerDefinition>("TADTests/EagleDefinition");
+            var rabbit = Resources.Load<AttackerDefinition>("TADTests/RabbitDefinition");
+            var pigeon = Resources.Load<AttackerDefinition>("TADTests/PigeonDefinition");
             Assert.That(bull, Is.Not.Null);
-            Assert.That(greyhound, Is.Not.Null);
-            Assert.That(eagle, Is.Not.Null);
+            Assert.That(rabbit, Is.Not.Null);
+            Assert.That(pigeon, Is.Not.Null);
 
             var sensorWeapon = ScriptableObject.CreateInstance<WeaponDefinition>();
             var farmHand = GameBasicsTestSupport.CreateFarmHand();
@@ -964,18 +970,18 @@ namespace TAD.Tests.PlayMode
 
             var firstBull = GameBasicsTestSupport.CreateAttacker(bull);
             var secondBull = GameBasicsTestSupport.CreateAttacker(bull);
-            var firstGreyhound = GameBasicsTestSupport.CreateAttacker(greyhound);
-            var secondGreyhound = GameBasicsTestSupport.CreateAttacker(greyhound);
-            var firstEagle = GameBasicsTestSupport.CreateAttacker(eagle);
-            var secondEagle = GameBasicsTestSupport.CreateAttacker(eagle);
+            var firstRabbit = GameBasicsTestSupport.CreateAttacker(rabbit);
+            var secondRabbit = GameBasicsTestSupport.CreateAttacker(rabbit);
+            var firstPigeon = GameBasicsTestSupport.CreateAttacker(pigeon);
+            var secondPigeon = GameBasicsTestSupport.CreateAttacker(pigeon);
             var attackers = new[]
             {
                 firstBull,
                 secondBull,
-                firstGreyhound,
-                secondGreyhound,
-                firstEagle,
-                secondEagle
+                firstRabbit,
+                secondRabbit,
+                firstPigeon,
+                secondPigeon
             };
 
             for (var index = 0; index < attackers.Length; index++)
@@ -1011,7 +1017,7 @@ namespace TAD.Tests.PlayMode
             Assert.That(farmHand.CurrentTarget, Is.EqualTo(secondBull));
 
             farmHand.SetTargetingMode(DefenderTargetingMode.Fastest);
-            Assert.That(farmHand.CurrentTarget, Is.EqualTo(firstGreyhound));
+            Assert.That(farmHand.CurrentTarget, Is.EqualTo(firstRabbit));
 
             // The default sensor weapon has no projectile definition, so it uses the safe melee fallback.
             // Flying animals remain tracked in range, but the fallback can only select grounded targets.
@@ -1019,7 +1025,7 @@ namespace TAD.Tests.PlayMode
             Assert.That(farmHand.CurrentTarget, Is.EqualTo(firstBull));
 
             farmHand.SetTargetingMode(DefenderTargetingMode.LastEnemyInRange);
-            Assert.That(farmHand.CurrentTarget, Is.EqualTo(secondGreyhound));
+            Assert.That(farmHand.CurrentTarget, Is.EqualTo(secondRabbit));
 
             var unarmed = Resources.Load<WeaponDefinition>("TADTests/UnarmedWeaponDefinition");
             Assert.That(unarmed, Is.Not.Null);
@@ -1028,11 +1034,12 @@ namespace TAD.Tests.PlayMode
             yield return new WaitForFixedUpdate();
 
             // Unarmed is the deliberate melee exception: it can acquire airborne attackers without
-            // inheriting ranged wall-piercing behaviour.
+            // inheriting ranged wall-piercing behaviour. Airborne targets become eligible; they do
+            // not displace an eligible target with a larger KillGain.
             farmHand.SetTargetingMode(DefenderTargetingMode.HighestKillGain);
-            Assert.That(farmHand.CurrentTarget, Is.EqualTo(firstEagle));
+            Assert.That(farmHand.CurrentTarget, Is.EqualTo(firstBull));
             farmHand.SetTargetingMode(DefenderTargetingMode.LastEnemyInRange);
-            Assert.That(farmHand.CurrentTarget, Is.EqualTo(secondEagle));
+            Assert.That(farmHand.CurrentTarget, Is.EqualTo(secondPigeon));
 
             var airRifle = Resources.Load<WeaponDefinition>("TADTests/AirRifleWeaponDefinition");
             Assert.That(airRifle, Is.Not.Null);
@@ -1040,18 +1047,19 @@ namespace TAD.Tests.PlayMode
             Physics2D.SyncTransforms();
             yield return new WaitForFixedUpdate();
 
-            // Ranged weapons retain the existing ability to select flying animals.
+            // Ranged weapons retain the existing ability to select flying animals, while preserving
+            // the selected targeting rule's priority order.
             farmHand.SetTargetingMode(DefenderTargetingMode.HighestKillGain);
-            Assert.That(farmHand.CurrentTarget, Is.EqualTo(firstEagle));
+            Assert.That(farmHand.CurrentTarget, Is.EqualTo(firstBull));
             farmHand.SetTargetingMode(DefenderTargetingMode.LastEnemyInRange);
-            Assert.That(farmHand.CurrentTarget, Is.EqualTo(secondEagle));
-            secondEagle.transform.position = new Vector2(farmHand.Range + 1f, 0f);
+            Assert.That(farmHand.CurrentTarget, Is.EqualTo(secondPigeon));
+            secondPigeon.transform.position = new Vector2(farmHand.Range + 1f, 0f);
             Physics2D.SyncTransforms();
             yield return new WaitForFixedUpdate();
-            Assert.That(farmHand.CurrentTarget, Is.EqualTo(firstEagle));
+            Assert.That(farmHand.CurrentTarget, Is.EqualTo(firstPigeon));
 
-            firstEagle.TakeDamage(firstEagle.RemainingHealth);
-            Assert.That(farmHand.CurrentTarget, Is.EqualTo(secondGreyhound));
+            firstPigeon.TakeDamage(firstPigeon.RemainingHealth);
+            Assert.That(farmHand.CurrentTarget, Is.EqualTo(secondRabbit));
 
             Object.Destroy(sensorWeapon);
         }
@@ -1060,7 +1068,7 @@ namespace TAD.Tests.PlayMode
         public IEnumerator ProjectileTargetingRules_AllowRangedAndExplicitlyConfiguredMeleeProjectilesToTargetFlyingAnimals()
         {
             var bull = Resources.Load<AttackerDefinition>("TADTests/BullDefinition");
-            var eagle = Resources.Load<AttackerDefinition>("TADTests/EagleDefinition");
+            var eagle = Resources.Load<AttackerDefinition>("TADTests/PigeonDefinition");
             Assert.That(bull, Is.Not.Null);
             Assert.That(eagle, Is.Not.Null);
 
@@ -1180,7 +1188,7 @@ namespace TAD.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator AttackerQueue_RefundsRemovedGroupsAndKeepsWaveIncomePersistent()
+        public IEnumerator AttackerQueue_SelectionIncomeIsReversedWhenAnUnsentGroupIsRemoved()
         {
             var fixture = GameBasicsTestSupport.CreateQueueFixture();
             var definition = Resources.Load<AttackerDefinition>("TADTests/ChickenDefinition");
@@ -1200,7 +1208,8 @@ namespace TAD.Tests.PlayMode
             Assert.That(group.TotalCount, Is.EqualTo(definition.SendSize));
             Assert.That(group.RemainingAlive, Is.EqualTo(definition.SendSize));
             Assert.That(fixture.AttackerBank.CurrentGold, Is.EqualTo(goldBeforeQueue - definition.SendCost));
-            Assert.That(fixture.AttackerBank.CurrentIncome, Is.EqualTo(definition.WaveIncome));
+            Assert.That(fixture.AttackerBank.CurrentIncome, Is.EqualTo(definition.WaveIncome),
+                "Selecting an attacker card must immediately add its authored income.");
 
             Assert.That(fixture.WaveQueue.TryQueueAttackers(definition), Is.True);
             fixture.WaveQueue.CopyDisplayGroups(groups);
@@ -1241,14 +1250,237 @@ namespace TAD.Tests.PlayMode
             Assert.That(fixture.WaveQueue.TryGetDisplayGroup(retainedGroup.Id, out _), Is.True);
             Assert.That(fixture.WaveQueue.QueuedAttackerCount, Is.EqualTo(definition.SendSize));
             Assert.That(fixture.AttackerBank.CurrentGold, Is.EqualTo(goldBeforeQueue - definition.SendCost));
-            Assert.That(fixture.AttackerBank.CurrentIncome, Is.EqualTo(definition.WaveIncome));
+            Assert.That(fixture.AttackerBank.CurrentIncome, Is.EqualTo(definition.WaveIncome),
+                "Removing an unsent card must reverse only that card's selection income.");
             Assert.That(panel.IsShowing, Is.False);
+        }
 
-            var incomeSnapshot = fixture.AttackerBank.CurrentIncome;
-            var goldBeforeIncome = fixture.AttackerBank.CurrentGold;
-            Assert.That(fixture.AttackerBank.PayIncome(incomeSnapshot), Is.EqualTo(incomeSnapshot));
-            Assert.That(fixture.AttackerBank.CurrentGold, Is.EqualTo(goldBeforeIncome + incomeSnapshot));
-            Assert.That(fixture.AttackerBank.CurrentIncome, Is.EqualTo(incomeSnapshot));
+        [UnityTest]
+        public IEnumerator AttackerWave_SelectionIncomeStacksWithEachFoodStoreArrivalAndRefundsOnce()
+        {
+            var fixture = GameBasicsTestSupport.CreateQueueFixture();
+            var definition = GetSpawnableAttackerDefinition(fixture.SpawnPool);
+            Assert.That(definition, Is.Not.Null);
+            yield return null;
+
+            Assert.That(fixture.SpawnPool.RouteMapper.RebuildRoutes(), Is.True);
+            SetPrivateField(fixture.WaveQueue, "spawnInterval", 0f);
+            var goldBeforeQueue = fixture.AttackerBank.CurrentGold;
+            Assert.That(fixture.WaveQueue.TryQueueAttackers(definition), Is.True);
+            Assert.That(fixture.AttackerBank.CurrentGold, Is.EqualTo(goldBeforeQueue - definition.SendCost));
+            Assert.That(fixture.AttackerBank.CurrentIncome, Is.EqualTo(definition.WaveIncome));
+            Assert.That(fixture.WaveQueue.TrySendQueuedWaves(null), Is.True);
+
+            var deadline = Time.realtimeSinceStartup + 1f;
+            while (FindActivePoolAttackers(fixture.SpawnPool).Count < definition.SendSize &&
+                   Time.realtimeSinceStartup < deadline)
+            {
+                yield return null;
+            }
+
+            var attackers = FindActivePoolAttackers(fixture.SpawnPool);
+            Assert.That(attackers, Has.Count.EqualTo(definition.SendSize));
+            var firstCollider = attackers[0].GetComponent<Collider2D>();
+            fixture.FoodStore.gameObject.SendMessage("OnTriggerEnter2D", firstCollider, SendMessageOptions.RequireReceiver);
+            yield return null;
+
+            Assert.That(fixture.AttackerBank.CurrentGold, Is.EqualTo(goldBeforeQueue),
+                "The first animal from a group refunds that group's original send cost exactly once.");
+            Assert.That(fixture.AttackerBank.CurrentIncome, Is.EqualTo(definition.WaveIncome * 2));
+
+            // Replaying the same trigger cannot grant another refund or income entry.
+            fixture.FoodStore.gameObject.SendMessage("OnTriggerEnter2D", firstCollider, SendMessageOptions.RequireReceiver);
+            Assert.That(fixture.AttackerBank.CurrentGold, Is.EqualTo(goldBeforeQueue));
+            Assert.That(fixture.AttackerBank.CurrentIncome, Is.EqualTo(definition.WaveIncome * 2));
+
+            attackers = FindActivePoolAttackers(fixture.SpawnPool);
+            var secondCollider = attackers[0].GetComponent<Collider2D>();
+            fixture.FoodStore.gameObject.SendMessage("OnTriggerEnter2D", secondCollider, SendMessageOptions.RequireReceiver);
+            yield return null;
+
+            Assert.That(fixture.AttackerBank.CurrentGold, Is.EqualTo(goldBeforeQueue),
+                "Later arrivals from the same group earn income but never a second cost refund.");
+            Assert.That(fixture.AttackerBank.CurrentIncome, Is.EqualTo(definition.WaveIncome * 3));
+
+            fixture.WaveController.ResetForNewLevelSession();
+            fixture.WaveQueue.ResetForNewLevelSession();
+        }
+
+        [UnityTest]
+        public IEnumerator BasicAttacker_ExhaustedCachedRouteUsesFlowFieldWithoutIndexingPastTheRoute()
+        {
+            var fixture = GameBasicsTestSupport.CreateQueueFixture();
+            var definition = GetSpawnableAttackerDefinition(fixture.SpawnPool);
+            Assert.That(definition, Is.Not.Null);
+            yield return null;
+
+            var mapper = fixture.SpawnPool.RouteMapper;
+            Assert.That(mapper, Is.Not.Null);
+            Assert.That(mapper.RebuildRoutes(), Is.True);
+
+            var attacker = GameBasicsTestSupport.CreateAttacker(definition);
+            attacker.SetRouteMapper(mapper);
+
+            var cachedRoute = GetPrivateField<List<Vector3>>(attacker, "routePoints");
+            Assert.That(cachedRoute, Has.Count.GreaterThanOrEqualTo(2));
+
+            // Reaching the final sparse waypoint intentionally switches to FarmRouteMapper's live
+            // flow field while the Food Store trigger finishes the arrival. This used to leave the
+            // index at Count and FixedUpdate then indexed beyond the cached route.
+            SetPrivateField(attacker, "nextRoutePointIndex", cachedRoute.Count);
+            var fixedUpdate = typeof(BasicAttacker).GetMethod(
+                "FixedUpdate",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(fixedUpdate, Is.Not.Null);
+
+            Assert.DoesNotThrow(
+                () => fixedUpdate.Invoke(attacker, null),
+                "An attacker that has consumed its cached waypoints must keep moving on the flow field.");
+            Assert.That(attacker.MoveDirection.sqrMagnitude, Is.GreaterThan(0f));
+        }
+
+        [UnityTest]
+        public IEnumerator AttackerWave_TerminalArrivalSettlesEconomyBeforeFoodDepletion()
+        {
+            var fixture = GameBasicsTestSupport.CreateQueueFixture();
+            var definition = GetSpawnableAttackerDefinition(fixture.SpawnPool);
+            Assert.That(definition, Is.Not.Null);
+            yield return null;
+
+            SetPrivateField(fixture.FoodStore, "startingFood", 1f);
+            fixture.FoodStore.ResetFood();
+            Assert.That(fixture.SpawnPool.RouteMapper.RebuildRoutes(), Is.True);
+            SetPrivateField(fixture.WaveQueue, "spawnInterval", 0f);
+            var goldBeforeQueue = fixture.AttackerBank.CurrentGold;
+            Assert.That(fixture.WaveQueue.TryQueueAttackers(definition), Is.True);
+            Assert.That(fixture.WaveQueue.TrySendQueuedWaves(null), Is.True);
+
+            var deadline = Time.realtimeSinceStartup + 1f;
+            while (FindActivePoolAttackers(fixture.SpawnPool).Count == 0 &&
+                   Time.realtimeSinceStartup < deadline)
+            {
+                yield return null;
+            }
+
+            var attacker = FindActivePoolAttackers(fixture.SpawnPool)[0];
+            fixture.FoodStore.gameObject.SendMessage(
+                "OnTriggerEnter2D",
+                attacker.GetComponent<Collider2D>(),
+                SendMessageOptions.RequireReceiver);
+            yield return null;
+
+            Assert.That(fixture.FoodStore.IsDepleted, Is.True);
+            Assert.That(fixture.AttackerBank.CurrentGold, Is.EqualTo(goldBeforeQueue),
+                "The animal that ends the match must still refund its group's send cost.");
+            Assert.That(fixture.AttackerBank.CurrentIncome, Is.EqualTo(definition.WaveIncome * 2),
+                "The terminal food-store arrival must add income on top of the card-selection income before cancellation.");
+
+            fixture.WaveQueue.CancelAllOrders();
+            fixture.WaveController.ResetForNewLevelSession();
+        }
+
+        [UnityTest]
+        public IEnumerator AttackerWave_OverlapsSnapshotGroupsAndDefersLaterOrdersToTheNextCycle()
+        {
+            var fixture = GameBasicsTestSupport.CreateQueueFixture();
+            var definition = GetSpawnableAttackerDefinition(fixture.SpawnPool);
+            Assert.That(definition, Is.Not.Null);
+            yield return null;
+
+            Assert.That(fixture.SpawnPool.RouteMapper.RebuildRoutes(), Is.True);
+            SetPrivateField(fixture.WaveQueue, "spawnInterval", 0f);
+            var startedWaves = new List<int>();
+            fixture.WaveController.WaveStarted += (waveNumber, _) => startedWaves.Add(waveNumber);
+
+            Assert.That(fixture.WaveQueue.TryQueueAttackers(definition), Is.True);
+            Assert.That(fixture.WaveQueue.TryQueueAttackers(definition), Is.True);
+            Assert.That(fixture.WaveQueue.TrySendQueuedWaves(null), Is.True);
+
+            // This card is selected after the day's snapshot. It must not be pulled into either
+            // of the two groups already entering the map.
+            Assert.That(fixture.WaveQueue.TryQueueAttackers(definition), Is.True);
+
+            var deadline = Time.realtimeSinceStartup + 1f;
+            while (startedWaves.Count < 2 && Time.realtimeSinceStartup < deadline)
+            {
+                yield return null;
+            }
+
+            Assert.That(startedWaves, Has.Count.EqualTo(2));
+            Assert.That(fixture.WaveController.ActiveAttackerCount, Is.EqualTo(definition.SendSize * 2),
+                "The second group must enter while the first group is still active on the map.");
+
+            var pendingGroups = new List<AttackerQueuedGroupInfo>();
+            fixture.WaveQueue.CopyPendingGroups(pendingGroups);
+            Assert.That(pendingGroups, Has.Count.EqualTo(1));
+            Assert.That(pendingGroups[0].TotalCount, Is.EqualTo(definition.SendSize));
+            Assert.That(fixture.WaveQueue.QueuedWaveCount, Is.EqualTo(1),
+                "Orders added during combat remain for the following day/night cycle.");
+
+            fixture.WaveController.ResetForNewLevelSession();
+            fixture.WaveQueue.ResetForNewLevelSession();
+        }
+
+        [UnityTest]
+        public IEnumerator AttackerWave_DeferredSelectionIncomeWaitsForItsOwnDispatchPayout()
+        {
+            var fixture = GameBasicsTestSupport.CreateQueueFixture();
+            var definition = GetSpawnableAttackerDefinition(fixture.SpawnPool);
+            Assert.That(definition, Is.Not.Null);
+            yield return null;
+
+            Assert.That(fixture.SpawnPool.RouteMapper.RebuildRoutes(), Is.True);
+            SetPrivateField(fixture.WaveQueue, "spawnInterval", 0f);
+            var goldBeforeQueue = fixture.AttackerBank.CurrentGold;
+
+            Assert.That(fixture.WaveQueue.TryQueueAttackers(definition), Is.True);
+            Assert.That(fixture.WaveQueue.TrySendQueuedWaves(null), Is.True);
+
+            // This selection is visible in the persistent-income HUD immediately, but is not
+            // eligible for the active day's gold payout because it belongs to tomorrow's queue.
+            Assert.That(fixture.WaveQueue.TryQueueAttackers(definition), Is.True);
+            Assert.That(fixture.AttackerBank.CurrentIncome, Is.EqualTo(definition.WaveIncome * 2));
+
+            var deadline = Time.realtimeSinceStartup + 1f;
+            while (FindActivePoolAttackers(fixture.SpawnPool).Count < definition.SendSize &&
+                   Time.realtimeSinceStartup < deadline)
+            {
+                yield return null;
+            }
+
+            var activeAttackers = new List<BasicAttacker>(FindActivePoolAttackers(fixture.SpawnPool));
+            Assert.That(activeAttackers, Has.Count.EqualTo(definition.SendSize));
+            foreach (var attacker in activeAttackers)
+            {
+                fixture.FoodStore.gameObject.SendMessage(
+                    "OnTriggerEnter2D",
+                    attacker.GetComponent<Collider2D>(),
+                    SendMessageOptions.RequireReceiver);
+                yield return null;
+            }
+
+            deadline = Time.realtimeSinceStartup + 1f;
+            while (fixture.WaveQueue.IsSending && Time.realtimeSinceStartup < deadline)
+            {
+                yield return null;
+            }
+
+            Assert.That(fixture.WaveQueue.IsSending, Is.False);
+            var resolvedGroupIncome = definition.WaveIncome * (definition.SendSize + 1);
+            Assert.That(fixture.AttackerBank.CurrentGold,
+                Is.EqualTo(goldBeforeQueue - definition.SendCost + resolvedGroupIncome),
+                "The next-day selection must not be paid during the current day's resolution.");
+
+            var pendingGroups = new List<AttackerQueuedGroupInfo>();
+            fixture.WaveQueue.CopyPendingGroups(pendingGroups);
+            Assert.That(pendingGroups, Has.Count.EqualTo(1));
+            Assert.That(fixture.WaveQueue.TryRemoveQueuedGroup(pendingGroups[0].Id), Is.True);
+            Assert.That(fixture.AttackerBank.CurrentGold, Is.EqualTo(goldBeforeQueue + resolvedGroupIncome));
+            Assert.That(fixture.AttackerBank.CurrentIncome, Is.EqualTo(resolvedGroupIncome),
+                "Removing the unplayed card must leave only the resolved group's selection and arrival income.");
+
+            fixture.WaveController.ResetForNewLevelSession();
+            fixture.WaveQueue.ResetForNewLevelSession();
         }
 
         [UnityTest]
@@ -1487,6 +1719,110 @@ namespace TAD.Tests.PlayMode
             Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("MainMenu"));
         }
 
+        [UnityTest]
+        [Order(1000)]
+        public IEnumerator ShippedGameplayScenes_LoadWithTheirRequiredGameplaySystems()
+        {
+            var shippedSceneNames = new[] { "Level1", "Level2", "Level3", "Level4" };
+
+            foreach (var sceneName in shippedSceneNames)
+            {
+                var loadOperation = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
+                Assert.That(loadOperation, Is.Not.Null, $"{sceneName} must be loadable from Build Settings.");
+
+                var deadline = Time.realtimeSinceStartup + 15f;
+                while (!loadOperation.isDone && Time.realtimeSinceStartup < deadline)
+                {
+                    yield return null;
+                }
+
+                Assert.That(loadOperation.isDone, Is.True, $"{sceneName} did not finish loading in time.");
+                yield return null;
+
+                Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo(sceneName));
+                Assert.That(Object.FindAnyObjectByType<FoodStore>(), Is.Not.Null,
+                    $"{sceneName} is missing its Food Store.");
+                Assert.That(Object.FindAnyObjectByType<SpawnPool>(), Is.Not.Null,
+                    $"{sceneName} is missing its Spawn Pool.");
+                Assert.That(Object.FindAnyObjectByType<FarmRouteMapper>(), Is.Not.Null,
+                    $"{sceneName} is missing its route mapper.");
+                Assert.That(Object.FindAnyObjectByType<WaveController>(), Is.Not.Null,
+                    $"{sceneName} is missing its Wave Controller.");
+                Assert.That(Object.FindAnyObjectByType<AttackerWaveQueue>(), Is.Not.Null,
+                    $"{sceneName} is missing its attacker wave queue.");
+                Assert.That(Object.FindAnyObjectByType<DayCycleController>(), Is.Not.Null,
+                    $"{sceneName} is missing its day/night controller.");
+                Assert.That(Object.FindObjectsByType<ResourceBank>(FindObjectsInactive.Exclude).Length,
+                    Is.GreaterThanOrEqualTo(2), $"{sceneName} must have attacker and defender resource banks.");
+                Assert.That(Object.FindAnyObjectByType<EventSystem>(), Is.Not.Null,
+                    $"{sceneName} is missing its EventSystem.");
+            }
+        }
+
+        [UnityTest]
+        [Order(1001)]
+        public IEnumerator ShippedGameplayScenes_BuildVisibleSpawnToFoodRoutesForTheirConfiguredRoster()
+        {
+            var shippedSceneNames = new[] { "Level1", "Level2", "Level3", "Level4" };
+            var attackerDefinitions = new List<AttackerDefinition>();
+            var routePoints = new List<Vector3>();
+
+            foreach (var sceneName in shippedSceneNames)
+            {
+                var loadOperation = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
+                Assert.That(loadOperation, Is.Not.Null, $"{sceneName} must be loadable from Build Settings.");
+
+                var deadline = Time.realtimeSinceStartup + 15f;
+                while (!loadOperation.isDone && Time.realtimeSinceStartup < deadline)
+                {
+                    yield return null;
+                }
+
+                Assert.That(loadOperation.isDone, Is.True, $"{sceneName} did not finish loading in time.");
+                // Allow Start on the pool, route mapper, and day-cycle owner to complete before
+                // examining exactly the same flow fields used by a queued wave.
+                yield return null;
+                yield return new WaitForFixedUpdate();
+
+                var spawnPool = Object.FindAnyObjectByType<SpawnPool>();
+                var waveController = Object.FindAnyObjectByType<WaveController>();
+                var routeMapper = Object.FindAnyObjectByType<FarmRouteMapper>();
+                var dayCycle = Object.FindAnyObjectByType<DayCycleController>();
+                Assert.That(spawnPool, Is.Not.Null, $"{sceneName} is missing its Spawn Pool.");
+                Assert.That(waveController, Is.Not.Null, $"{sceneName} is missing its Wave Controller.");
+                Assert.That(routeMapper, Is.Not.Null, $"{sceneName} is missing its route mapper.");
+                Assert.That(dayCycle, Is.Not.Null, $"{sceneName} is missing its day-cycle controller.");
+                // Use the same entry point as the queue. This is where the controller makes
+                // sure the gameplay camera covers both route endpoints before the mapper
+                // caches its visible-only flow field.
+                Assert.That(waveController.CanQueuePlayerWave, Is.True,
+                    $"{sceneName} cannot prepare a visible spawn-to-food route for a queued wave.");
+
+                attackerDefinitions.Clear();
+                spawnPool.CopyAvailableAttackerDefinitions(attackerDefinitions);
+                Assert.That(attackerDefinitions, Is.Not.Empty, $"{sceneName} has no pooled attacker definitions.");
+
+                foreach (var definition in attackerDefinitions)
+                {
+                    routePoints.Clear();
+                    Assert.That(
+                        routeMapper.TryGetFastestRoute(waveController.SpawnPosition, definition, routePoints),
+                        Is.True,
+                        $"{sceneName} has no visible spawn-to-food route for {definition.DisplayName}.");
+                    Assert.That(routePoints, Is.Not.Empty,
+                        $"{sceneName} produced an empty route for {definition.DisplayName}.");
+                }
+
+                // Level 1 intentionally pauses its clock behind the guided tutorial. Every other
+                // shipped level must enter its normal preparation phase as soon as it loads.
+                if (sceneName != "Level1")
+                {
+                    Assert.That(dayCycle.IsTutorialHeld, Is.False, $"{sceneName} should not hold its day cycle for a tutorial.");
+                    Assert.That(dayCycle.IsPreparing, Is.True, $"{sceneName} did not start its preparation cycle.");
+                }
+            }
+        }
+
         private static bool DefeatAttackersUntilLevel(
             FarmHand defender,
             AttackerDefinition attackerDefinition,
@@ -1616,6 +1952,33 @@ namespace TAD.Tests.PlayMode
             return bounds;
         }
 
+        private static List<BasicAttacker> FindActivePoolAttackers(SpawnPool owner)
+        {
+            var attackers = new List<BasicAttacker>();
+            foreach (var attacker in Object.FindObjectsByType<BasicAttacker>(FindObjectsInactive.Exclude))
+            {
+                if (attacker != null && attacker.TryGetComponent<PooledInstance>(out var pooledInstance) &&
+                    pooledInstance.Owner == owner)
+                {
+                    attackers.Add(attacker);
+                }
+            }
+
+            return attackers;
+        }
+
+        private static AttackerDefinition GetSpawnableAttackerDefinition(SpawnPool pool)
+        {
+            if (pool == null)
+            {
+                return null;
+            }
+
+            var definitions = new List<AttackerDefinition>();
+            pool.CopyAvailableAttackerDefinitions(definitions);
+            return definitions.Find(definition => definition != null && definition.SendSize > 0);
+        }
+
         private static void SetPrivateField<T>(object target, string fieldName, T value)
         {
             var field = target.GetType().GetField(
@@ -1623,6 +1986,15 @@ namespace TAD.Tests.PlayMode
                 BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.That(field, Is.Not.Null, $"Missing private test field: {fieldName}");
             field.SetValue(target, value);
+        }
+
+        private static T GetPrivateField<T>(object target, string fieldName)
+        {
+            var field = target.GetType().GetField(
+                fieldName,
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(field, Is.Not.Null, $"Missing private test field: {fieldName}");
+            return (T)field.GetValue(target);
         }
     }
 }

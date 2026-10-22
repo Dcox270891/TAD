@@ -1,0 +1,740 @@
+fileFormatVersion: 2
+guid: 181262aba97d4574c937a154fb110977
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 8581645083061644461
+    second: TAD_StrongRosterAtlas_0
+  - first:
+      213: 6967887452288653802
+    second: TAD_StrongRosterAtlas_1
+  - first:
+      213: -240007965006039569
+    second: TAD_StrongRosterAtlas_2
+  - first:
+      213: 6412187036410970783
+    second: TAD_StrongRosterAtlas_3
+  - first:
+      213: 2665046537221813900
+    second: TAD_StrongRosterAtlas_4
+  - first:
+      213: 1102811043011018829
+    second: TAD_StrongRosterAtlas_5
+  - first:
+      213: -7147541527182579823
+    second: TAD_StrongRosterAtlas_6
+  - first:
+      213: -8156888100769052727
+    second: TAD_StrongRosterAtlas_7
+  - first:
+      213: -4129805422563550599
+    second: TAD_StrongRosterAtlas_8
+  - first:
+      213: 7505674061448943047
+    second: TAD_StrongRosterAtlas_9
+  - first:
+      213: -2018200535374526027
+    second: TAD_StrongRosterAtlas_10
+  - first:
+      213: -3402609839885628125
+    second: TAD_StrongRosterAtlas_11
+  - first:
+      213: -5036300351280657599
+    second: TAD_StrongRosterAtlas_12
+  - first:
+      213: -7903814043378632665
+    second: TAD_StrongRosterAtlas_13
+  - first:
+      213: -2867095164036065025
+    second: TAD_StrongRosterAtlas_14
+  - first:
+      213: -519641074916545690
+    second: TAD_StrongRosterAtlas_15
+  - first:
+      213: 5360214433441979743
+    second: TAD_StrongRosterAtlas_16
+  - first:
+      213: -1922380760028365294
+    second: TAD_StrongRosterAtlas_17
+  - first:
+      213: 4657503438908318188
+    second: TAD_StrongRosterAtlas_18
+  - first:
+      213: 2919905685825224070
+    second: TAD_StrongRosterAtlas_19
+  - first:
+      213: -8523957633476517814
+    second: TAD_StrongRosterAtlas_20
+  - first:
+      213: -2540053314510962563
+    second: TAD_StrongRosterAtlas_21
+  - first:
+      213: -7537526148287000264
+    second: TAD_StrongRosterAtlas_22
+  - first:
+      213: 2454536448480500967
+    second: TAD_StrongRosterAtlas_23
+  - first:
+      213: -4357260876291618725
+    second: TAD_StrongRosterAtlas_24
+  - first:
+      213: -4271019384850511049
+    second: TAD_StrongRosterAtlas_25
+  - first:
+      213: 628709627430796782
+    second: TAD_StrongRosterAtlas_26
+  - first:
+      213: 2213880341177500153
+    second: TAD_StrongRosterAtlas_27
+  - first:
+      213: -7704294991241839219
+    second: TAD_StrongRosterAtlas_28
+  - first:
+      213: 4631716605682177187
+    second: TAD_StrongRosterAtlas_29
+  - first:
+      213: 4544315018209665790
+    second: TAD_StrongRosterAtlas_30
+  - first:
+      213: 730831853443043485
+    second: TAD_StrongRosterAtlas_31
+  - first:
+      213: -5716991717619377658
+    second: TAD_StrongRosterAtlas_32
+  - first:
+      213: 5910717381930826841
+    second: TAD_StrongRosterAtlas_33
+  - first:
+      213: 7369883975694272879
+    second: TAD_StrongRosterAtlas_34
+  - first:
+      213: 5214289644946922078
+    second: TAD_StrongRosterAtlas_35
+  - first:
+      213: 5433056718213849222
+    second: TAD_StrongRosterAtlas_36
+  - first:
+      213: -7615114783887719801
+    second: TAD_StrongRosterAtlas_37
+  - first:
+      213: 5187782767860806097
+    second: TAD_StrongRosterAtlas_38
+  - first:
+      213: 1756498440083837688
+    second: TAD_StrongRosterAtlas_39
+  - first:
+      213: 5423878570457886596
+    second: TAD_StrongRosterAtlas_40
+  - first:
+      213: -2139165964861393443
+    second: TAD_StrongRosterAtlas_41
+  - first:
+      213: -577159126739989017
+    second: TAD_StrongRosterAtlas_42
+  - first:
+      213: 5948783370955770818
+    second: TAD_StrongRosterAtlas_43
+  - first:
+      213: 3636532456050021321
+    second: TAD_StrongRosterAtlas_44
+  - first:
+      213: 3777521742194949235
+    second: TAD_StrongRosterAtlas_45
+  - first:
+      213: 4063206527362994491
+    second: TAD_StrongRosterAtlas_46
+  - first:
+      213: -3296384125141908726
+    second: TAD_StrongRosterAtlas_47
+  - first:
+      213: 5976210897949953168
+    second: TAD_StrongRosterAtlas_48
+  - first:
+      213: 1195512157598818748
+    second: TAD_StrongRosterAtlas_49
+  - first:
+      213: -8855468731636067553
+    second: TAD_StrongRosterAtlas_50
+  - first:
+      213: 1233897431680915922
+    second: TAD_StrongRosterAtlas_51
+  - first:
+      213: 2242681463334827549
+    second: TAD_StrongRosterAtlas_52
+  - first:
+      213: -8650296700767716141
+    second: TAD_StrongRosterAtlas_53
+  - first:
+      213: 5199610391679556905
+    second: TAD_StrongRosterAtlas_54
+  - first:
+      213: -6426702622157501491
+    second: TAD_StrongRosterAtlas_55
+  - first:
+      213: -6733415103591307231
+    second: TAD_StrongRosterAtlas_56
+  - first:
+      213: -4152538545956858788
+    second: TAD_StrongRosterAtlas_57
+  - first:
+      213: -4711908187024710531
+    second: TAD_StrongRosterAtlas_58
+  - first:
+      213: -7178397946286515568
+    second: TAD_StrongRosterAtlas_59
+  - first:
+      213: -1788361899577133079
+    second: TAD_StrongRosterAtlas_60
+  - first:
+      213: 3486618146418291166
+    second: TAD_StrongRosterAtlas_61
+  - first:
+      213: -7016914803328890948
+    second: TAD_StrongRosterAtlas_62
+  - first:
+      213: -4055977916574897906
+    second: TAD_StrongRosterAtlas_63
+  - first:
+      213: 8572975096921772201
+    second: TAD_StrongRosterAtlas_64
+  - first:
+      213: -4639686017010904866
+    second: TAD_StrongRosterAtlas_65
+  - first:
+      213: 3063536708504022624
+    second: TAD_StrongRosterAtlas_66
+  - first:
+      213: 461754359149097037
+    second: TAD_StrongRosterAtlas_67
+  - first:
+      213: -4305664735860062504
+    second: TAD_StrongRosterAtlas_68
+  - first:
+      213: -6112962868438084492
+    second: TAD_StrongRosterAtlas_69
+  - first:
+      213: -3355228725707072958
+    second: TAD_StrongRosterAtlas_70
+  - first:
+      213: -5056636507617355039
+    second: TAD_StrongRosterAtlas_71
+  - first:
+      213: 6163656736395411052
+    second: TAD_StrongRosterAtlas_72
+  - first:
+      213: 806514087615073319
+    second: TAD_StrongRosterAtlas_73
+  - first:
+      213: -4176250607938371177
+    second: TAD_StrongRosterAtlas_74
+  - first:
+      213: -2090163528524770139
+    second: TAD_StrongRosterAtlas_75
+  - first:
+      213: -5179561575078641308
+    second: TAD_StrongRosterAtlas_76
+  - first:
+      213: 7361037735511349656
+    second: TAD_StrongRosterAtlas_77
+  - first:
+      213: 3188636824081303304
+    second: TAD_StrongRosterAtlas_78
+  - first:
+      213: 6420774566773965991
+    second: TAD_StrongRosterAtlas_79
+  - first:
+      213: -3353490132290768990
+    second: TAD_StrongRosterAtlas_80
+  - first:
+      213: 8284813466356746088
+    second: TAD_StrongRosterAtlas_81
+  - first:
+      213: -5911820981132392643
+    second: TAD_StrongRosterAtlas_82
+  - first:
+      213: 7304739897820317138
+    second: TAD_StrongRosterAtlas_83
+  - first:
+      213: -2676158922846910382
+    second: TAD_StrongRosterAtlas_84
+  - first:
+      213: 3192181800831223217
+    second: TAD_StrongRosterAtlas_85
+  - first:
+      213: 7709291494970406991
+    second: TAD_StrongRosterAtlas_86
+  - first:
+      213: -7448785327156962267
+    second: TAD_StrongRosterAtlas_87
+  - first:
+      213: -3515337751136270955
+    second: TAD_StrongRosterAtlas_88
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 512
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationMethod: 0
+  spriteTessellationDetail: -1
+  spriteGeometrySubdivision: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 75
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: iOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: VisionOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: tvOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WindowsStoreApps
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: TAD_StrongRosterAtlas_slot00
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 724
+        width: 362
+        height: 362
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c8d2635c2cf9bcd45ac249aae4f41916
+      internalID: 821796437
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_StrongRosterAtlas_slot01
+      rect:
+        serializedVersion: 2
+        x: 362
+        y: 724
+        width: 362
+        height: 362
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: aef7635890728c74f97e6f5e7941c3d0
+      internalID: -1407365450
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_StrongRosterAtlas_slot02
+      rect:
+        serializedVersion: 2
+        x: 724
+        y: 724
+        width: 362
+        height: 362
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ce36c89de47b26045ab3f15a6bb6985f
+      internalID: 83735739
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_StrongRosterAtlas_slot03
+      rect:
+        serializedVersion: 2
+        x: 1086
+        y: 724
+        width: 362
+        height: 362
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 84d0ec63f6d23264398309c6ece4de5c
+      internalID: 1864891100
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_StrongRosterAtlas_slot04
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 362
+        width: 362
+        height: 362
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7dd5228560d3d5146b6fe5498a780f47
+      internalID: -1568360189
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_StrongRosterAtlas_slot05
+      rect:
+        serializedVersion: 2
+        x: 362
+        y: 362
+        width: 362
+        height: 362
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ab8059ce53409ee439ea58409d5b9dc4
+      internalID: 1983935041
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_StrongRosterAtlas_slot06
+      rect:
+        serializedVersion: 2
+        x: 724
+        y: 362
+        width: 362
+        height: 362
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 0f8073eeb9ba9c74d8115c6397a70737
+      internalID: 788744106
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_StrongRosterAtlas_slot07
+      rect:
+        serializedVersion: 2
+        x: 1086
+        y: 362
+        width: 362
+        height: 362
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 0ebffe593f0bfeb4bb832f888a2ebf9b
+      internalID: 579010592
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_StrongRosterAtlas_slot08
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 362
+        height: 362
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a8cba08600afe454493f736c99e5cc2b
+      internalID: -1352091670
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_StrongRosterAtlas_slot09
+      rect:
+        serializedVersion: 2
+        x: 362
+        y: 0
+        width: 362
+        height: 362
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a57705ccfaff4514b9faf0839f2d2db2
+      internalID: -179918864
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_StrongRosterAtlas_slot10
+      rect:
+        serializedVersion: 2
+        x: 724
+        y: 0
+        width: 362
+        height: 362
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 45e90eb59c3924d40bf0cfc3ee503e2e
+      internalID: -546871300
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_StrongRosterAtlas_slot11
+      rect:
+        serializedVersion: 2
+        x: 1086
+        y: 0
+        width: 362
+        height: 362
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3f10d369392f7aa418aa3f159d388dab
+      internalID: -1203480914
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: c08fb701ab8d6f548add9da0fdc499b9
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      TAD_StrongRosterAtlas_slot00: 821796437
+      TAD_StrongRosterAtlas_slot01: -1407365450
+      TAD_StrongRosterAtlas_slot02: 83735739
+      TAD_StrongRosterAtlas_slot03: 1864891100
+      TAD_StrongRosterAtlas_slot04: -1568360189
+      TAD_StrongRosterAtlas_slot05: 1983935041
+      TAD_StrongRosterAtlas_slot06: 788744106
+      TAD_StrongRosterAtlas_slot07: 579010592
+      TAD_StrongRosterAtlas_slot08: -1352091670
+      TAD_StrongRosterAtlas_slot09: -179918864
+      TAD_StrongRosterAtlas_slot10: -546871300
+      TAD_StrongRosterAtlas_slot11: -1203480914
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

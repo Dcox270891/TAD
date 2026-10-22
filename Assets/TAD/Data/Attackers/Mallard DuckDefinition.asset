@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 694892edc0a468b448e49591a6175013, type: 3}
+  m_Name: Mallard DuckDefinition
+  m_EditorClassIdentifier: TAD.Runtime::TAD.Attackers.AttackerDefinition
+  attackerId: 034
+  displayName: Mallard Duck
+  maximumHealth: 12
+  movementSpeed: 3.3
+  size: 1.25
+  sendCost: 29
+  waveIncome: 7
+  expGiven: 8
+  killGain: 5
+  sendSize: 4
+  archetype: 3
+  challengeTier: 4
+  traversalProfile: 1
+  visualDefinition: {fileID: 11400000, guid: 138cf93a2921c3b48ab30cefe544e622, type: 2}
+  entrySound: {fileID: 8300000, guid: 27ad9fca326cf8440aa4980ba8d3bc78, type: 3}
+  deathSound: {fileID: 8300000, guid: 7bfeced44467b414382a4f76dfa2873b, type: 3}

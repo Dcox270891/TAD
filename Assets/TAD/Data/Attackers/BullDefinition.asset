@@ -15,8 +15,8 @@ MonoBehaviour:
   attackerId: 008
   displayName: Bull
   maximumHealth: 16
-  movementSpeed: 1.8
-  size: 1.35
+  movementSpeed: 1.78
+  size: 1.5
   sendCost: 18
   waveIncome: 4
   expGiven: 4
@@ -27,3 +27,4 @@ MonoBehaviour:
   traversalProfile: 0
   visualDefinition: {fileID: 11400000, guid: eaf8e0bbee278ae479eb358e3663f6b9, type: 2}
   entrySound: {fileID: 8300000, guid: ded9c000e0e0856438044851a9bec41c, type: 3}
+  deathSound: {fileID: 8300000, guid: b1ec5e76690b7ee4b925ca34bbe025e3, type: 3}

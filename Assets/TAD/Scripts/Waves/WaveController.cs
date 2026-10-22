@@ -13,6 +13,90 @@ namespace TAD.Waves
     [DisallowMultipleComponent]
     public sealed class WaveController : MonoBehaviour
     {
+        // The mapper deliberately works only inside the camera view. Keep the spawn and Food
+        // Store safely within that view before caching routes, including in level layouts that
+        // use the reusable core at an offset.
+        private const float RouteEndpointViewportPadding = 0.75f;
+
+        /// <summary>
+        /// Owns one player-selected group while it is spawning and resolving. Each group keeps
+        /// its own callbacks and pooled-attacker subscriptions so the next group can begin as
+        /// soon as the previous one has entered the map without losing the first group's result.
+        /// </summary>
+        private sealed class PlayerWaveRun
+        {
+            private readonly Dictionary<BasicAttacker, Action<BasicAttacker>> returnHandlers = new();
+
+            public PlayerWaveRun(
+                Action<BasicAttacker> attackerSpawned,
+                Action<BasicAttacker> attackerResolved,
+                Action<bool> spawnSequenceCompleted,
+                Action<bool> completed)
+            {
+                AttackerSpawned = attackerSpawned;
+                AttackerResolved = attackerResolved;
+                SpawnSequenceCompleted = spawnSequenceCompleted;
+                Completed = completed;
+            }
+
+            public readonly HashSet<BasicAttacker> ActiveAttackers = new();
+            public Action<BasicAttacker> AttackerSpawned { get; }
+            public Action<BasicAttacker> AttackerResolved { get; }
+            public Action<bool> SpawnSequenceCompleted { get; }
+            public Action<bool> Completed { get; }
+            public int WaveNumber { get; set; }
+            public bool SpawnSequenceFinished { get; set; }
+            public Coroutine Routine { get; set; }
+
+            public void RegisterAttacker(BasicAttacker attacker, Action<BasicAttacker> returnedHandler)
+            {
+                if (attacker == null || returnedHandler == null || !ActiveAttackers.Add(attacker))
+                {
+                    return;
+                }
+
+                returnHandlers.Add(attacker, returnedHandler);
+                attacker.ReturnedToPool += returnedHandler;
+            }
+
+            public bool TryResolveAttacker(BasicAttacker attacker)
+            {
+                // ReferenceEquals deliberately handles a Unity object that was destroyed without
+                // returning to the pool. Unity's overloaded null comparison would otherwise make
+                // the stale entry impossible to remove and stall this group's completion.
+                if (ReferenceEquals(attacker, null) || !ActiveAttackers.Remove(attacker))
+                {
+                    return false;
+                }
+
+                if (returnHandlers.TryGetValue(attacker, out var returnedHandler))
+                {
+                    if (attacker != null)
+                    {
+                        attacker.ReturnedToPool -= returnedHandler;
+                    }
+
+                    returnHandlers.Remove(attacker);
+                }
+
+                return true;
+            }
+
+            public void DetachAllAttackers()
+            {
+                foreach (var pair in returnHandlers)
+                {
+                    if (pair.Key != null)
+                    {
+                        pair.Key.ReturnedToPool -= pair.Value;
+                    }
+                }
+
+                returnHandlers.Clear();
+                ActiveAttackers.Clear();
+            }
+        }
+
         [Serializable]
         private sealed class AttackerGroup
         {
@@ -140,30 +224,33 @@ namespace TAD.Waves
 
         private readonly List<GameObject> activeAttackers = new();
         private Coroutine waveRoutine;
-        private Action<bool> playerWaveCompletion;
-        private Action<BasicAttacker> playerAttackerSpawned;
-        private Action<BasicAttacker> playerAttackerResolved;
+        private readonly List<PlayerWaveRun> activePlayerWaveRuns = new();
+        private readonly List<BasicAttacker> stalePlayerAttackers = new();
         private int currentWaveNumber;
         private int nextWaveIndex;
         private int spawnedInCurrentWave;
         private bool hasCompletedAllWaves;
-        private bool isPlayerWave;
+        private bool isPlayerSpawnSequenceRunning;
+        private bool playerWaveRunAggregateFailed;
         private bool isSubscribedToFoodStore;
 
         public int CurrentWaveNumber => currentWaveNumber;
         public int TotalWaveCount => waves?.Length ?? 0;
         public int SpawnedInCurrentWave => spawnedInCurrentWave;
         public int ActiveAttackerCount => CountActiveAttackers();
-        public bool IsRunning => waveRoutine != null;
+        public bool IsRunning => waveRoutine != null || activePlayerWaveRuns.Count > 0;
         public bool HasCompletedAllWaves => hasCompletedAllWaves;
-        public bool CanStartNextWave => waveRoutine == null && !hasCompletedAllWaves &&
+        public bool CanStartNextWave => !IsRunning && !hasCompletedAllWaves &&
                                         waves != null && nextWaveIndex < waves.Length &&
                                         (foodStore == null || !foodStore.IsDepleted);
-        public bool CanStartPlayerWave => waveRoutine == null && TryResolveDependencies() &&
+        public bool CanStartPlayerWave => waveRoutine == null && !isPlayerSpawnSequenceRunning && TryResolveDependencies() &&
                                            foodStore != null && !foodStore.IsDepleted && EnsureRouteMap();
         public bool CanQueuePlayerWave => TryResolveDependencies() && foodStore != null &&
                                           !foodStore.IsDepleted && EnsureRouteMap();
         public Vector3 SpawnPosition => (spawnPoint != null ? spawnPoint : transform).position;
+        /// <summary>The authored spawn transform used by portrait framing and route presentation.</summary>
+        public Transform SpawnPointTransform => spawnPoint != null ? spawnPoint : transform;
+        public FoodStore FoodStore => foodStore;
 
         public event Action<int, int> WaveStarted;
         public event Action<int> WaveCompleted;
@@ -172,6 +259,13 @@ namespace TAD.Waves
 
         private void Start()
         {
+            // Build the complete, visible-only route cache once the two gameplay endpoints
+            // have been framed by the camera. This happens before either AI can queue a wave.
+            if (TryResolveDependencies())
+            {
+                EnsureRouteMap();
+            }
+
             if (startOnStart)
             {
                 StartWaves();
@@ -191,7 +285,7 @@ namespace TAD.Waves
 
         public bool StartWaves()
         {
-            if (waveRoutine != null)
+            if (IsRunning)
             {
                 return false;
             }
@@ -202,13 +296,12 @@ namespace TAD.Waves
                 return false;
             }
 
-            if (!TryResolveDependencies() || !EnsureRouteMap())
+            if (!TryResolveDependencies(logMissingDependencies: true) || !EnsureRouteMap())
             {
                 Debug.LogError("Wave Controller could not build a route to the Food Store before sending attackers.", this);
                 return false;
             }
 
-            ClearPlayerWaveCallbacks();
             currentWaveNumber = 0;
             nextWaveIndex = 0;
             spawnedInCurrentWave = 0;
@@ -221,7 +314,7 @@ namespace TAD.Waves
 
         public bool StartNextWave()
         {
-            if (!CanStartNextWave || !TryResolveDependencies() || foodStore.IsDepleted)
+            if (!CanStartNextWave || !TryResolveDependencies(logMissingDependencies: true) || foodStore.IsDepleted)
             {
                 return false;
             }
@@ -239,7 +332,6 @@ namespace TAD.Waves
                 return false;
             }
 
-            ClearPlayerWaveCallbacks();
             spawnedInCurrentWave = 0;
             activeAttackers.Clear();
             SubscribeToFoodStore();
@@ -252,7 +344,7 @@ namespace TAD.Waves
             float spawnInterval,
             Action<bool> completion)
         {
-            return TryStartPlayerWave(attackerDefinitions, spawnInterval, null, null, completion);
+            return TryStartPlayerWave(attackerDefinitions, spawnInterval, null, null, null, completion);
         }
 
         /// <summary>
@@ -266,19 +358,50 @@ namespace TAD.Waves
             Action<BasicAttacker> onAttackerResolved,
             Action<bool> completion)
         {
+            return TryStartPlayerWave(
+                attackerDefinitions,
+                spawnInterval,
+                onAttackerSpawned,
+                onAttackerResolved,
+                null,
+                completion);
+        }
+
+        /// <summary>
+        /// Sends one selected attacker group. <paramref name="onSpawnSequenceCompleted"/> is
+        /// raised as soon as this group has finished entering the playable map, while
+        /// <paramref name="completion"/> waits until this group's own attackers have returned
+        /// to the pool. This permits visible, overlapping groups without combining their rewards.
+        /// </summary>
+        public bool TryStartPlayerWave(
+            IReadOnlyList<AttackerDefinition> attackerDefinitions,
+            float spawnInterval,
+            Action<BasicAttacker> onAttackerSpawned,
+            Action<BasicAttacker> onAttackerResolved,
+            Action<bool> onSpawnSequenceCompleted,
+            Action<bool> completion)
+        {
             if (!CanStartPlayerWave || attackerDefinitions == null || attackerDefinitions.Count == 0)
             {
                 return false;
             }
 
             spawnedInCurrentWave = 0;
-            activeAttackers.Clear();
             SubscribeToFoodStore();
-            playerWaveCompletion = completion;
-            playerAttackerSpawned = onAttackerSpawned;
-            playerAttackerResolved = onAttackerResolved;
-            isPlayerWave = true;
-            waveRoutine = StartCoroutine(RunPlayerWave(attackerDefinitions, Mathf.Max(0f, spawnInterval)));
+            if (activePlayerWaveRuns.Count == 0)
+            {
+                playerWaveRunAggregateFailed = false;
+            }
+
+            var playerWaveRun = new PlayerWaveRun(
+                onAttackerSpawned,
+                onAttackerResolved,
+                onSpawnSequenceCompleted,
+                completion);
+            activePlayerWaveRuns.Add(playerWaveRun);
+            isPlayerSpawnSequenceRunning = true;
+            playerWaveRun.Routine = StartCoroutine(
+                RunPlayerWave(playerWaveRun, attackerDefinitions, Mathf.Max(0f, spawnInterval)));
             return true;
         }
 
@@ -290,7 +413,7 @@ namespace TAD.Waves
                 waveRoutine = null;
             }
 
-            ClearPlayerWaveCallbacks();
+            StopPlayerWaveRuns(notifyCompletion: false);
             for (var index = activeAttackers.Count - 1; index >= 0; index--)
             {
                 var attackerObject = activeAttackers[index];
@@ -310,19 +433,21 @@ namespace TAD.Waves
 
         public void StopWaves()
         {
-            var wasRunning = waveRoutine != null;
-            var completion = playerWaveCompletion;
+            var wasRunning = IsRunning;
             if (wasRunning)
             {
-                StopCoroutine(waveRoutine);
-                waveRoutine = null;
+                if (waveRoutine != null)
+                {
+                    StopCoroutine(waveRoutine);
+                    waveRoutine = null;
+                }
+
+                StopPlayerWaveRuns(notifyCompletion: true);
             }
 
-            ClearPlayerWaveCallbacks();
             activeAttackers.Clear();
             if (wasRunning)
             {
-                completion?.Invoke(false);
                 WaveRunFinished?.Invoke(false);
             }
         }
@@ -461,18 +586,22 @@ namespace TAD.Waves
             CompleteSingleWave(completed);
         }
 
-        private IEnumerator RunPlayerWave(IReadOnlyList<AttackerDefinition> attackerDefinitions, float spawnInterval)
+        private IEnumerator RunPlayerWave(
+            PlayerWaveRun playerWaveRun,
+            IReadOnlyList<AttackerDefinition> attackerDefinitions,
+            float spawnInterval)
         {
             if (foodStore.IsDepleted)
             {
-                CompletePlayerWave(false);
+                CompletePlayerWaveSpawnSequence(playerWaveRun, completed: false);
+                CompletePlayerWaveRun(playerWaveRun, completed: false);
                 yield break;
             }
 
             currentWaveNumber = Mathf.Max(1, currentWaveNumber + 1);
+            playerWaveRun.WaveNumber = currentWaveNumber;
             spawnedInCurrentWave = 0;
-            activeAttackers.Clear();
-            WaveStarted?.Invoke(currentWaveNumber, attackerDefinitions.Count);
+            WaveStarted?.Invoke(playerWaveRun.WaveNumber, attackerDefinitions.Count);
 
             var failedToSpawn = false;
             for (var attackerIndex = 0; attackerIndex < attackerDefinitions.Count; attackerIndex++)
@@ -489,7 +618,10 @@ namespace TAD.Waves
                     break;
                 }
 
-                playerAttackerSpawned?.Invoke(attacker);
+                playerWaveRun.RegisterAttacker(
+                    attacker,
+                    returnedAttacker => HandlePlayerAttackerReturned(playerWaveRun, returnedAttacker));
+                playerWaveRun.AttackerSpawned?.Invoke(attacker);
                 spawnedInCurrentWave++;
                 if (attackerIndex < attackerDefinitions.Count - 1 && spawnInterval > 0f)
                 {
@@ -497,22 +629,107 @@ namespace TAD.Waves
                 }
             }
 
-            yield return WaitForActiveAttackers();
-            CompletePlayerWave(!foodStore.IsDepleted && !failedToSpawn);
-        }
+            // The next queued group may start now. This run deliberately keeps waiting on only
+            // its own tracked attackers, so earlier groups remain on screen while later groups enter.
+            CompletePlayerWaveSpawnSequence(playerWaveRun, !failedToSpawn && !foodStore.IsDepleted);
 
-        private void CompletePlayerWave(bool completed)
-        {
-            waveRoutine = null;
-            var completion = playerWaveCompletion;
-            ClearPlayerWaveCallbacks();
-            if (completed)
+            while (playerWaveRun.ActiveAttackers.Count > 0)
             {
-                WaveCompleted?.Invoke(currentWaveNumber);
+                ResolveInactivePlayerAttackers(playerWaveRun);
+                if (playerWaveRun.ActiveAttackers.Count == 0)
+                {
+                    break;
+                }
+
+                yield return null;
             }
 
-            completion?.Invoke(completed);
-            WaveRunFinished?.Invoke(completed);
+            CompletePlayerWaveRun(playerWaveRun, !foodStore.IsDepleted && !failedToSpawn);
+        }
+
+        private void CompletePlayerWaveSpawnSequence(PlayerWaveRun playerWaveRun, bool completed)
+        {
+            if (playerWaveRun == null || playerWaveRun.SpawnSequenceFinished)
+            {
+                return;
+            }
+
+            playerWaveRun.SpawnSequenceFinished = true;
+            isPlayerSpawnSequenceRunning = false;
+            playerWaveRun.SpawnSequenceCompleted?.Invoke(completed);
+        }
+
+        private void HandlePlayerAttackerReturned(PlayerWaveRun playerWaveRun, BasicAttacker attacker)
+        {
+            if (playerWaveRun == null || !playerWaveRun.TryResolveAttacker(attacker))
+            {
+                return;
+            }
+
+            if (attacker != null)
+            {
+                activeAttackers.Remove(attacker.gameObject);
+            }
+
+            playerWaveRun.AttackerResolved?.Invoke(attacker);
+        }
+
+        /// <summary>
+        /// Pool return notifications are the normal authoritative resolution path. This small
+        /// defensive sweep prevents a manually disabled or destroyed attacker from leaving an
+        /// overlapping player group waiting forever if a third-party component bypasses the pool.
+        /// </summary>
+        private void ResolveInactivePlayerAttackers(PlayerWaveRun playerWaveRun)
+        {
+            if (playerWaveRun == null || playerWaveRun.ActiveAttackers.Count == 0)
+            {
+                return;
+            }
+
+            stalePlayerAttackers.Clear();
+            foreach (var attacker in playerWaveRun.ActiveAttackers)
+            {
+                if (attacker == null || !attacker.gameObject.activeInHierarchy)
+                {
+                    stalePlayerAttackers.Add(attacker);
+                }
+            }
+
+            foreach (var attacker in stalePlayerAttackers)
+            {
+                HandlePlayerAttackerReturned(playerWaveRun, attacker);
+            }
+
+            stalePlayerAttackers.Clear();
+        }
+
+        private void CompletePlayerWaveRun(PlayerWaveRun playerWaveRun, bool completed)
+        {
+            if (playerWaveRun == null || !activePlayerWaveRuns.Remove(playerWaveRun))
+            {
+                return;
+            }
+
+            playerWaveRun.Routine = null;
+            playerWaveRun.DetachAllAttackers();
+            if (!completed)
+            {
+                playerWaveRunAggregateFailed = true;
+            }
+            else
+            {
+                WaveCompleted?.Invoke(playerWaveRun.WaveNumber);
+            }
+
+            playerWaveRun.Completed?.Invoke(completed);
+            if (activePlayerWaveRuns.Count != 0)
+            {
+                return;
+            }
+
+            var allPlayerRunsCompleted = !playerWaveRunAggregateFailed;
+            playerWaveRunAggregateFailed = false;
+            WaveRunFinished?.Invoke(allPlayerRunsCompleted);
         }
 
         private void CompleteSingleWave(bool completed)
@@ -566,7 +783,7 @@ namespace TAD.Waves
             }
 
             activeAttackers.Add(attackerObject);
-            TadSfxPlayer.Play(attacker.Definition.EntrySound, TadAudioChannelType.Attacker, attacker.CurrentPosition);
+            TadSfxPlayer.Play(attacker.Definition.AnimalCrySound, TadAudioChannelType.Attacker, attacker.CurrentPosition);
             spawnedAttacker = attacker;
             return true;
         }
@@ -596,15 +813,6 @@ namespace TAD.Waves
             {
                 var attackerObject = activeAttackers[index];
                 var isStillActive = attackerObject != null && attackerObject.activeSelf;
-                if (isPlayerWave && attackerObject != null &&
-                    attackerObject.TryGetComponent<BasicAttacker>(out var resolvedAttacker) &&
-                    (!isStillActive || resolvedAttacker.IsDefeated))
-                {
-                    // A defeated animal can remain visible briefly for its death animation, but it is no
-                    // longer alive for the queued-group counter. The queue ignores duplicate instance IDs.
-                    playerAttackerResolved?.Invoke(resolvedAttacker);
-                }
-
                 if (isStillActive)
                 {
                     continue;
@@ -616,20 +824,107 @@ namespace TAD.Waves
             return activeAttackers.Count;
         }
 
-        private void ClearPlayerWaveCallbacks()
+        private void StopPlayerWaveRuns(bool notifyCompletion)
         {
-            playerWaveCompletion = null;
-            playerAttackerSpawned = null;
-            playerAttackerResolved = null;
-            isPlayerWave = false;
+            isPlayerSpawnSequenceRunning = false;
+            if (activePlayerWaveRuns.Count == 0)
+            {
+                playerWaveRunAggregateFailed = false;
+                return;
+            }
+
+            var runs = activePlayerWaveRuns.ToArray();
+            activePlayerWaveRuns.Clear();
+            foreach (var playerWaveRun in runs)
+            {
+                if (playerWaveRun.Routine != null)
+                {
+                    StopCoroutine(playerWaveRun.Routine);
+                    playerWaveRun.Routine = null;
+                }
+
+                playerWaveRun.DetachAllAttackers();
+                if (notifyCompletion)
+                {
+                    playerWaveRun.Completed?.Invoke(false);
+                }
+            }
+
+            playerWaveRunAggregateFailed = false;
         }
 
         private bool EnsureRouteMap()
         {
-            return routeMapper != null && (routeMapper.CachedRouteFieldCount > 0 || routeMapper.RebuildRoutes());
+            if (routeMapper == null)
+            {
+                return false;
+            }
+
+            // When the camera has to widen, all flow fields are based on stale visible bounds.
+            // Rebuild them after physics has caught up with the current level geometry.
+            var cameraFramingChanged = EnsureGameplayCameraFramesRouteEndpoints();
+            if (cameraFramingChanged || routeMapper.CachedRouteFieldCount == 0)
+            {
+                Physics2D.SyncTransforms();
+                return routeMapper.RebuildRoutes();
+            }
+
+            return true;
         }
 
-        private bool TryResolveDependencies()
+        /// <summary>
+        /// Rebuilds the camera-bounded route cache after a presentation-only camera rotation or
+        /// viewport resize. Gameplay callers retain the normal startup path through <see cref="EnsureRouteMap"/>.
+        /// </summary>
+        public bool RefreshRouteMapForCurrentViewport()
+        {
+            return TryResolveDependencies() && EnsureRouteMap();
+        }
+
+        /// <summary>
+        /// Ensures the visible play area contains the two endpoints required by every attacker
+        /// route. This keeps a translated level core from producing an empty flow field or
+        /// returning pooled animals before they reach the visible map.
+        /// </summary>
+        private bool EnsureGameplayCameraFramesRouteEndpoints()
+        {
+            var gameplayCamera = Camera.main;
+            if (gameplayCamera == null || !gameplayCamera.orthographic || foodStore == null)
+            {
+                return false;
+            }
+
+            // Use the camera's local axes rather than raw world X/Y. Portrait presentation turns
+            // only the camera so the authored farm remains intact while the spawn is at the top of
+            // a phone screen and the Food Store is at the bottom.
+            var spawnPosition = gameplayCamera.transform.InverseTransformPoint(SpawnPosition);
+            var foodPosition = gameplayCamera.transform.InverseTransformPoint(foodStore.transform.position);
+            var requiredHalfHeight = Mathf.Max(
+                Mathf.Abs(spawnPosition.y),
+                Mathf.Abs(foodPosition.y)) + RouteEndpointViewportPadding;
+            var requiredHalfWidth = Mathf.Max(
+                Mathf.Abs(spawnPosition.x),
+                Mathf.Abs(foodPosition.x)) + RouteEndpointViewportPadding;
+            var requiredSize = Mathf.Max(
+                requiredHalfHeight,
+                requiredHalfWidth / Mathf.Max(0.01f, gameplayCamera.aspect));
+
+            if (requiredSize <= gameplayCamera.orthographicSize + 0.01f)
+            {
+                return false;
+            }
+
+            gameplayCamera.orthographicSize = requiredSize;
+            return true;
+        }
+
+        /// <summary>
+        /// Resolves scene dependencies without treating passive availability checks as runtime
+        /// errors. A minimal scene can legitimately own a day-cycle controller before it owns a
+        /// wave-spawning setup; only an explicit attempt to send a wave should report that
+        /// configuration problem to the developer.
+        /// </summary>
+        private bool TryResolveDependencies(bool logMissingDependencies = false)
         {
             spawnPool ??= UnityEngine.Object.FindAnyObjectByType<SpawnPool>();
             if (spawnPool != null)
@@ -647,7 +942,11 @@ namespace TAD.Waves
                 return true;
             }
 
-            Debug.LogError("Wave Controller needs a Spawn Pool, Farm Route Mapper, and Food Store before it can send waves.", this);
+            if (logMissingDependencies)
+            {
+                Debug.LogError("Wave Controller needs a Spawn Pool, Farm Route Mapper, and Food Store before it can send waves.", this);
+            }
+
             return false;
         }
 

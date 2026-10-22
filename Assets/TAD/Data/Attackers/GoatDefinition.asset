@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 694892edc0a468b448e49591a6175013, type: 3}
+  m_Name: GoatDefinition
+  m_EditorClassIdentifier: TAD.Runtime::TAD.Attackers.AttackerDefinition
+  attackerId: 016
+  displayName: Goat
+  maximumHealth: 29
+  movementSpeed: 3
+  size: 1.25
+  sendCost: 43
+  waveIncome: 12
+  expGiven: 15
+  killGain: 9
+  sendSize: 6
+  archetype: 0
+  challengeTier: 7
+  traversalProfile: 0
+  visualDefinition: {fileID: 11400000, guid: 3a933b9cd4e850d4992b1b53d89293c6, type: 2}
+  entrySound: {fileID: 8300000, guid: 3bed3d8681bb7df4aa54e40159eb4fb8, type: 3}
+  deathSound: {fileID: 8300000, guid: 466104580d92ef34aad30d41bd7c6dca, type: 3}

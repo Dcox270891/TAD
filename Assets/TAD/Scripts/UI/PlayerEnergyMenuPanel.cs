@@ -112,7 +112,9 @@ namespace TAD.UI
             layout.spacing = 0f;
             layout.childAlignment = TextAnchor.MiddleLeft;
             layout.childControlWidth = true;
-            layout.childControlHeight = false;
+            // Energy and timer labels provide explicit preferred heights. Let the group honour
+            // them so the countdown stays inside its framed, tap-friendly panel on phones.
+            layout.childControlHeight = true;
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = false;
 

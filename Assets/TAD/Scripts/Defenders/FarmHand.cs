@@ -115,6 +115,18 @@ namespace TAD.Defenders
         /// <summary>The authoritative Defender resource bank used for this farmhand's weapon purchases.</summary>
         public ResourceBank DefenderBank => ResolveDefenderBank();
 
+        /// <summary>
+        /// Binds this reusable farmhand to the Defender bank that paid for its placement.  The
+        /// placement controller calls this as part of the purchase transaction, which prevents a
+        /// pooled defender from accidentally resolving a bank belonging to another loaded level.
+        /// Passing a non-Defender bank deliberately clears the explicit binding and leaves the
+        /// normal single-level fallback in place.
+        /// </summary>
+        public void BindDefenderBank(ResourceBank bank)
+        {
+            defenderBank = bank != null && bank.BankSide == BankSide.Defender ? bank : null;
+        }
+
         /// <summary>25% of the base farmhand and permanently purchased upgrade costs, rounded up to whole gold.</summary>
         public int RelocationCost => Mathf.CeilToInt(Mathf.Max(0, investedGold) * RelocationCostMultiplier);
 
@@ -1623,9 +1635,15 @@ namespace TAD.Defenders
         /// </summary>
         private static PlayerProfileData GetPlayerDefenderUpgradeProfile()
         {
-            return MatchRoleSelection.IsPlayerDefender
-                ? PlayerSettingsService.Instance.Profile
-                : null;
+            // OnValidate evaluates range for prefab previews. Do not create the persistent
+            // settings singleton while Unity is validating an asset; upgrade bonuses only
+            // apply during an actual match.
+            if (!Application.isPlaying || !MatchRoleSelection.IsPlayerDefender)
+            {
+                return null;
+            }
+
+            return PlayerSettingsService.Instance.Profile;
         }
 
         private static DefenderTargetingMode NormalizeTargetingMode(DefenderTargetingMode mode)

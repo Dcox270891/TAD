@@ -16,3 +16,4 @@ MonoBehaviour:
   displayName: 'Level 3: Barnyard Gauntlet'
   sceneName: Level3
   description: A denser farm layout with the largest opening waves.
+  unlocked: 1

@@ -8,6 +8,7 @@ using TAD.Pooling;
 using TAD.UI;
 using TAD.Waves;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace TAD.Tests.PlayMode
@@ -15,6 +16,8 @@ namespace TAD.Tests.PlayMode
     internal static class GameBasicsTestSupport
     {
         private const string TestPrefix = "TAD Test ";
+        private const string IsolatedScenePrefix = "TAD Test Sandbox ";
+        private static ResourceBank latestTestDefenderBank;
 
         internal sealed class QueueFixture
         {
@@ -58,6 +61,23 @@ namespace TAD.Tests.PlayMode
             var bank = bankObject.AddComponent<ResourceBank>();
             bank.Configure(side, startingGold);
             bankObject.SetActive(true);
+
+            if (side == BankSide.Defender)
+            {
+                // Tests deliberately leave the editor's current scene loaded while building a
+                // compact fixture. Bind its newly-created Defender bank explicitly so it cannot
+                // be confused with a bank belonging to that background scene.
+                latestTestDefenderBank = bank;
+                foreach (var placementController in Object.FindObjectsByType<FarmHandPlacementController>(FindObjectsInactive.Include))
+                {
+                    if (placementController != null &&
+                        placementController.gameObject.name.StartsWith(TestPrefix, System.StringComparison.Ordinal))
+                    {
+                        placementController.BindDefenderBank(bank);
+                    }
+                }
+            }
+
             return bank;
         }
 
@@ -76,6 +96,7 @@ namespace TAD.Tests.PlayMode
             var handObject = new GameObject(TestPrefix + "FarmHand");
             handObject.SetActive(false);
             var hand = handObject.AddComponent<FarmHand>();
+            hand.BindDefenderBank(latestTestDefenderBank);
             handObject.SetActive(true);
             return hand;
         }
@@ -88,6 +109,7 @@ namespace TAD.Tests.PlayMode
             var camera = cameraObject.AddComponent<Camera>();
             camera.orthographic = true;
             camera.orthographicSize = 6f;
+            cameraObject.AddComponent<AudioListener>();
             return camera;
         }
 
@@ -190,6 +212,7 @@ namespace TAD.Tests.PlayMode
         internal static IEnumerator DestroyAllTestObjects()
         {
             Time.timeScale = 1f;
+            latestTestDefenderBank = null;
             var objectsToDestroy = new HashSet<GameObject>();
 
             // Spawned pool objects detach from their pool while active. Mark them before their owning
@@ -218,6 +241,84 @@ namespace TAD.Tests.PlayMode
             }
 
             yield return null;
+        }
+
+        /// <summary>
+        /// Removes any authored game scene leaked by PlayMode coverage while retaining Unity's
+        /// initial test-runner scene. Some coverage deliberately loads a shipped level with
+        /// <see cref="LoadSceneMode.Single"/>; only deleting objects named for a test leaves
+        /// that level's walls, terrain, camera, and global lookups alive for the next fixture.
+        /// We must not unload Unity's temporary initial scene, because that also owns the
+        /// PlayMode runner. A runtime-only sandbox is created only when a known authored scene
+        /// needs to be unloaded.
+        /// </summary>
+        internal static IEnumerator ResetToIsolatedTestScene()
+        {
+            yield return DestroyAllTestObjects();
+
+            var scenesToUnload = new List<Scene>();
+            for (var index = 0; index < SceneManager.sceneCount; index++)
+            {
+                var scene = SceneManager.GetSceneAt(index);
+                if (IsAuthoredGameplayScene(scene))
+                {
+                    scenesToUnload.Add(scene);
+                }
+            }
+
+            if (scenesToUnload.Count == 0)
+            {
+                yield return null;
+                yield break;
+            }
+
+            var sandbox = FindOrCreateSandboxScene();
+            if (!SceneManager.SetActiveScene(sandbox))
+            {
+                throw new System.InvalidOperationException("Could not activate the isolated PlayMode test scene.");
+            }
+
+            foreach (var scene in scenesToUnload)
+            {
+                if (!scene.isLoaded)
+                {
+                    continue;
+                }
+
+                var unloadOperation = SceneManager.UnloadSceneAsync(scene);
+                if (unloadOperation != null)
+                {
+                    yield return unloadOperation;
+                }
+            }
+
+            yield return null;
+        }
+
+        private static Scene FindOrCreateSandboxScene()
+        {
+            for (var index = 0; index < SceneManager.sceneCount; index++)
+            {
+                var scene = SceneManager.GetSceneAt(index);
+                if (scene.IsValid() && scene.isLoaded &&
+                    scene.name.StartsWith(IsolatedScenePrefix, System.StringComparison.Ordinal))
+                {
+                    return scene;
+                }
+            }
+
+            return SceneManager.CreateScene(IsolatedScenePrefix + System.Guid.NewGuid().ToString("N"));
+        }
+
+        private static bool IsAuthoredGameplayScene(Scene scene)
+        {
+            if (!scene.IsValid() || !scene.isLoaded)
+            {
+                return false;
+            }
+
+            return scene.path == "Assets/Scenes/MainMenu.unity" ||
+                   scene.path.StartsWith("Assets/Scenes/Levels/", System.StringComparison.Ordinal);
         }
 
         private static Text AddText(Transform parent, string name)

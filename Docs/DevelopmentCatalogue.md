@@ -1,5 +1,19 @@
 # TAD development catalogue
 
+## 2026-10-22 — grass-bounded attacker and defender movement
+
+![Level 1 Game-view capture of the authored grass play field](DevelopmentEvidence/2026-10-22-grass-bounded-movement-level1.png)
+
+The authored grass background is now the authoritative playable footprint. Ground attackers and relocating farmhands are clamped and routed within that grass area, so neither can travel into the surrounding presentation background. The food barn may remain visually beyond the grass edge: attackers finish at the last legal grass cell and then resolve their arrival with the Food Store, rather than walking through the barn artwork.
+
+To keep the paths reliable for the whole roster, attacker display size is now separate from route-clearance diameter. Each animal keeps its intended visual scale while using a conservative physical footprint for navigation, including the largest animals. Level 1–4 layouts were not edited during this work.
+
+Validation completed before publication:
+
+- Focused game-basics validation: 40/40 Play Mode tests passed.
+- Full Game Basics Edit Mode: 124/124 tests passed.
+- Full Game Basics Play Mode: 53/53 tests passed, including the four shipped scenes, grass bounds, barn-edge arrival, pooling, day-cycle, targeting, and farmhand relocation presentation.
+
 ## 2026-10-08 — automatic farmhand identities
 
 ![Level 2 Game-view capture of pooled farmhands with automatic identities](DevelopmentEvidence/defender-appearance-randomization-2026-10-08.png)

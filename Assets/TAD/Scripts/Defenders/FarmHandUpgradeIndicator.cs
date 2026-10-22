@@ -11,17 +11,27 @@ namespace TAD.Defenders
     public sealed class FarmHandUpgradeIndicator : MonoBehaviour
     {
         private const float ArrowPixelsPerUnit = 32f;
-        private const float ArrowSizeMultiplier = 1.15f;
+        private const float ArrowSizeMultiplier = 1.2f;
+        private const float PulseAmount = 0.055f;
+        private const float PulseSpeed = 4.5f;
+        private const float BobAmount = 0.025f;
         private const string ArrowObjectName = "Upgrade Available Arrow";
 
         // Kept slightly translucent so the farmhand remains legible while the arrow sits behind it.
         private static readonly Color UpgradeReadyRed = new(0.94f, 0.10f, 0.12f, 0.94f);
         private static Sprite arrowSprite;
 
+        [Header("Presentation")]
+        [Tooltip("The authored low-poly marker used in game. The small generated arrow remains as a safe fallback for older prefabs.")]
+        [SerializeField] private Sprite authoredArrowSprite;
+
         private FarmHand farmHand;
         private SpriteRenderer farmHandVisual;
         private SpriteRenderer arrowRenderer;
         private bool isSubscribed;
+        private Vector3 baseArrowLocalScale = Vector3.one;
+        private Vector3 baseArrowLocalPosition;
+        private bool hasBaseArrowPresentation;
 
         private void Awake()
         {
@@ -41,10 +51,27 @@ namespace TAD.Defenders
         private void OnDisable()
         {
             Unsubscribe();
+            hasBaseArrowPresentation = false;
             if (arrowRenderer != null)
             {
                 arrowRenderer.enabled = false;
             }
+        }
+
+        private void Update()
+        {
+            if (arrowRenderer == null || !arrowRenderer.enabled || !hasBaseArrowPresentation)
+            {
+                return;
+            }
+
+            // The restrained bob and pulse keeps a waiting upgrade obvious at mobile scale while
+            // the farmhand still renders clearly over the marker.
+            var phase = Time.unscaledTime * PulseSpeed;
+            var scaleMultiplier = 1f + Mathf.Sin(phase) * PulseAmount;
+            arrowRenderer.transform.localScale = baseArrowLocalScale * scaleMultiplier;
+            arrowRenderer.transform.localPosition = baseArrowLocalPosition +
+                (Vector3.up * (Mathf.Sin(phase * 0.75f) * BobAmount));
         }
 
         private void OnDestroy()
@@ -142,13 +169,16 @@ namespace TAD.Defenders
                 return;
             }
 
-            arrowRenderer.sprite = GetArrowSprite();
+            arrowRenderer.sprite = authoredArrowSprite != null ? authoredArrowSprite : GetArrowSprite();
             arrowRenderer.color = UpgradeReadyRed;
 
             var arrowTransform = arrowRenderer.transform;
             if (farmHandVisual == null || farmHandVisual.sprite == null || arrowRenderer.sprite == null)
             {
                 arrowTransform.localPosition = Vector3.zero;
+                baseArrowLocalPosition = arrowTransform.localPosition;
+                baseArrowLocalScale = arrowTransform.localScale;
+                hasBaseArrowPresentation = true;
                 return;
             }
 
@@ -171,6 +201,9 @@ namespace TAD.Defenders
 
             var localVisualCentre = transform.InverseTransformPoint(farmHandVisual.bounds.center);
             arrowTransform.localPosition = new Vector3(localVisualCentre.x, localVisualCentre.y, 0f);
+            baseArrowLocalScale = arrowTransform.localScale;
+            baseArrowLocalPosition = arrowTransform.localPosition;
+            hasBaseArrowPresentation = true;
         }
 
         private static Sprite GetArrowSprite()

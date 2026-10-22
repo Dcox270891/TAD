@@ -16,7 +16,7 @@ MonoBehaviour:
   displayName: Boar
   maximumHealth: 11
   movementSpeed: 1.6
-  size: 1.15
+  size: 1.25
   sendCost: 11
   waveIncome: 2
   expGiven: 2
@@ -27,3 +27,4 @@ MonoBehaviour:
   traversalProfile: 0
   visualDefinition: {fileID: 11400000, guid: c2ecdc71fc827e641b962c0df1b92ca0, type: 2}
   entrySound: {fileID: 8300000, guid: e2250183af794624fac43ba68a0bfe23, type: 3}
+  deathSound: {fileID: 8300000, guid: 238376249a92e324cb66e2a730966881, type: 3}

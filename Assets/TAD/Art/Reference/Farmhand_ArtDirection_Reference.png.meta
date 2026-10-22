@@ -1,0 +1,795 @@
+fileFormatVersion: 2
+guid: 0012d2c6a584b964eb4e50b267da3c01
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -7891962163173572226
+    second: Farmhand_ArtDirection_Reference_0
+  - first:
+      213: 7070961011250408902
+    second: Farmhand_ArtDirection_Reference_1
+  - first:
+      213: 7359268933007745111
+    second: Farmhand_ArtDirection_Reference_2
+  - first:
+      213: -7671209445777421536
+    second: Farmhand_ArtDirection_Reference_3
+  - first:
+      213: -7616024860627934743
+    second: Farmhand_ArtDirection_Reference_4
+  - first:
+      213: -4975640353093060801
+    second: Farmhand_ArtDirection_Reference_5
+  - first:
+      213: 377981448437683465
+    second: Farmhand_ArtDirection_Reference_6
+  - first:
+      213: 7911123116030751031
+    second: Farmhand_ArtDirection_Reference_7
+  - first:
+      213: -2460439455044039931
+    second: Farmhand_ArtDirection_Reference_8
+  - first:
+      213: 4166181916145890668
+    second: Farmhand_ArtDirection_Reference_9
+  - first:
+      213: 1931027666308938329
+    second: Farmhand_ArtDirection_Reference_10
+  - first:
+      213: 831511970285434954
+    second: Farmhand_ArtDirection_Reference_11
+  - first:
+      213: 672743817558976315
+    second: Farmhand_ArtDirection_Reference_12
+  - first:
+      213: 4734337811758089159
+    second: Farmhand_ArtDirection_Reference_13
+  - first:
+      213: 276593532148979360
+    second: Farmhand_ArtDirection_Reference_14
+  - first:
+      213: -5988536912513188518
+    second: Farmhand_ArtDirection_Reference_15
+  - first:
+      213: -3685324123737704699
+    second: Farmhand_ArtDirection_Reference_16
+  - first:
+      213: 1484884361585364941
+    second: Farmhand_ArtDirection_Reference_17
+  - first:
+      213: 2171486515944469393
+    second: Farmhand_ArtDirection_Reference_18
+  - first:
+      213: 7585700589765380462
+    second: Farmhand_ArtDirection_Reference_19
+  - first:
+      213: 1322695434088936877
+    second: Farmhand_ArtDirection_Reference_20
+  - first:
+      213: 2495451962190016069
+    second: Farmhand_ArtDirection_Reference_21
+  - first:
+      213: -6833130551990993358
+    second: Farmhand_ArtDirection_Reference_22
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationMethod: 0
+  spriteTessellationDetail: -1
+  spriteGeometrySubdivision: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: iOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: VisionOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: tvOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WindowsStoreApps
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: Farmhand_ArtDirection_Reference_0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 1282
+        height: 1196
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e71473bd93e1a7290800000000000000
+      internalID: -7891962163173572226
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Farmhand_ArtDirection_Reference_1
+      rect:
+        serializedVersion: 2
+        x: 650
+        y: 1159
+        width: 69
+        height: 39
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6cda7308399112260800000000000000
+      internalID: 7070961011250408902
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Farmhand_ArtDirection_Reference_2
+      rect:
+        serializedVersion: 2
+        x: 807
+        y: 1192
+        width: 20
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 750ae7e7a10612660800000000000000
+      internalID: 7359268933007745111
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Farmhand_ArtDirection_Reference_3
+      rect:
+        serializedVersion: 2
+        x: 824
+        y: 1175
+        width: 21
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 02bc0d227a36a8590800000000000000
+      internalID: -7671209445777421536
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Farmhand_ArtDirection_Reference_4
+      rect:
+        serializedVersion: 2
+        x: 813
+        y: 1176
+        width: 8
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9e16abd9db17e4690800000000000000
+      internalID: -7616024860627934743
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Farmhand_ArtDirection_Reference_5
+      rect:
+        serializedVersion: 2
+        x: 819
+        y: 1176
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f37f9cff579f2fab0800000000000000
+      internalID: -4975640353093060801
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Farmhand_ArtDirection_Reference_6
+      rect:
+        serializedVersion: 2
+        x: 872
+        y: 1152
+        width: 54
+        height: 29
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 905d0ddef1cde3500800000000000000
+      internalID: 377981448437683465
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Farmhand_ArtDirection_Reference_7
+      rect:
+        serializedVersion: 2
+        x: 969
+        y: 1167
+        width: 13
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 731f4612f84f9cd60800000000000000
+      internalID: 7911123116030751031
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Farmhand_ArtDirection_Reference_8
+      rect:
+        serializedVersion: 2
+        x: 647
+        y: 1158
+        width: 7
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 50b8eb20a53caddd0800000000000000
+      internalID: -2460439455044039931
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Farmhand_ArtDirection_Reference_9
+      rect:
+        serializedVersion: 2
+        x: 983
+        y: 1168
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c65388d116041d930800000000000000
+      internalID: 4166181916145890668
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Farmhand_ArtDirection_Reference_10
+      rect:
+        serializedVersion: 2
+        x: 526
+        y: 1096
+        width: 25
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 95abbc57e636cca10800000000000000
+      internalID: 1931027666308938329
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Farmhand_ArtDirection_Reference_11
+      rect:
+        serializedVersion: 2
+        x: 558
+        y: 1108
+        width: 8
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a48395f3bbf1a8b00800000000000000
+      internalID: 831511970285434954
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Farmhand_ArtDirection_Reference_12
+      rect:
+        serializedVersion: 2
+        x: 937
+        y: 1069
+        width: 47
+        height: 66
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b37617e00f0165900800000000000000
+      internalID: 672743817558976315
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Farmhand_ArtDirection_Reference_13
+      rect:
+        serializedVersion: 2
+        x: 1139
+        y: 940
+        width: 13
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7c38a8cf72fb3b140800000000000000
+      internalID: 4734337811758089159
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Farmhand_ArtDirection_Reference_14
+      rect:
+        serializedVersion: 2
+        x: 63
+        y: 744
+        width: 21
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0a619ee1a58a6d300800000000000000
+      internalID: 276593532148979360
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Farmhand_ArtDirection_Reference_15
+      rect:
+        serializedVersion: 2
+        x: 759
+        y: 64
+        width: 11
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a5d365d186174eca0800000000000000
+      internalID: -5988536912513188518
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Farmhand_ArtDirection_Reference_16
+      rect:
+        serializedVersion: 2
+        x: 785
+        y: 78
+        width: 13
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 507bf623c391bdcc0800000000000000
+      internalID: -3685324123737704699
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Farmhand_ArtDirection_Reference_17
+      rect:
+        serializedVersion: 2
+        x: 789
+        y: 38
+        width: 70
+        height: 45
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: dcf04d8a57e5b9410800000000000000
+      internalID: 1484884361585364941
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Farmhand_ArtDirection_Reference_18
+      rect:
+        serializedVersion: 2
+        x: 864
+        y: 62
+        width: 9
+        height: 19
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 193bb613b7ba22e10800000000000000
+      internalID: 2171486515944469393
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Farmhand_ArtDirection_Reference_19
+      rect:
+        serializedVersion: 2
+        x: 119
+        y: 54
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e69cf61ee72d54960800000000000000
+      internalID: 7585700589765380462
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Farmhand_ArtDirection_Reference_20
+      rect:
+        serializedVersion: 2
+        x: 856
+        y: 54
+        width: 6
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: da5f6e64d782b5210800000000000000
+      internalID: 1322695434088936877
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Farmhand_ArtDirection_Reference_21
+      rect:
+        serializedVersion: 2
+        x: 858
+        y: 31
+        width: 29
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 54e23609650a1a220800000000000000
+      internalID: 2495451962190016069
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Farmhand_ArtDirection_Reference_22
+      rect:
+        serializedVersion: 2
+        x: 886
+        y: 35
+        width: 32
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 23e35b867f7db21a0800000000000000
+      internalID: -6833130551990993358
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      Farmhand_ArtDirection_Reference_0: -7891962163173572226
+      Farmhand_ArtDirection_Reference_1: 7070961011250408902
+      Farmhand_ArtDirection_Reference_10: 1931027666308938329
+      Farmhand_ArtDirection_Reference_11: 831511970285434954
+      Farmhand_ArtDirection_Reference_12: 672743817558976315
+      Farmhand_ArtDirection_Reference_13: 4734337811758089159
+      Farmhand_ArtDirection_Reference_14: 276593532148979360
+      Farmhand_ArtDirection_Reference_15: -5988536912513188518
+      Farmhand_ArtDirection_Reference_16: -3685324123737704699
+      Farmhand_ArtDirection_Reference_17: 1484884361585364941
+      Farmhand_ArtDirection_Reference_18: 2171486515944469393
+      Farmhand_ArtDirection_Reference_19: 7585700589765380462
+      Farmhand_ArtDirection_Reference_2: 7359268933007745111
+      Farmhand_ArtDirection_Reference_20: 1322695434088936877
+      Farmhand_ArtDirection_Reference_21: 2495451962190016069
+      Farmhand_ArtDirection_Reference_22: -6833130551990993358
+      Farmhand_ArtDirection_Reference_3: -7671209445777421536
+      Farmhand_ArtDirection_Reference_4: -7616024860627934743
+      Farmhand_ArtDirection_Reference_5: -4975640353093060801
+      Farmhand_ArtDirection_Reference_6: 377981448437683465
+      Farmhand_ArtDirection_Reference_7: 7911123116030751031
+      Farmhand_ArtDirection_Reference_8: -2460439455044039931
+      Farmhand_ArtDirection_Reference_9: 4166181916145890668
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

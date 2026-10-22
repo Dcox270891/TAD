@@ -19,6 +19,7 @@ namespace TAD.Editor
     {
         private const string OutlineAssetPath = "Assets/TAD/Art/UI/TAD_ThinWoodOutline.png";
         private const string SquareFillAssetPath = "Assets/TAD/Art/UI/TAD_SquareUiFill.png";
+        private const string BoldFontAssetPath = "Assets/TAD/Art/UI/Fonts/Coiny-Regular.ttf";
         private const string ButtonPrefabPath = "Assets/TAD/Prefabs/UI/ThinWoodOutlineButton.prefab";
         private const string PlayerLevelUpCardPrefabPath = "Assets/TAD/Prefabs/UI/PlayerLevelUpCard.prefab";
         private const string UiPrefabsFolder = "Assets/TAD/Prefabs/UI";
@@ -42,6 +43,12 @@ namespace TAD.Editor
         [MenuItem("TAD/UI/Build Thin Wood Outline Assets")]
         private static void BuildThinWoodOutlineAssets()
         {
+            RebuildAllUiAssets();
+        }
+
+        /// <summary>Explicit entry point for CI or an editor command after shared UI art changes.</summary>
+        public static void RebuildAllUiAssets()
+        {
             CreateOrUpdateAssets();
         }
 
@@ -64,6 +71,7 @@ namespace TAD.Editor
                 AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
                 var outlineSprite = ConfigureOutlineImporter();
                 var squareFillSprite = CreateOrUpdateSquareFillSprite();
+                var boldFont = AssetDatabase.LoadAssetAtPath<Font>(BoldFontAssetPath);
                 if (outlineSprite == null)
                 {
                     throw new InvalidOperationException($"Unable to import the outline sprite at '{OutlineAssetPath}'.");
@@ -74,10 +82,15 @@ namespace TAD.Editor
                     throw new InvalidOperationException($"Unable to import the square fill sprite at '{SquareFillAssetPath}'.");
                 }
 
-                CreateOrUpdateButtonPrefab(outlineSprite);
+                if (boldFont == null)
+                {
+                    throw new InvalidOperationException($"Unable to import the bold UI font at '{BoldFontAssetPath}'.");
+                }
+
+                CreateOrUpdateButtonPrefab(outlineSprite, boldFont);
                 var levelUpCardPrefab = CreateOrUpdatePlayerLevelUpCardPrefab(outlineSprite);
-                ApplyThinOutlineThemeToUiPrefabs(outlineSprite, squareFillSprite, levelUpCardPrefab);
-                ApplyThinOutlineThemeToMainMenu(outlineSprite);
+                ApplyThinOutlineThemeToUiPrefabs(outlineSprite, squareFillSprite, levelUpCardPrefab, boldFont);
+                ApplyThinOutlineThemeToMainMenu(outlineSprite, boldFont);
                 AssetDatabase.SaveAssets();
                 Debug.Log("TAD: Thin wood outlines are now applied to all UI panels and buttons.");
             }
@@ -162,7 +175,7 @@ namespace TAD.Editor
             return AssetDatabase.LoadAssetAtPath<Sprite>(SquareFillAssetPath);
         }
 
-        private static void CreateOrUpdateButtonPrefab(Sprite outlineSprite)
+        private static void CreateOrUpdateButtonPrefab(Sprite outlineSprite, Font boldFont)
         {
             var directory = Path.GetDirectoryName(ButtonPrefabPath);
             if (!string.IsNullOrWhiteSpace(directory) && !AssetDatabase.IsValidFolder(directory))
@@ -189,7 +202,7 @@ namespace TAD.Editor
                 }
 
                 var buttonRect = buttonObject.GetComponent<RectTransform>();
-                buttonRect.sizeDelta = new Vector2(180f, 52f);
+                buttonRect.sizeDelta = new Vector2(220f, 72f);
 
                 var image = buttonObject.GetComponent<Image>();
                 image.raycastTarget = true;
@@ -211,12 +224,12 @@ namespace TAD.Editor
                 button.colors = colors;
 
                 var layout = buttonObject.GetComponent<LayoutElement>();
-                layout.minWidth = 120f;
-                layout.minHeight = 40f;
-                layout.preferredWidth = 180f;
-                layout.preferredHeight = 52f;
+                layout.minWidth = 160f;
+                layout.minHeight = 72f;
+                layout.preferredWidth = 220f;
+                layout.preferredHeight = 72f;
 
-                CreateLabel(buttonObject.transform);
+                CreateLabel(buttonObject.transform, boldFont);
                 PrefabUtility.SaveAsPrefabAsset(buttonObject, ButtonPrefabPath);
             }
             finally
@@ -272,7 +285,7 @@ namespace TAD.Editor
             }
         }
 
-        private static void CreateLabel(Transform parent)
+        private static void CreateLabel(Transform parent, Font boldFont)
         {
             var labelObject = new GameObject("Label", typeof(RectTransform), typeof(CanvasRenderer), typeof(Text));
             labelObject.layer = parent.gameObject.layer;
@@ -285,12 +298,12 @@ namespace TAD.Editor
             labelRect.offsetMax = new Vector2(-20f, -6f);
 
             var label = labelObject.GetComponent<Text>();
-            label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            label.font = boldFont != null ? boldFont : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             label.text = "BUTTON";
             label.alignment = TextAnchor.MiddleCenter;
             label.resizeTextForBestFit = true;
-            label.resizeTextMinSize = 12;
-            label.resizeTextMaxSize = 24;
+            label.resizeTextMinSize = 20;
+            label.resizeTextMaxSize = 32;
             label.fontStyle = FontStyle.Bold;
             label.color = new Color(0.24f, 0.105f, 0.03f, 1f);
             label.raycastTarget = false;
@@ -299,7 +312,8 @@ namespace TAD.Editor
         private static void ApplyThinOutlineThemeToUiPrefabs(
             Sprite outlineSprite,
             Sprite squareFillSprite,
-            GameObject levelUpCardPrefab)
+            GameObject levelUpCardPrefab,
+            Font boldFont)
         {
             var prefabPaths = AssetDatabase.FindAssets("t:Prefab", new[] { UiPrefabsFolder })
                 .Select(AssetDatabase.GUIDToAssetPath)
@@ -310,9 +324,9 @@ namespace TAD.Editor
                 var prefabRoot = PrefabUtility.LoadPrefabContents(prefabPath);
                 try
                 {
-                    EnsureSkin(prefabRoot, outlineSprite);
+                    EnsureSkin(prefabRoot, outlineSprite, boldFont);
                     RepairMaskedButtonTargets(prefabRoot);
-                    FarmUiSkin.ApplyThinWoodOutlineTheme(prefabRoot.transform, outlineSprite);
+                    FarmUiSkin.ApplyThinWoodOutlineTheme(prefabRoot.transform, outlineSprite, boldFont);
                     ConfigureFoodStoreHud(prefabRoot, squareFillSprite);
                     ConfigureAttackerQueuePanel(prefabRoot);
                     ConfigureCloseButtonPlacement(prefabRoot);
@@ -413,7 +427,7 @@ namespace TAD.Editor
             }
         }
 
-        private static void ApplyThinOutlineThemeToMainMenu(Sprite outlineSprite)
+        private static void ApplyThinOutlineThemeToMainMenu(Sprite outlineSprite, Font boldFont)
         {
             if (AssetDatabase.LoadAssetAtPath<SceneAsset>(MainMenuScenePath) == null)
             {
@@ -429,11 +443,12 @@ namespace TAD.Editor
                     foreach (var skin in root.GetComponentsInChildren<FarmUiSkin>(true))
                     {
                         skin.ConfigureThinWoodOutline(outlineSprite);
+                        skin.ConfigureBoldFarmFont(boldFont);
                         EditorUtility.SetDirty(skin);
                     }
 
                     RepairMaskedButtonTargets(root);
-                    FarmUiSkin.ApplyThinWoodOutlineTheme(root.transform, outlineSprite);
+                    FarmUiSkin.ApplyThinWoodOutlineTheme(root.transform, outlineSprite, boldFont);
                     ConfigureCloseButtonPlacement(root);
                 }
 
@@ -445,7 +460,7 @@ namespace TAD.Editor
             }
         }
 
-        private static void EnsureSkin(GameObject prefabRoot, Sprite outlineSprite)
+        private static void EnsureSkin(GameObject prefabRoot, Sprite outlineSprite, Font boldFont)
         {
             var skin = prefabRoot.GetComponent<FarmUiSkin>();
             if (skin == null)
@@ -454,6 +469,7 @@ namespace TAD.Editor
             }
 
             skin.ConfigureThinWoodOutline(outlineSprite);
+            skin.ConfigureBoldFarmFont(boldFont);
         }
 
         /// <summary>
@@ -502,6 +518,13 @@ namespace TAD.Editor
 
         private static bool NeedsInitialBuild()
         {
+            var boldFont = AssetDatabase.LoadAssetAtPath<Font>(BoldFontAssetPath);
+            if (boldFont == null)
+            {
+                // Wait for Unity's font importer rather than writing partial fallback styling.
+                return false;
+            }
+
             if (AssetDatabase.LoadAssetAtPath<GameObject>(ButtonPrefabPath) == null)
             {
                 return true;
@@ -512,7 +535,9 @@ namespace TAD.Editor
                 return true;
             }
 
-            return false;
+            var buttonLabel = AssetDatabase.LoadAssetAtPath<GameObject>(ButtonPrefabPath)
+                .GetComponentInChildren<Text>(true);
+            return buttonLabel == null || buttonLabel.font != boldFont;
         }
 
         private static string ToAbsoluteProjectPath(string assetPath)

@@ -1,0 +1,1263 @@
+fileFormatVersion: 2
+guid: e4be74bd281384744be9725a680c83e3
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 3726826256489504748
+    second: TAD_WoodStatusBarFrame_0
+  - first:
+      213: 8214397377821108741
+    second: TAD_WoodStatusBarFrame_1
+  - first:
+      213: -3415815531279474652
+    second: TAD_WoodStatusBarFrame_2
+  - first:
+      213: -3387107493358218206
+    second: TAD_WoodStatusBarFrame_3
+  - first:
+      213: -3292619962510785930
+    second: TAD_WoodStatusBarFrame_4
+  - first:
+      213: 44513697891321375
+    second: TAD_WoodStatusBarFrame_5
+  - first:
+      213: 1433766791671353527
+    second: TAD_WoodStatusBarFrame_6
+  - first:
+      213: -995279139715121792
+    second: TAD_WoodStatusBarFrame_7
+  - first:
+      213: -212100780772749342
+    second: TAD_WoodStatusBarFrame_8
+  - first:
+      213: -7002773797903796343
+    second: TAD_WoodStatusBarFrame_9
+  - first:
+      213: 5431761516054983945
+    second: TAD_WoodStatusBarFrame_10
+  - first:
+      213: 6620630191370938635
+    second: TAD_WoodStatusBarFrame_11
+  - first:
+      213: -5490283693764542103
+    second: TAD_WoodStatusBarFrame_12
+  - first:
+      213: 4921069827506852456
+    second: TAD_WoodStatusBarFrame_13
+  - first:
+      213: -91931360093914118
+    second: TAD_WoodStatusBarFrame_14
+  - first:
+      213: -5883300060652793189
+    second: TAD_WoodStatusBarFrame_15
+  - first:
+      213: 1160206941917105132
+    second: TAD_WoodStatusBarFrame_16
+  - first:
+      213: 8915232650918207465
+    second: TAD_WoodStatusBarFrame_17
+  - first:
+      213: -2800440638481489573
+    second: TAD_WoodStatusBarFrame_18
+  - first:
+      213: -8266044234982934126
+    second: TAD_WoodStatusBarFrame_19
+  - first:
+      213: 4399012176314716486
+    second: TAD_WoodStatusBarFrame_20
+  - first:
+      213: 7099168622076567415
+    second: TAD_WoodStatusBarFrame_21
+  - first:
+      213: -1363680432519947406
+    second: TAD_WoodStatusBarFrame_22
+  - first:
+      213: -1267732229366103926
+    second: TAD_WoodStatusBarFrame_23
+  - first:
+      213: 6831526278670804221
+    second: TAD_WoodStatusBarFrame_24
+  - first:
+      213: -7171213807742146645
+    second: TAD_WoodStatusBarFrame_25
+  - first:
+      213: 5781090311778243041
+    second: TAD_WoodStatusBarFrame_26
+  - first:
+      213: 9151254460796594064
+    second: TAD_WoodStatusBarFrame_27
+  - first:
+      213: -6144559960447709574
+    second: TAD_WoodStatusBarFrame_28
+  - first:
+      213: 2955746309392774103
+    second: TAD_WoodStatusBarFrame_29
+  - first:
+      213: 2542507318425548532
+    second: TAD_WoodStatusBarFrame_30
+  - first:
+      213: -2779683247048811064
+    second: TAD_WoodStatusBarFrame_31
+  - first:
+      213: 1572332576431488001
+    second: TAD_WoodStatusBarFrame_32
+  - first:
+      213: 846120379260917846
+    second: TAD_WoodStatusBarFrame_33
+  - first:
+      213: -1619349501668081818
+    second: TAD_WoodStatusBarFrame_34
+  - first:
+      213: 8994956114339090932
+    second: TAD_WoodStatusBarFrame_35
+  - first:
+      213: -4472174667175226972
+    second: TAD_WoodStatusBarFrame_36
+  - first:
+      213: 3791928614264357938
+    second: TAD_WoodStatusBarFrame_37
+  - first:
+      213: -7854522430532263325
+    second: TAD_WoodStatusBarFrame_38
+  - first:
+      213: 1392706593559573440
+    second: TAD_WoodStatusBarFrame_39
+  - first:
+      213: 2157429999696471568
+    second: TAD_WoodStatusBarFrame_40
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 1
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 8192
+  spriteBorder: {x: 176, y: 128, z: 176, w: 128}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationMethod: 0
+  spriteTessellationDetail: -1
+  spriteGeometrySubdivision: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: iOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: VisionOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: tvOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WindowsStoreApps
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: TAD_WoodStatusBarFrame_0
+      rect:
+        serializedVersion: 2
+        x: 187
+        y: 552
+        width: 273
+        height: 112
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cefd7a51cb858b330800000000000000
+      internalID: 3726826256489504748
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_WoodStatusBarFrame_1
+      rect:
+        serializedVersion: 2
+        x: 374
+        y: 579
+        width: 11
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 50a6de4b4e66ff170800000000000000
+      internalID: 8214397377821108741
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_WoodStatusBarFrame_2
+      rect:
+        serializedVersion: 2
+        x: 487
+        y: 550
+        width: 79
+        height: 69
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 42023df3fd59890d0800000000000000
+      internalID: -3415815531279474652
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_WoodStatusBarFrame_3
+      rect:
+        serializedVersion: 2
+        x: 533
+        y: 564
+        width: 13
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 224d1523ea39ef0d0800000000000000
+      internalID: -3387107493358218206
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_WoodStatusBarFrame_4
+      rect:
+        serializedVersion: 2
+        x: 559
+        y: 552
+        width: 15
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6724f22d6934e42d0800000000000000
+      internalID: -3292619962510785930
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_WoodStatusBarFrame_5
+      rect:
+        serializedVersion: 2
+        x: 573
+        y: 548
+        width: 78
+        height: 137
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f16837ee8f42e9000800000000000000
+      internalID: 44513697891321375
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_WoodStatusBarFrame_6
+      rect:
+        serializedVersion: 2
+        x: 698
+        y: 562
+        width: 51
+        height: 57
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7b09254fc43c5e310800000000000000
+      internalID: 1433766791671353527
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_WoodStatusBarFrame_7
+      rect:
+        serializedVersion: 2
+        x: 740
+        y: 536
+        width: 49
+        height: 44
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 08d7ce845ee0032f0800000000000000
+      internalID: -995279139715121792
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_WoodStatusBarFrame_8
+      rect:
+        serializedVersion: 2
+        x: 786
+        y: 562
+        width: 9
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2ef0571b6777e0df0800000000000000
+      internalID: -212100780772749342
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_WoodStatusBarFrame_9
+      rect:
+        serializedVersion: 2
+        x: 788
+        y: 562
+        width: 36
+        height: 68
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 987f785455621de90800000000000000
+      internalID: -7002773797903796343
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_WoodStatusBarFrame_10
+      rect:
+        serializedVersion: 2
+        x: 823
+        y: 563
+        width: 21
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9053815f15e716b40800000000000000
+      internalID: 5431761516054983945
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_WoodStatusBarFrame_11
+      rect:
+        serializedVersion: 2
+        x: 845
+        y: 562
+        width: 25
+        height: 54
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b0924e9d41431eb50800000000000000
+      internalID: 6620630191370938635
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_WoodStatusBarFrame_12
+      rect:
+        serializedVersion: 2
+        x: 859
+        y: 540
+        width: 35
+        height: 41
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9618b0db1189ec3b0800000000000000
+      internalID: -5490283693764542103
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_WoodStatusBarFrame_13
+      rect:
+        serializedVersion: 2
+        x: 891
+        y: 562
+        width: 25
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 86250776fe62b4440800000000000000
+      internalID: 4921069827506852456
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_WoodStatusBarFrame_14
+      rect:
+        serializedVersion: 2
+        x: 915
+        y: 536
+        width: 35
+        height: 44
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: afb32e14ae469bef0800000000000000
+      internalID: -91931360093914118
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_WoodStatusBarFrame_15
+      rect:
+        serializedVersion: 2
+        x: 925
+        y: 566
+        width: 41
+        height: 62
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b9291c114c15a5ea0800000000000000
+      internalID: -5883300060652793189
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_WoodStatusBarFrame_16
+      rect:
+        serializedVersion: 2
+        x: 965
+        y: 578
+        width: 16
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ceb49ee0112e91010800000000000000
+      internalID: 1160206941917105132
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_WoodStatusBarFrame_17
+      rect:
+        serializedVersion: 2
+        x: 977
+        y: 582
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9ef91ff6cd449bb70800000000000000
+      internalID: 8915232650918207465
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_WoodStatusBarFrame_18
+      rect:
+        serializedVersion: 2
+        x: 988
+        y: 570
+        width: 29
+        height: 49
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b512eb0a316d229d0800000000000000
+      internalID: -2800440638481489573
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_WoodStatusBarFrame_19
+      rect:
+        serializedVersion: 2
+        x: 1003
+        y: 564
+        width: 8
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2993d2c409c194d80800000000000000
+      internalID: -8266044234982934126
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_WoodStatusBarFrame_20
+      rect:
+        serializedVersion: 2
+        x: 1006
+        y: 593
+        width: 11
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6415bd3744e6c0d30800000000000000
+      internalID: 4399012176314716486
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_WoodStatusBarFrame_21
+      rect:
+        serializedVersion: 2
+        x: 1022
+        y: 562
+        width: 73
+        height: 70
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 77f197faf30558260800000000000000
+      internalID: 7099168622076567415
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_WoodStatusBarFrame_22
+      rect:
+        serializedVersion: 2
+        x: 1088
+        y: 532
+        width: 88
+        height: 84
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 27b5f782fdb331de0800000000000000
+      internalID: -1363680432519947406
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_WoodStatusBarFrame_23
+      rect:
+        serializedVersion: 2
+        x: 1102
+        y: 574
+        width: 166
+        height: 122
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a80c15e014c186ee0800000000000000
+      internalID: -1267732229366103926
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_WoodStatusBarFrame_24
+      rect:
+        serializedVersion: 2
+        x: 1182
+        y: 611
+        width: 12
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: df46be994f47ece50800000000000000
+      internalID: 6831526278670804221
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_WoodStatusBarFrame_25
+      rect:
+        serializedVersion: 2
+        x: 1188
+        y: 592
+        width: 18
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ba7272d590bba7c90800000000000000
+      internalID: -7171213807742146645
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_WoodStatusBarFrame_26
+      rect:
+        serializedVersion: 2
+        x: 1337
+        y: 548
+        width: 64
+        height: 108
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1e19eff420f8a3050800000000000000
+      internalID: 5781090311778243041
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_WoodStatusBarFrame_27
+      rect:
+        serializedVersion: 2
+        x: 1347
+        y: 584
+        width: 24
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0976df85279cffe70800000000000000
+      internalID: 9151254460796594064
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_WoodStatusBarFrame_28
+      rect:
+        serializedVersion: 2
+        x: 1357
+        y: 570
+        width: 12
+        height: 19
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a7e0d6075432abaa0800000000000000
+      internalID: -6144559960447709574
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_WoodStatusBarFrame_29
+      rect:
+        serializedVersion: 2
+        x: 1416
+        y: 554
+        width: 266
+        height: 148
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7d33781bb9be40920800000000000000
+      internalID: 2955746309392774103
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_WoodStatusBarFrame_30
+      rect:
+        serializedVersion: 2
+        x: 1448
+        y: 562
+        width: 17
+        height: 19
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4f6f5917fecc84320800000000000000
+      internalID: 2542507318425548532
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_WoodStatusBarFrame_31
+      rect:
+        serializedVersion: 2
+        x: 1462
+        y: 564
+        width: 13
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8cd1d8f60d49c69d0800000000000000
+      internalID: -2779683247048811064
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_WoodStatusBarFrame_32
+      rect:
+        serializedVersion: 2
+        x: 1695
+        y: 562
+        width: 102
+        height: 87
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 10c39fec52c02d510800000000000000
+      internalID: 1572332576431488001
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_WoodStatusBarFrame_33
+      rect:
+        serializedVersion: 2
+        x: 1816
+        y: 570
+        width: 126
+        height: 35
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 658d01380060ebb00800000000000000
+      internalID: 846120379260917846
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_WoodStatusBarFrame_34
+      rect:
+        serializedVersion: 2
+        x: 1957
+        y: 554
+        width: 124
+        height: 102
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 66f3ed9353ae689e0800000000000000
+      internalID: -1619349501668081818
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_WoodStatusBarFrame_35
+      rect:
+        serializedVersion: 2
+        x: 949
+        y: 552
+        width: 13
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4f1d86dbde084dc70800000000000000
+      internalID: 8994956114339090932
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_WoodStatusBarFrame_36
+      rect:
+        serializedVersion: 2
+        x: 800
+        y: 528
+        width: 20
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4a11585b5d4afe1c0800000000000000
+      internalID: -4472174667175226972
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_WoodStatusBarFrame_37
+      rect:
+        serializedVersion: 2
+        x: 857
+        y: 531
+        width: 15
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 234cdd2fbf2af9430800000000000000
+      internalID: 3791928614264357938
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_WoodStatusBarFrame_38
+      rect:
+        serializedVersion: 2
+        x: 933
+        y: 538
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 36269c7e6712ff290800000000000000
+      internalID: -7854522430532263325
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_WoodStatusBarFrame_39
+      rect:
+        serializedVersion: 2
+        x: 36
+        y: 39
+        width: 2099
+        height: 453
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0c376799443e35310800000000000000
+      internalID: 1392706593559573440
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_WoodStatusBarFrame_40
+      rect:
+        serializedVersion: 2
+        x: 788
+        y: 162
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 016eda7772bb0fd10800000000000000
+      internalID: 2157429999696471568
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 5e97eb03825dee720800000000000000
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      TAD_WoodStatusBarFrame_0: 3726826256489504748
+      TAD_WoodStatusBarFrame_1: 8214397377821108741
+      TAD_WoodStatusBarFrame_10: 5431761516054983945
+      TAD_WoodStatusBarFrame_11: 6620630191370938635
+      TAD_WoodStatusBarFrame_12: -5490283693764542103
+      TAD_WoodStatusBarFrame_13: 4921069827506852456
+      TAD_WoodStatusBarFrame_14: -91931360093914118
+      TAD_WoodStatusBarFrame_15: -5883300060652793189
+      TAD_WoodStatusBarFrame_16: 1160206941917105132
+      TAD_WoodStatusBarFrame_17: 8915232650918207465
+      TAD_WoodStatusBarFrame_18: -2800440638481489573
+      TAD_WoodStatusBarFrame_19: -8266044234982934126
+      TAD_WoodStatusBarFrame_2: -3415815531279474652
+      TAD_WoodStatusBarFrame_20: 4399012176314716486
+      TAD_WoodStatusBarFrame_21: 7099168622076567415
+      TAD_WoodStatusBarFrame_22: -1363680432519947406
+      TAD_WoodStatusBarFrame_23: -1267732229366103926
+      TAD_WoodStatusBarFrame_24: 6831526278670804221
+      TAD_WoodStatusBarFrame_25: -7171213807742146645
+      TAD_WoodStatusBarFrame_26: 5781090311778243041
+      TAD_WoodStatusBarFrame_27: 9151254460796594064
+      TAD_WoodStatusBarFrame_28: -6144559960447709574
+      TAD_WoodStatusBarFrame_29: 2955746309392774103
+      TAD_WoodStatusBarFrame_3: -3387107493358218206
+      TAD_WoodStatusBarFrame_30: 2542507318425548532
+      TAD_WoodStatusBarFrame_31: -2779683247048811064
+      TAD_WoodStatusBarFrame_32: 1572332576431488001
+      TAD_WoodStatusBarFrame_33: 846120379260917846
+      TAD_WoodStatusBarFrame_34: -1619349501668081818
+      TAD_WoodStatusBarFrame_35: 8994956114339090932
+      TAD_WoodStatusBarFrame_36: -4472174667175226972
+      TAD_WoodStatusBarFrame_37: 3791928614264357938
+      TAD_WoodStatusBarFrame_38: -7854522430532263325
+      TAD_WoodStatusBarFrame_39: 1392706593559573440
+      TAD_WoodStatusBarFrame_4: -3292619962510785930
+      TAD_WoodStatusBarFrame_40: 2157429999696471568
+      TAD_WoodStatusBarFrame_5: 44513697891321375
+      TAD_WoodStatusBarFrame_6: 1433766791671353527
+      TAD_WoodStatusBarFrame_7: -995279139715121792
+      TAD_WoodStatusBarFrame_8: -212100780772749342
+      TAD_WoodStatusBarFrame_9: -7002773797903796343
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

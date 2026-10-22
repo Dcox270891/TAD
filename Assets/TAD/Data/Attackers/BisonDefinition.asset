@@ -15,8 +15,8 @@ MonoBehaviour:
   attackerId: 009
   displayName: Bison
   maximumHealth: 23
-  movementSpeed: 2
-  size: 1.55
+  movementSpeed: 1.96
+  size: 1.75
   sendCost: 28
   waveIncome: 6
   expGiven: 6
@@ -27,3 +27,4 @@ MonoBehaviour:
   traversalProfile: 0
   visualDefinition: {fileID: 11400000, guid: 3ebc963d90fcacc4bb72111c4b9b72e3, type: 2}
   entrySound: {fileID: 8300000, guid: deb129f1b8f08c14db08d32fa5b67bc6, type: 3}
+  deathSound: {fileID: 8300000, guid: 8c89df8a27595444c9ee729dec5ad88d, type: 3}

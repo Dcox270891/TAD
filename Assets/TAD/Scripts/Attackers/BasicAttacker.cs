@@ -76,12 +76,20 @@ namespace TAD.Attackers
         private Rigidbody2D body;
         private PolygonCollider2D bodyCollider;
         private PooledInstance pooledInstance;
+        // Keep the pool identity in managed state as well as on PooledInstance. That allows a
+        // wave controller to settle ownership cleanly if a third-party script destroys this
+        // component instead of returning it through the normal pool lifecycle.
+        private long runtimeInstanceId;
         private FarmRouteMapper routeMapper;
         private AttackerVisualController visualController;
         private Vector2 moveDirection;
         private float currentHealth;
         private bool hasReachedFoodStore;
         private bool isDefeated;
+        // Some authored barns deliberately overhang the edge of the visible grass. This flag is
+        // captured with the cached route so the animal resolves its arrival from the final valid
+        // grass cell instead of ever moving into the decorative surplus beyond the farm.
+        private bool resolvesArrivalAtGrassBoundary;
         private int nextRoutePointIndex;
         private ActiveDamageOverTime bleedEffect;
         private ActiveDamageOverTime poisonEffect;
@@ -96,7 +104,9 @@ namespace TAD.Attackers
         /// Session-unique identity assigned by the pool when this attacker is created.
         /// This is separate from <see cref="AttackerId"/>, which identifies the attacker type.
         /// </summary>
-        public long InstanceId => pooledInstance != null ? pooledInstance.RuntimeInstanceId : 0L;
+        public long InstanceId => runtimeInstanceId != 0L
+            ? runtimeInstanceId
+            : pooledInstance != null ? pooledInstance.RuntimeInstanceId : 0L;
 
         public float RemainingHealth => currentHealth;
         public float MaximumHealth => definition != null
@@ -115,8 +125,18 @@ namespace TAD.Attackers
 
         /// <summary>Raised whenever this pooled attacker's health is reset or changed.</summary>
         public event System.Action<float, float> HealthChanged;
+
+        /// <summary>
+        /// Raised immediately before this attacker is returned to its pool. Wave ownership uses
+        /// this instead of polling GameObject activity so overlapping groups cannot lose track of
+        /// a reused pooled instance.
+        /// </summary>
+        public event System.Action<BasicAttacker> ReturnedToPool;
+
         public bool IsDefeated => isDefeated;
         public float Size => definition != null ? definition.Size : 0f;
+        /// <summary>Actual world-space body diameter used for grass and wall navigation.</summary>
+        public float NavigationDiameter => definition != null ? definition.NavigationDiameter : 0f;
         public int SendCost => definition != null
             ? PlayerUpgradeProgression.GetEffectiveAttackerCost(GetPlayerAttackerUpgradeProfile(), definition)
             : 0;
@@ -262,13 +282,26 @@ namespace TAD.Attackers
                 return;
             }
 
-            // Clamp this physics step to the cached waypoint. Faster animals can otherwise move from one
-            // side of a narrow arrival radius to the other without ever entering it, causing a permanent
-            // oscillation at the waypoint.
-            var waypoint = (Vector2)routePoints[nextRoutePointIndex];
             var maximumMoveDistance = Mathf.Max(0f, EffectiveMovementSpeed) * Time.fixedDeltaTime;
-            var nextPosition = Vector2.MoveTowards(body.position, waypoint, maximumMoveDistance);
-            if (routeMapper.TryClampToVisibleMap(nextPosition, out var constrainedNextPosition))
+            Vector2 nextPosition;
+            if (nextRoutePointIndex >= 0 && nextRoutePointIndex < routePoints.Count)
+            {
+                // Clamp this physics step to the cached waypoint. Faster animals can otherwise move from one
+                // side of a narrow arrival radius to the other without ever entering it, causing a permanent
+                // oscillation at the waypoint.
+                var waypoint = (Vector2)routePoints[nextRoutePointIndex];
+                nextPosition = Vector2.MoveTowards(body.position, waypoint, maximumMoveDistance);
+            }
+            else
+            {
+                // TryGetRouteDirection deliberately falls back to the live flow field after the final cached
+                // waypoint. At that point there is no route point left to clamp to, so advance along the
+                // validated flow-field direction instead of indexing past the cached list.
+                nextPosition = body.position + (moveDirection * maximumMoveDistance);
+            }
+
+            var attackerDiameter = NavigationDiameter;
+            if (routeMapper.TryClampToVisibleMap(nextPosition, attackerDiameter, out var constrainedNextPosition))
             {
                 body.MovePosition(constrainedNextPosition);
             }
@@ -298,7 +331,9 @@ namespace TAD.Attackers
         /// <summary>Constrain this active animal to the mapper's visible play area.</summary>
         public bool TryClampToVisibleMap()
         {
-            if (body == null || routeMapper == null || !routeMapper.TryClampToVisibleMap(body.position, out var constrainedPosition))
+            var attackerDiameter = NavigationDiameter;
+            if (body == null || routeMapper == null ||
+                !routeMapper.TryClampToVisibleMap(body.position, attackerDiameter, out var constrainedPosition))
             {
                 return false;
             }
@@ -518,6 +553,10 @@ namespace TAD.Attackers
             }
 
             hasReachedFoodStore = true;
+            TadSfxPlayer.Play(
+                definition != null ? definition.AnimalCrySound : null,
+                TadAudioChannelType.Attacker,
+                CurrentPosition);
             ReturnToPool();
         }
 
@@ -537,11 +576,15 @@ namespace TAD.Attackers
                 pooledInstance = GetComponent<PooledInstance>();
             }
 
+            runtimeInstanceId = pooledInstance != null ? pooledInstance.RuntimeInstanceId : 0L;
             ResetRuntimeState();
         }
 
         void IPoolLifecycle.OnReturnedToPool()
         {
+            // Notify before clearing any state so listeners can still distinguish a defeat from a
+            // food-store arrival. The pool can then safely recycle this same instance for a later wave.
+            ReturnedToPool?.Invoke(this);
             RestoreTraversalCollisions();
             if (body != null)
             {
@@ -562,6 +605,7 @@ namespace TAD.Attackers
             helpedToKillActivationSessions.Clear();
             activeTerrainSpeedModifiers.Clear();
             ResetStatusEffects();
+            resolvesArrivalAtGrassBoundary = false;
             nextRoutePointIndex = 0;
 
             if (body != null)
@@ -604,6 +648,7 @@ namespace TAD.Attackers
         {
             routePoints.Clear();
             nextRoutePointIndex = 0;
+            resolvesArrivalAtGrassBoundary = false;
 
             if (body == null || routeMapper == null ||
                 !routeMapper.TryGetFastestRoute(body.position, definition, routePoints) ||
@@ -612,6 +657,7 @@ namespace TAD.Attackers
                 return false;
             }
 
+            resolvesArrivalAtGrassBoundary = routeMapper.RequiresGrassBoundFoodStoreArrival(NavigationDiameter);
             nextRoutePointIndex = 1;
             return true;
         }
@@ -638,6 +684,15 @@ namespace TAD.Attackers
                 return true;
             }
 
+            if (resolvesArrivalAtGrassBoundary && routeMapper != null && routeMapper.FoodStore != null)
+            {
+                // The Food Store applies the exact same economy, food, haptic, and pool-return
+                // sequence as its physics trigger. We use it only after reaching a legal grass
+                // endpoint, keeping the attacker's entire path on the rendered farm ground.
+                routeMapper.FoodStore.TryAcceptRaider(this);
+                return false;
+            }
+
             // The Food Store trigger normally returns an attacker before it reaches this fallback.
             // Keeping it preserves movement when a route ends immediately beside a small target collider.
             return routeMapper != null && routeMapper.TryGetNextDirection(
@@ -654,6 +709,10 @@ namespace TAD.Attackers
             }
 
             isDefeated = true;
+            TadSfxPlayer.Play(
+                definition != null ? definition.DeathSound : null,
+                TadAudioChannelType.Attacker,
+                CurrentPosition);
             moveDirection = Vector2.zero;
             routePoints.Clear();
             ResetStatusEffects();

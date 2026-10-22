@@ -67,7 +67,7 @@ namespace TAD.Tutorials
                     "Ground animals follow the fastest cached route around solid walls to the Food Store. Full cover blocks attacks across it; ranged Farmhands can attack through half cover, while melee cannot.\n\nMud slows ground animals, Ice speeds them up, and flying animals ignore terrain and half cover."),
                 ContinueStep(
                     "Attacker economy",
-                    "Your gold and persistent income are shown at the top left. Each animal card costs gold once, queues its Send Size as one group, and adds its listed income. Income is paid after sent groups finish and keeps building across days.\n\nThe UP NEXT cue shows your planned groups."),
+                    "Your gold and persistent income are shown at the top left. Each animal card costs gold once, queues its Send Size as one group, and immediately adds its listed income. The first animal in a group to reach the Food Store refunds that card cost once; every animal that reaches it adds the listed income again. Income is paid after sent groups finish and keeps building across days.\n\nThe UP NEXT cue shows your planned groups."),
                 ActionStep(
                     "Queue your first group",
                     "Choose any affordable animal card in the attacker panel. Its cost is removed immediately, and its group appears in UP NEXT.",
@@ -105,7 +105,7 @@ namespace TAD.Tutorials
                     "Level 1 introduces both roles. Attackers send animals from the woodland spawn at the top left to empty the Food Store. Defenders place Farmhands to protect the barn.\n\nYou selected DEFENDER, so this run teaches you how to set up a defense."),
                 ContinueStep(
                     "Know the opposing side",
-                    "The Attacker spends gold on animal cards. Each card queues its Send Size as one group, adds persistent income, and shows its route in UP NEXT.\n\nAs the Defender, place Farmhands where they can cover the routes before animals reach the Food Store."),
+                    "The Attacker spends gold on animal cards. Each card queues its Send Size as one group, immediately adds persistent income, and shows its route in UP NEXT. Animals that reach the Food Store add more income, while the first one refunds that group cost once.\n\nAs the Defender, place Farmhands where they can cover the routes before animals reach the Food Store."),
                 ContinueStep(
                     "Routes, cover and terrain",
                     "Ground animals follow the fastest cached route around solid walls to the Food Store. Full cover blocks attacks across it; ranged Farmhands can attack through half cover, while melee cannot.\n\nMud slows ground animals, Ice speeds them up, and flying animals ignore terrain and half cover."),
@@ -286,17 +286,17 @@ namespace TAD.Tutorials
 
         private void ResolveDependencies()
         {
-            dayCycle ??= UnityEngine.Object.FindFirstObjectByType<DayCycleController>();
+            dayCycle ??= UnityEngine.Object.FindAnyObjectByType<DayCycleController>();
             waveController ??= dayCycle != null
                 ? dayCycle.GetComponent<WaveController>()
-                : UnityEngine.Object.FindFirstObjectByType<WaveController>();
+                : UnityEngine.Object.FindAnyObjectByType<WaveController>();
             attackerWaveQueue ??= dayCycle != null
                 ? dayCycle.GetComponent<AttackerWaveQueue>()
-                : UnityEngine.Object.FindFirstObjectByType<AttackerWaveQueue>();
-            placementController ??= UnityEngine.Object.FindFirstObjectByType<FarmHandPlacementController>();
-            attackerDetailsPanel ??= UnityEngine.Object.FindFirstObjectByType<AttackerDetailsPanel>(
+                : UnityEngine.Object.FindAnyObjectByType<AttackerWaveQueue>();
+            placementController ??= UnityEngine.Object.FindAnyObjectByType<FarmHandPlacementController>();
+            attackerDetailsPanel ??= UnityEngine.Object.FindAnyObjectByType<AttackerDetailsPanel>(
                 FindObjectsInactive.Include);
-            defenderDetailsPanel ??= UnityEngine.Object.FindFirstObjectByType<DefenderDetailsPanel>(
+            defenderDetailsPanel ??= UnityEngine.Object.FindAnyObjectByType<DefenderDetailsPanel>(
                 FindObjectsInactive.Include);
         }
 
@@ -481,7 +481,7 @@ namespace TAD.Tutorials
             buttonRect.anchoredPosition = new Vector2(-22f, 15f);
             continueButton.onClick.AddListener(Advance);
 
-            var skin = UnityEngine.Object.FindFirstObjectByType<FarmUiSkin>(FindObjectsInactive.Include);
+            var skin = UnityEngine.Object.FindAnyObjectByType<FarmUiSkin>(FindObjectsInactive.Include);
             if (skin != null)
             {
                 skin.ApplyThemeTo(root.transform);

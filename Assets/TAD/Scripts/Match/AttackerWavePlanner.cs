@@ -214,8 +214,8 @@ namespace TAD.Match
 
                 // Human attackers may take an early expensive risk, but the opponent should build
                 // its economy with the lighter roster first. This preserves a defend-favoured
-                // opening and lets the accumulated recurring income unlock meaningful tier-two
-                // and tier-three pressure in the final days.
+                // opening while accumulated recurring income progressively unlocks the ten-tier
+                // pressure curve across the remaining days.
                 if (definition.ChallengeTier > maximumChallengeTier)
                 {
                     continue;
@@ -261,7 +261,10 @@ namespace TAD.Match
             var expectedRemainingHealth = Mathf.Max(minimumRemainingHealth, definition.MaximumHealth - expectedDamage);
             var groupBreakthrough = expectedRemainingHealth * definition.SendSize;
             var speedBonus = 1f + Mathf.Clamp(definition.MovementSpeed * 0.05f, 0f, 0.45f);
-            var incomeValue = definition.WaveIncome * 2f;
+            // A selected group adds its authored income once, then each animal that reaches the
+            // barn adds it again. Score the complete reachable group value so the attacker AI
+            // evaluates the same economy the player receives.
+            var incomeValue = definition.WaveIncome * (definition.SendSize + 1) * 2f;
             var tierValue = definition.ChallengeTier * 0.35f;
             var counterValue = GetArchetypeCounterValue(candidate, expectedDamage, defenderThreats);
             var cost = Mathf.Max(1, definition.SendCost);
@@ -407,17 +410,14 @@ namespace TAD.Match
         }
 
         /// <summary>
-        /// Gates only the attacker AI's catalogue by completed day. Player-controlled attackers
-        /// retain the full roster at all times; the economy and price are their own trade-off.
+        /// Gates only the attacker AI's catalogue by completed day. The ten-day encounter now has
+        /// a matching ten-tier animal roster, so each completed-day index unlocks exactly one more
+        /// challenge tier. Player-controlled attackers retain the catalogue unlocked by account
+        /// progression; the economy and price remain their own trade-off.
         /// </summary>
         public static int GetMaximumChallengeTierForAiDay(int day)
         {
-            if (day <= 2)
-            {
-                return 1;
-            }
-
-            return day <= 5 ? 2 : 3;
+            return Mathf.Clamp(day + 1, 1, 10);
         }
 
         private static bool IsSameDefinition(AttackerDefinition left, AttackerDefinition right)

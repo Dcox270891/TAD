@@ -160,6 +160,12 @@ public sealed class FarmRouteMapper : MonoBehaviour
     [SerializeField]
     [Tooltip("Fallback size shown before routes are built. At runtime, the route map uses the Main Camera's visible area.")]
     private Vector2 mapSize = new(20f, 12f);
+    [SerializeField]
+    [Tooltip("Optional authored farm boundary. When assigned, navigation and placement must stay inside this polygon as well as the visible camera area.")]
+    private FarmPlayableArea playableArea;
+    [SerializeField]
+    [Tooltip("The visible grass tile that defines fallback playable ground for levels without an authored polygon.")]
+    private GameplayGrassBackdrop gameplayGrassBackdrop;
     [SerializeField, Min(0f)]
     [Tooltip("Extra clearance left around walls, in world units.")]
     private float obstaclePadding;
@@ -179,13 +185,109 @@ public sealed class FarmRouteMapper : MonoBehaviour
     private Vector2 runtimeMapSize;
     private Vector2 actualCellSize;
     private bool hasBuiltMap;
+    // Scene-wide discovery is permitted at startup, never per grid cell. A route rebuild can
+    // inspect tens of thousands of cells, so repeated FindAnyObjectByType calls here would turn
+    // the grass-bound safety rule into a severe level-load stall on mobile hardware.
+    private bool hasResolvedScenePlayableArea;
+    private bool hasResolvedSceneGrassBackdrop;
+    // The renderer bounds are native-object queries. Cache one immutable snapshot for each map
+    // build instead of asking the renderer again for every cell and every route-field variant.
+    private bool hasRefreshedPlayableGrassBounds;
+    private bool hasPlayableGrassBounds;
+    private Rect cachedPlayableGrassBounds;
     public FoodStore FoodStore => foodStore;
+    /// <summary>
+    /// The authored non-physical ground boundary. It intentionally does not participate in combat
+    /// line-of-sight; it only constrains movement, placement, and route construction.
+    /// </summary>
+    public FarmPlayableArea PlayableArea => playableArea;
+    /// <summary>
+    /// The visible grass footprint used as a ground boundary when a level deliberately has no
+    /// authored <see cref="FarmPlayableArea"/>. It has no physical collider of its own.
+    /// </summary>
+    public GameplayGrassBackdrop GameplayGrassBackdrop => gameplayGrassBackdrop;
     public Vector2 MapSize => hasBuiltMap ? runtimeMapSize : mapSize;
     public Rect VisibleMapBounds => hasBuiltMap
         ? new Rect(gridMinimum, runtimeMapSize)
         : new Rect((Vector2)transform.position - (mapSize * 0.5f), mapSize);
     public int CachedRouteFieldCount => routeFields.Count;
     public int PrecomputedAttackerSizeCount => precomputedRouteKeys.Count;
+
+    /// <summary>
+    /// Explicitly assigns the food destination used by this mapper. Production levels normally
+    /// resolve it automatically; the narrow API also keeps focused runtime fixtures independent
+    /// from any other loaded scene.
+    /// </summary>
+    public void SetFoodStore(FoodStore store)
+    {
+        if (foodStore == store)
+        {
+            return;
+        }
+
+        foodStore = store;
+        routeFields.Clear();
+        hasBuiltMap = false;
+    }
+
+    /// <summary>Returns the actual world-space bounds of the rendered grass ground, when present.</summary>
+    public bool TryGetPlayableGrassBounds(out Rect grassBounds)
+    {
+        RefreshPlayableGrassBounds();
+        grassBounds = cachedPlayableGrassBounds;
+        return hasPlayableGrassBounds;
+    }
+
+    /// <summary>
+    /// Returns whether an animal of this size must resolve its barn arrival from the final legal
+    /// grass cell. This is only true when the Food Store itself is visible and inside an authored
+    /// area (if one exists), but its centre lies beyond the rendered grass footprint.
+    /// </summary>
+    public bool RequiresGrassBoundFoodStoreArrival(float agentDiameter)
+    {
+        if ((!hasBuiltMap && !RebuildRoutes()) || foodStore == null)
+        {
+            return false;
+        }
+
+        var radius = (Mathf.Max(0.01f, agentDiameter) * 0.5f) + obstaclePadding;
+        return ShouldResolveFoodStoreAtGrassBoundary(radius);
+    }
+
+    /// <summary>
+    /// Assigns the area used by this mapper. Scene builders use this narrow API rather than
+    /// editing serialized YAML, and it safely invalidates any field built for an older boundary.
+    /// </summary>
+    public void SetPlayableArea(FarmPlayableArea area)
+    {
+        if (playableArea == area)
+        {
+            return;
+        }
+
+        playableArea = area;
+        hasResolvedScenePlayableArea = true;
+        routeFields.Clear();
+        hasBuiltMap = false;
+    }
+
+    /// <summary>
+    /// Explicitly assigns the visible ground artwork used by this mapper. Levels normally resolve
+    /// it once at startup, while this API supports intentionally dynamic test or level setups.
+    /// </summary>
+    public void SetGameplayGrassBackdrop(GameplayGrassBackdrop backdrop)
+    {
+        if (gameplayGrassBackdrop == backdrop)
+        {
+            return;
+        }
+
+        gameplayGrassBackdrop = backdrop;
+        hasResolvedSceneGrassBackdrop = true;
+        hasRefreshedPlayableGrassBounds = false;
+        routeFields.Clear();
+        hasBuiltMap = false;
+    }
 
     /// <summary>Copies the static terrain tiles captured by the most recent map rebuild.</summary>
     public int CopyTerrainSpeedModifiers(List<TerrainSpeedModifier> results)
@@ -283,7 +385,7 @@ public sealed class FarmRouteMapper : MonoBehaviour
 
         return TryGetFastestRoute(
             startingPosition,
-            definition.Size,
+            definition.NavigationDiameter,
             definition.TraversalProfile,
             definition.Archetype == AttackerArchetype.Flying,
             routePoints,
@@ -331,9 +433,18 @@ public sealed class FarmRouteMapper : MonoBehaviour
         var routeKey = new RouteKey(GetSizeKey(safeAttackerSize), traversalProfile, ignoresTerrainEffects);
         var radius = (safeAttackerSize * 0.5f) + obstaclePadding;
         var startPosition2D = (Vector2)startingPosition;
-        var destination = foodStore.transform.position;
+        var destination = (Vector2)foodStore.transform.position;
+        var resolvesAtGrassBoundary = ShouldResolveFoodStoreAtGrassBoundary(radius);
         if (!TryGetCellIndex(startPosition2D, out var currentIndex))
         {
+            // A grass-edge arrival still starts from a valid map cell. Do not create a direct
+            // shortcut from camera surplus to the Food Store just because the barn itself is
+            // intentionally beyond the rendered grass.
+            if (resolvesAtGrassBoundary)
+            {
+                return false;
+            }
+
             if (!IsClearSegment(startPosition2D, destination, radius, traversalProfile))
             {
                 return false;
@@ -343,7 +454,11 @@ public sealed class FarmRouteMapper : MonoBehaviour
             timing = BuildRouteTiming(routePoints, ignoresTerrainEffects);
             return timing.IsValid;
         }
-        if (!routeFields.TryGetValue(routeKey, out var field) || !field.Walkable[currentIndex] || field.GoalIndex < 0)
+        // The spawn pool warms every shipped animal field during level start, but a new data-driven
+        // attacker can be introduced at runtime (or by a focused test). Build that single size/profile
+        // field on demand instead of incorrectly reporting a clear grass route as unavailable.
+        var field = GetOrCreateRouteField(routeKey);
+        if (!field.Walkable[currentIndex] || field.GoalIndex < 0)
         {
             return false;
         }
@@ -351,7 +466,12 @@ public sealed class FarmRouteMapper : MonoBehaviour
         var remainingSteps = field.NextIndices.Length;
         while (currentIndex != field.GoalIndex && remainingSteps-- > 0)
         {
-            var nextIndex = field.SmoothedNextIndices[currentIndex];
+            var nextIndex = GetSmoothedNextIndex(
+                field,
+                currentIndex,
+                radius,
+                traversalProfile,
+                ignoresTerrainEffects);
             if (nextIndex < 0)
             {
                 routePoints.Clear();
@@ -383,12 +503,14 @@ public sealed class FarmRouteMapper : MonoBehaviour
             }
         }
         if (currentIndex != field.GoalIndex ||
-            !IsClearSegment(routePoints[^1], destination, radius, traversalProfile))
+            (!resolvesAtGrassBoundary &&
+             !IsClearSegment(routePoints[^1], destination, radius, traversalProfile)))
         {
             routePoints.Clear();
             return false;
         }
-        if ((routePoints[^1] - destination).sqrMagnitude > 0.0001f)
+        if (!resolvesAtGrassBoundary &&
+            (routePoints[^1] - (Vector3)destination).sqrMagnitude > 0.0001f)
         {
             routePoints.Add(destination);
         }
@@ -460,7 +582,12 @@ public sealed class FarmRouteMapper : MonoBehaviour
         var remainingSteps = field.NextIndices.Length;
         while (currentIndex != field.GoalIndex && remainingSteps-- > 0)
         {
-            var nextIndex = field.SmoothedNextIndices[currentIndex];
+            var nextIndex = GetSmoothedNextIndex(
+                field,
+                currentIndex,
+                radius,
+                AttackerTraversalProfile.Ground,
+                ignoresTerrainEffects: true);
             if (nextIndex < 0)
             {
                 routePoints.Clear();
@@ -525,11 +652,13 @@ public sealed class FarmRouteMapper : MonoBehaviour
 
     private void Start()
     {
-        RebuildRoutes();
+        // The Wave Controller owns the first build. It frames the Main Camera around the
+        // spawn and Food Store first, which prevents a discarded out-of-bounds cache from
+        // being built while the level starts.
     }
     public bool RebuildRoutes()
     {
-        foodStore ??= UnityEngine.Object.FindAnyObjectByType<FoodStore>();
+        foodStore ??= FindFoodStoreInOwnScene();
         if (foodStore == null)
         {
             Debug.LogWarning("Farm Route Mapper could not find a Food Store, so no attacker routes were generated.", this);
@@ -539,6 +668,8 @@ public sealed class FarmRouteMapper : MonoBehaviour
         cellSize = Mathf.Max(0.05f, cellSize);
         defaultAttackerSize = Mathf.Max(0.01f, defaultAttackerSize);
         cornerSmoothingLookAheadCells = Mathf.Clamp(cornerSmoothingLookAheadCells, 1, 32);
+        ResolvePlayableArea();
+        RefreshPlayableGrassBounds();
         if (!TryGetMainCameraBounds(out gridMinimum, out runtimeMapSize))
         {
             hasBuiltMap = false;
@@ -565,16 +696,36 @@ public sealed class FarmRouteMapper : MonoBehaviour
     }
     public bool TryClampToVisibleMap(Vector2 position, out Vector2 clampedPosition)
     {
+        return TryClampToVisibleMap(position, agentDiameter: 0f, out clampedPosition);
+    }
+
+    /// <summary>
+    /// Confirms that an actor of the supplied diameter remains inside both the camera-visible map
+    /// and the authored farm boundary. Unlike the historic camera-only clamp this deliberately
+    /// rejects a point outside the farm instead of sliding it around the outer edge of the level.
+    /// </summary>
+    public bool TryClampToVisibleMap(Vector2 position, float agentDiameter, out Vector2 clampedPosition)
+    {
         clampedPosition = position;
         if (!hasBuiltMap && !RebuildRoutes())
         {
             return false;
         }
+
+        if (HasUsablePlayableArea())
+        {
+            var radius = (Mathf.Max(0f, agentDiameter) * 0.5f) + obstaclePadding;
+            return IsWithinVisibleMap(position) && IsWithinPlayableArea(position, radius);
+        }
+
+        // Preserve the original camera-edge safety behaviour for legacy or user-authored maps
+        // that have not received an authored FarmPlayableArea yet.
         var maximum = gridMinimum + runtimeMapSize;
         clampedPosition = new Vector2(
             Mathf.Clamp(position.x, gridMinimum.x + MapBoundaryEpsilon, maximum.x - MapBoundaryEpsilon),
             Mathf.Clamp(position.y, gridMinimum.y + MapBoundaryEpsilon, maximum.y - MapBoundaryEpsilon));
-        return true;
+        var fallbackRadius = (Mathf.Max(0f, agentDiameter) * 0.5f) + obstaclePadding;
+        return IsWithinPlayableArea(clampedPosition, fallbackRadius);
     }
     public bool TryGetNextDirection(Vector2 currentPosition, float attackerSize, out Vector2 direction)
     {
@@ -600,7 +751,7 @@ public sealed class FarmRouteMapper : MonoBehaviour
 
         return TryGetNextDirection(
             currentPosition,
-            definition.Size,
+            definition.NavigationDiameter,
             definition.TraversalProfile,
             definition.Archetype == AttackerArchetype.Flying,
             out direction);
@@ -643,7 +794,12 @@ public sealed class FarmRouteMapper : MonoBehaviour
         {
             if (field.Walkable[currentIndex])
             {
-                var smoothedNextIndex = field.SmoothedNextIndices[currentIndex];
+                var smoothedNextIndex = GetSmoothedNextIndex(
+                    field,
+                    currentIndex,
+                    radius,
+                    traversalProfile,
+                    ignoresTerrainEffects);
                 if (TryGetClearDirectionToCell(currentPosition, smoothedNextIndex, radius, traversalProfile, out direction))
                 {
                     return true;
@@ -676,7 +832,7 @@ public sealed class FarmRouteMapper : MonoBehaviour
                 if (definition != null)
                 {
                     AddUniqueKey(new RouteKey(
-                        GetSizeKey(definition.Size),
+                        GetSizeKey(definition.NavigationDiameter),
                         definition.TraversalProfile,
                         definition.Archetype == AttackerArchetype.Flying));
                 }
@@ -690,7 +846,7 @@ public sealed class FarmRouteMapper : MonoBehaviour
             if (attacker != null && attacker.Definition != null)
             {
                 AddUniqueKey(new RouteKey(
-                    GetSizeKey(attacker.Size),
+                    GetSizeKey(attacker.NavigationDiameter),
                     attacker.TraversalProfile,
                     attacker.IsFlying));
             }
@@ -791,51 +947,54 @@ public sealed class FarmRouteMapper : MonoBehaviour
             }
         }
         field.TravelCosts = distances;
-        BuildSmoothedNextIndices(field, radius, traversalProfile, ignoresTerrainEffects);
+        // Corner smoothing is intentionally evaluated only for the handful of cells on a route
+        // when that route is requested. Precomputing it for every cell in every animal-size field
+        // multiplied startup work enough to stall level loading after the roster grew to 40 animals.
+        Array.Copy(field.NextIndices, field.SmoothedNextIndices, field.NextIndices.Length);
         return field;
     }
-    private void BuildSmoothedNextIndices(
+    private int GetSmoothedNextIndex(
         RouteField field,
+        int originIndex,
         float radius,
         AttackerTraversalProfile traversalProfile,
         bool ignoresTerrainEffects)
     {
-        for (var index = 0; index < field.NextIndices.Length; index++)
+        var bestIndex = field.NextIndices[originIndex];
+        if (bestIndex < 0)
         {
-            var bestIndex = field.NextIndices[index];
-            if (bestIndex < 0)
-            {
-                continue;
-            }
-            var currentIndex = bestIndex;
-            var origin = GetCellCenter(index);
-            for (var step = 1; step < cornerSmoothingLookAheadCells; step++)
-            {
-                var candidateIndex = field.NextIndices[currentIndex];
-                if (candidateIndex < 0 ||
-                    !IsClearSegment(origin, GetCellCenter(candidateIndex), radius, traversalProfile))
-                {
-                    break;
-                }
-
-                // The normal path is terrain-time optimal. A visual smoothing shortcut is accepted
-                // only when it is no slower than the cells it replaces; this prevents a corner line
-                // from silently cutting through mud after Dijkstra deliberately chose an ice lane.
-                var preservedTravelCost = field.TravelCosts[index] - field.TravelCosts[candidateIndex];
-                var shortcutTravelCost = CalculateUnitSpeedTravelCost(
-                    origin,
-                    GetCellCenter(candidateIndex),
-                    ignoresTerrainEffects);
-                if (shortcutTravelCost > preservedTravelCost + 0.0001f)
-                {
-                    break;
-                }
-
-                bestIndex = candidateIndex;
-                currentIndex = candidateIndex;
-            }
-            field.SmoothedNextIndices[index] = bestIndex;
+            return -1;
         }
+
+        var currentIndex = bestIndex;
+        var origin = GetCellCenter(originIndex);
+        for (var step = 1; step < cornerSmoothingLookAheadCells; step++)
+        {
+            var candidateIndex = field.NextIndices[currentIndex];
+            if (candidateIndex < 0 ||
+                !IsClearSegment(origin, GetCellCenter(candidateIndex), radius, traversalProfile))
+            {
+                break;
+            }
+
+            // The normal path is terrain-time optimal. A visual smoothing shortcut is accepted
+            // only when it is no slower than the cells it replaces; this prevents a corner line
+            // from silently cutting through mud after Dijkstra deliberately chose an ice lane.
+            var preservedTravelCost = field.TravelCosts[originIndex] - field.TravelCosts[candidateIndex];
+            var shortcutTravelCost = CalculateUnitSpeedTravelCost(
+                origin,
+                GetCellCenter(candidateIndex),
+                ignoresTerrainEffects);
+            if (shortcutTravelCost > preservedTravelCost + 0.0001f)
+            {
+                break;
+            }
+
+            bestIndex = candidateIndex;
+            currentIndex = candidateIndex;
+        }
+
+        return bestIndex;
     }
 
     /// <summary>
@@ -972,7 +1131,7 @@ public sealed class FarmRouteMapper : MonoBehaviour
     }
     private bool IsWalkable(Vector2 worldPosition, float radius, AttackerTraversalProfile traversalProfile)
     {
-        if (!IsWithinVisibleMap(worldPosition))
+        if (!IsWithinVisibleMap(worldPosition) || !IsWithinPlayableArea(worldPosition, radius))
         {
             return false;
         }
@@ -1031,6 +1190,156 @@ public sealed class FarmRouteMapper : MonoBehaviour
         var maximum = gridMinimum + runtimeMapSize;
         return worldPosition.x >= gridMinimum.x && worldPosition.x <= maximum.x &&
                worldPosition.y >= gridMinimum.y && worldPosition.y <= maximum.y;
+    }
+
+    private void ResolvePlayableArea()
+    {
+        if (!hasResolvedScenePlayableArea)
+        {
+            hasResolvedScenePlayableArea = true;
+            if (playableArea == null)
+            {
+                playableArea = GetComponent<FarmPlayableArea>();
+            }
+
+            if (playableArea == null)
+            {
+                playableArea = UnityEngine.Object.FindAnyObjectByType<FarmPlayableArea>();
+            }
+        }
+
+        if (!hasResolvedSceneGrassBackdrop)
+        {
+            hasResolvedSceneGrassBackdrop = true;
+            if (gameplayGrassBackdrop == null)
+            {
+                gameplayGrassBackdrop = GetComponentInChildren<GameplayGrassBackdrop>(true);
+            }
+
+            if (gameplayGrassBackdrop == null)
+            {
+                gameplayGrassBackdrop = FindLargestActiveGrassBackdropInOwnScene();
+            }
+        }
+    }
+
+    private FoodStore FindFoodStoreInOwnScene()
+    {
+        foreach (var candidate in UnityEngine.Object.FindObjectsByType<FoodStore>(FindObjectsInactive.Exclude))
+        {
+            if (candidate != null && candidate.gameObject.scene == gameObject.scene)
+            {
+                return candidate;
+            }
+        }
+
+        return null;
+    }
+
+    private GameplayGrassBackdrop FindLargestActiveGrassBackdropInOwnScene()
+    {
+        GameplayGrassBackdrop best = null;
+        var bestArea = 0f;
+        foreach (var candidate in UnityEngine.Object.FindObjectsByType<GameplayGrassBackdrop>(FindObjectsInactive.Exclude))
+        {
+            if (candidate == null || candidate.gameObject.scene != gameObject.scene)
+            {
+                continue;
+            }
+
+            var renderer = candidate.GrassRenderer;
+            if (renderer == null || renderer.sprite == null || !renderer.gameObject.activeInHierarchy)
+            {
+                continue;
+            }
+
+            var bounds = renderer.bounds;
+            var area = bounds.size.x * bounds.size.y;
+            if (best == null || area > bestArea)
+            {
+                best = candidate;
+                bestArea = area;
+            }
+        }
+
+        return best;
+    }
+
+    private bool HasUsablePlayableArea()
+    {
+        return playableArea != null && playableArea.HasBoundary;
+    }
+
+    private bool ShouldResolveFoodStoreAtGrassBoundary(float radius)
+    {
+        if (foodStore == null || !TryGetCachedPlayableGrassBounds(out var grassBounds))
+        {
+            return false;
+        }
+
+        var destination = (Vector2)foodStore.transform.position;
+        // This deliberately remains a narrow exception for a Food Store that is visibly part of
+        // the level but overhangs the grass. It cannot turn a missing/off-camera or polygon-outside
+        // destination into a routeable objective.
+        return IsWithinVisibleMap(destination) &&
+               (!HasUsablePlayableArea() || playableArea.ContainsCircle(destination, radius)) &&
+               !ContainsCircleInRect(grassBounds, destination, radius);
+    }
+
+    private bool IsWithinPlayableArea(Vector2 worldPosition, float radius)
+    {
+        if (HasUsablePlayableArea() && !playableArea.ContainsCircle(worldPosition, radius))
+        {
+            return false;
+        }
+
+        // Do not let camera-only surplus around the authored grass tile become walkable. This
+        // check intentionally applies even when a designer has supplied a polygon: the two
+        // boundaries are intersected so actors always remain on visible farm ground.
+        return !TryGetCachedPlayableGrassBounds(out var grassBounds) ||
+               ContainsCircleInRect(grassBounds, worldPosition, radius);
+    }
+
+    private bool TryGetCachedPlayableGrassBounds(out Rect grassBounds)
+    {
+        if (!hasRefreshedPlayableGrassBounds)
+        {
+            RefreshPlayableGrassBounds();
+        }
+
+        grassBounds = cachedPlayableGrassBounds;
+        return hasPlayableGrassBounds;
+    }
+
+    private void RefreshPlayableGrassBounds()
+    {
+        ResolvePlayableArea();
+        hasRefreshedPlayableGrassBounds = true;
+        hasPlayableGrassBounds = false;
+        cachedPlayableGrassBounds = default;
+        var renderer = gameplayGrassBackdrop != null ? gameplayGrassBackdrop.GrassRenderer : null;
+        if (renderer == null || renderer.sprite == null || !renderer.gameObject.activeInHierarchy)
+        {
+            return;
+        }
+
+        var bounds = renderer.bounds;
+        if (bounds.size.x <= MapBoundaryEpsilon || bounds.size.y <= MapBoundaryEpsilon)
+        {
+            return;
+        }
+
+        cachedPlayableGrassBounds = Rect.MinMaxRect(bounds.min.x, bounds.min.y, bounds.max.x, bounds.max.y);
+        hasPlayableGrassBounds = true;
+    }
+
+    private static bool ContainsCircleInRect(Rect bounds, Vector2 position, float radius)
+    {
+        var safeRadius = Mathf.Max(0f, radius);
+        return position.x >= bounds.xMin + safeRadius - MapBoundaryEpsilon &&
+               position.x <= bounds.xMax - safeRadius + MapBoundaryEpsilon &&
+               position.y >= bounds.yMin + safeRadius - MapBoundaryEpsilon &&
+               position.y <= bounds.yMax - safeRadius + MapBoundaryEpsilon;
     }
     private bool TryGetClearDirectionToCell(
         Vector2 currentPosition,

@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 2793776317936891553}
   - component: {fileID: 4734699891384999841}
   - component: {fileID: 3871713652862864613}
+  - component: {fileID: 3214008230230501099}
   m_Layer: 5
   m_Name: Label
   m_TagString: Untagged
@@ -34,8 +35,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_AnchoredPosition: {x: -76, y: 62}
+  m_SizeDelta: {x: -56, y: -28}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &4734699891384999841
 CanvasRenderer:
@@ -66,19 +67,37 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
-    m_FontSize: 26
-    m_FontStyle: 3
+    m_Font: {fileID: 12800000, guid: 39ef1f2a0f149414998b282244497fa0, type: 3}
+    m_FontSize: 28
+    m_FontStyle: 1
     m_BestFit: 0
-    m_MinSize: 10
-    m_MaxSize: 40
+    m_MinSize: 18
+    m_MaxSize: 28
     m_Alignment: 4
     m_AlignByGeometry: 1
     m_RichText: 1
     m_HorizontalOverflow: 1
-    m_VerticalOverflow: 1
+    m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: Buy Farmhand
+--- !u!114 &3214008230230501099
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 482574090807981670}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8e4eeabb98e25fd4db3eabf4cfefdeae, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TAD.Runtime::TAD.UI.FarmUiTextPadding
+  contentOwner: {fileID: 5228858239901214050}
+  horizontalPadding: 28
+  verticalPadding: 14
+  keepSingleLine: 1
+  minimumSingleLineFontSize: 14
+  maximumSingleLineFontSize: 28
 --- !u!1 &2870215862168584581
 GameObject:
   m_ObjectHideFlags: 0
@@ -90,6 +109,7 @@ GameObject:
   - component: {fileID: 9027005735204172288}
   - component: {fileID: 1686733199628639657}
   - component: {fileID: 4998960781241620673}
+  - component: {fileID: 5539275174100684810}
   m_Layer: 5
   m_Name: Label
   m_TagString: Untagged
@@ -113,8 +133,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_AnchoredPosition: {x: -36, y: 162}
+  m_SizeDelta: {x: -56, y: -28}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1686733199628639657
 CanvasRenderer:
@@ -145,19 +165,37 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
-    m_FontSize: 56
-    m_FontStyle: 3
+    m_Font: {fileID: 12800000, guid: 39ef1f2a0f149414998b282244497fa0, type: 3}
+    m_FontSize: 53
+    m_FontStyle: 1
     m_BestFit: 0
-    m_MinSize: 10
-    m_MaxSize: 56
+    m_MinSize: 18
+    m_MaxSize: 53
     m_Alignment: 4
     m_AlignByGeometry: 1
     m_RichText: 1
     m_HorizontalOverflow: 1
-    m_VerticalOverflow: 1
+    m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: "\xD7"
+--- !u!114 &5539275174100684810
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2870215862168584581}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8e4eeabb98e25fd4db3eabf4cfefdeae, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TAD.Runtime::TAD.UI.FarmUiTextPadding
+  contentOwner: {fileID: 5984197183813542052}
+  horizontalPadding: 28
+  verticalPadding: 14
+  keepSingleLine: 1
+  minimumSingleLineFontSize: 14
+  maximumSingleLineFontSize: 53
 --- !u!1 &3344373094017837152
 GameObject:
   m_ObjectHideFlags: 0
@@ -175,7 +213,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &7542887577055866813
 RectTransform:
   m_ObjectHideFlags: 0
@@ -245,7 +283,6 @@ GameObject:
   - component: {fileID: 5562624568297153636}
   - component: {fileID: 1627297497767283781}
   - component: {fileID: 895531775092052426}
-  - component: {fileID: 8151967871288259185}
   m_Layer: 5
   m_Name: CancelButton
   m_TagString: Untagged
@@ -302,10 +339,10 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6ebe4ce13b9a6b3409a0346843127883, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 0e4845469f6846746b7febbe9329929b, type: 3}
   m_Type: 1
   m_PreserveAspect: 0
-  m_FillCenter: 0
+  m_FillCenter: 1
   m_FillMethod: 4
   m_FillAmount: 1
   m_FillClockwise: 1
@@ -356,19 +393,6 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
---- !u!114 &8151967871288259185
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4674808106027594025}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 00a7b9bc38114f240b521e05c77ccdca, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: TAD.Runtime::TAD.UI.FarmUiThinWoodOutline
-  outlineSprite: {fileID: 21300000, guid: 6ebe4ce13b9a6b3409a0346843127883, type: 3}
 --- !u!1 &5189596548090747822
 GameObject:
   m_ObjectHideFlags: 0
@@ -381,7 +405,6 @@ GameObject:
   - component: {fileID: 8358434693987095147}
   - component: {fileID: 8083127148082542210}
   - component: {fileID: 1563860417624510356}
-  - component: {fileID: 7755408616762631374}
   m_Layer: 5
   m_Name: BuyButton
   m_TagString: Untagged
@@ -438,10 +461,10 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6ebe4ce13b9a6b3409a0346843127883, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 0e4845469f6846746b7febbe9329929b, type: 3}
   m_Type: 1
   m_PreserveAspect: 0
-  m_FillCenter: 0
+  m_FillCenter: 1
   m_FillMethod: 4
   m_FillAmount: 1
   m_FillClockwise: 1
@@ -492,19 +515,6 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
---- !u!114 &7755408616762631374
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5189596548090747822}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 00a7b9bc38114f240b521e05c77ccdca, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: TAD.Runtime::TAD.UI.FarmUiThinWoodOutline
-  outlineSprite: {fileID: 21300000, guid: 6ebe4ce13b9a6b3409a0346843127883, type: 3}
 --- !u!1 &6883894590174958959
 GameObject:
   m_ObjectHideFlags: 0
@@ -519,6 +529,7 @@ GameObject:
   - component: {fileID: 3074933020722402053}
   - component: {fileID: 3840638929522613190}
   - component: {fileID: 573534792394167889}
+  - component: {fileID: 2863877990877986715}
   m_Layer: 5
   m_Name: FarmHandPlacementUi
   m_TagString: Untagged
@@ -641,6 +652,28 @@ MonoBehaviour:
   m_EditorClassIdentifier: TAD.Runtime::TAD.UI.FarmUiSkin
   menuGrassSprite: {fileID: 21300000, guid: 18dc9001961fbfe47a9cbe4d9e0d645d, type: 3}
   thinWoodOutlineSprite: {fileID: 21300000, guid: 6ebe4ce13b9a6b3409a0346843127883, type: 3}
+  woodPlankButtonSprite: {fileID: 21300000, guid: 0e4845469f6846746b7febbe9329929b, type: 3}
+  parchmentCardSprite: {fileID: 21300000, guid: f7818b36b74b8aa4bbf2a8b4af1f5679, type: 3}
+  statusBarFrameSprite: {fileID: 21300000, guid: e4be74bd281384744be9725a680c83e3, type: 3}
+  statusBarFillSprite: {fileID: 21300000, guid: 51ee6e5d2a600cf4cbeaa3ba65e9470a, type: 3}
+  boldFarmFont: {fileID: 12800000, guid: 39ef1f2a0f149414998b282244497fa0, type: 3}
+  appliedFarmUiLayoutRevision: 5
+--- !u!114 &2863877990877986715
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6883894590174958959}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e74f1f85d64641e4d84d58423d8cf2da, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TAD.Runtime::TAD.UI.MobileUiLayoutController
+  previewPortraitInEditor: 0
+  forcePortraitForTests: 0
+  safeInset: 16
+  topHudHeight: 192
 --- !u!1 &6962248729842695831
 GameObject:
   m_ObjectHideFlags: 0
@@ -653,7 +686,6 @@ GameObject:
   - component: {fileID: 7622608712670231828}
   - component: {fileID: 8631555516165947891}
   - component: {fileID: 4491734631365065498}
-  - component: {fileID: 7655597319683750190}
   m_Layer: 5
   m_Name: ConfirmButton
   m_TagString: Untagged
@@ -710,10 +742,10 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6ebe4ce13b9a6b3409a0346843127883, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 0e4845469f6846746b7febbe9329929b, type: 3}
   m_Type: 1
   m_PreserveAspect: 0
-  m_FillCenter: 0
+  m_FillCenter: 1
   m_FillMethod: 4
   m_FillAmount: 1
   m_FillClockwise: 1
@@ -764,19 +796,6 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
---- !u!114 &7655597319683750190
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6962248729842695831}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 00a7b9bc38114f240b521e05c77ccdca, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: TAD.Runtime::TAD.UI.FarmUiThinWoodOutline
-  outlineSprite: {fileID: 21300000, guid: 6ebe4ce13b9a6b3409a0346843127883, type: 3}
 --- !u!1 &7759854444331250460
 GameObject:
   m_ObjectHideFlags: 0
@@ -788,6 +807,7 @@ GameObject:
   - component: {fileID: 9194711299272823988}
   - component: {fileID: 7666879272292054288}
   - component: {fileID: 7356773630212022816}
+  - component: {fileID: 6239604795587937991}
   m_Layer: 5
   m_Name: Label
   m_TagString: Untagged
@@ -811,8 +831,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 36, y: 162}
+  m_SizeDelta: {x: -56, y: -28}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &7666879272292054288
 CanvasRenderer:
@@ -843,19 +863,37 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
-    m_FontSize: 48
-    m_FontStyle: 3
+    m_Font: {fileID: 12800000, guid: 39ef1f2a0f149414998b282244497fa0, type: 3}
+    m_FontSize: 32
+    m_FontStyle: 1
     m_BestFit: 0
-    m_MinSize: 10
-    m_MaxSize: 48
+    m_MinSize: 18
+    m_MaxSize: 32
     m_Alignment: 4
     m_AlignByGeometry: 1
     m_RichText: 1
     m_HorizontalOverflow: 1
-    m_VerticalOverflow: 1
+    m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: "\u2713"
+--- !u!114 &6239604795587937991
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7759854444331250460}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8e4eeabb98e25fd4db3eabf4cfefdeae, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TAD.Runtime::TAD.UI.FarmUiTextPadding
+  contentOwner: {fileID: 7502848059777432057}
+  horizontalPadding: 28
+  verticalPadding: 14
+  keepSingleLine: 1
+  minimumSingleLineFontSize: 14
+  maximumSingleLineFontSize: 32
 --- !u!1 &7772605197406512790
 GameObject:
   m_ObjectHideFlags: 0
@@ -873,7 +911,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1010921095172696096
 RectTransform:
   m_ObjectHideFlags: 0
@@ -948,7 +986,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &4915678984767910850
 RectTransform:
   m_ObjectHideFlags: 0

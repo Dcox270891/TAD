@@ -32,7 +32,6 @@ RectTransform:
   m_Children:
   - {fileID: 6524649696042093184}
   - {fileID: 4146871852529057590}
-  - {fileID: 6175981742498322933}
   m_Father: {fileID: 7136178416241139299}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0}
@@ -61,15 +60,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.94, g: 0.82, b: 0.53, a: 0.98}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
-  m_Type: 0
+  m_Sprite: {fileID: 21300000, guid: f7818b36b74b8aa4bbf2a8b4af1f5679, type: 3}
+  m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -89,6 +88,7 @@ GameObject:
   - component: {fileID: 4146871852529057590}
   - component: {fileID: 3314699395132269552}
   - component: {fileID: 7813854748526663433}
+  - component: {fileID: 2504540345424855359}
   m_Layer: 5
   m_Name: PreparationLabel
   m_TagString: Untagged
@@ -112,8 +112,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -1}
-  m_SizeDelta: {x: -24, y: -2}
+  m_AnchoredPosition: {x: 0, y: 179}
+  m_SizeDelta: {x: -48, y: -2}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &3314699395132269552
 CanvasRenderer:
@@ -144,19 +144,37 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
-    m_FontSize: 21
+    m_Font: {fileID: 12800000, guid: 39ef1f2a0f149414998b282244497fa0, type: 3}
+    m_FontSize: 26
     m_FontStyle: 1
     m_BestFit: 1
-    m_MinSize: 12
-    m_MaxSize: 21
+    m_MinSize: 18
+    m_MaxSize: 26
     m_Alignment: 4
     m_AlignByGeometry: 1
     m_RichText: 1
-    m_HorizontalOverflow: 1
+    m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: 'Preparation: 5'
+--- !u!114 &2504540345424855359
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2387912948309033635}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8e4eeabb98e25fd4db3eabf4cfefdeae, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TAD.Runtime::TAD.UI.FarmUiTextPadding
+  contentOwner: {fileID: 4373965513189792460}
+  horizontalPadding: 24
+  verticalPadding: 20
+  keepSingleLine: 0
+  minimumSingleLineFontSize: 8
+  maximumSingleLineFontSize: 0
 --- !u!1 &4471879064145327302
 GameObject:
   m_ObjectHideFlags: 0
@@ -170,6 +188,7 @@ GameObject:
   - component: {fileID: 4840638584245815013}
   - component: {fileID: 5395352909747150178}
   - component: {fileID: 7643102175314924478}
+  - component: {fileID: 6883344309643958025}
   m_Layer: 5
   m_Name: DayCycleHud
   m_TagString: Untagged
@@ -272,6 +291,28 @@ MonoBehaviour:
   m_EditorClassIdentifier: TAD.Runtime::TAD.UI.FarmUiSkin
   menuGrassSprite: {fileID: 21300000, guid: 18dc9001961fbfe47a9cbe4d9e0d645d, type: 3}
   thinWoodOutlineSprite: {fileID: 21300000, guid: 6ebe4ce13b9a6b3409a0346843127883, type: 3}
+  woodPlankButtonSprite: {fileID: 21300000, guid: 0e4845469f6846746b7febbe9329929b, type: 3}
+  parchmentCardSprite: {fileID: 21300000, guid: f7818b36b74b8aa4bbf2a8b4af1f5679, type: 3}
+  statusBarFrameSprite: {fileID: 21300000, guid: e4be74bd281384744be9725a680c83e3, type: 3}
+  statusBarFillSprite: {fileID: 21300000, guid: 51ee6e5d2a600cf4cbeaa3ba65e9470a, type: 3}
+  boldFarmFont: {fileID: 12800000, guid: 39ef1f2a0f149414998b282244497fa0, type: 3}
+  appliedFarmUiLayoutRevision: 5
+--- !u!114 &6883344309643958025
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4471879064145327302}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e74f1f85d64641e4d84d58423d8cf2da, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TAD.Runtime::TAD.UI.MobileUiLayoutController
+  previewPortraitInEditor: 0
+  forcePortraitForTests: 0
+  safeInset: 16
+  topHudHeight: 192
 --- !u!1 &4772685865530449503
 GameObject:
   m_ObjectHideFlags: 0
@@ -283,6 +324,7 @@ GameObject:
   - component: {fileID: 6524649696042093184}
   - component: {fileID: 4985822200138172095}
   - component: {fileID: 4286211279244002455}
+  - component: {fileID: 2215569774966882608}
   m_Layer: 5
   m_Name: DayLabel
   m_TagString: Untagged
@@ -306,8 +348,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0.5}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: -1}
-  m_SizeDelta: {x: -24, y: -2}
+  m_AnchoredPosition: {x: 0, y: 179}
+  m_SizeDelta: {x: -48, y: -2}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &4985822200138172095
 CanvasRenderer:
@@ -338,105 +380,34 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
+    m_Font: {fileID: 12800000, guid: 39ef1f2a0f149414998b282244497fa0, type: 3}
     m_FontSize: 26
     m_FontStyle: 1
     m_BestFit: 1
-    m_MinSize: 12
+    m_MinSize: 18
     m_MaxSize: 26
     m_Alignment: 4
     m_AlignByGeometry: 1
     m_RichText: 1
-    m_HorizontalOverflow: 1
+    m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: Day 0
---- !u!1 &4914689358659727215
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 6175981742498322933}
-  - component: {fileID: 3163198803391907785}
-  - component: {fileID: 1739468867815686648}
-  - component: {fileID: 1793764628733183095}
-  m_Layer: 5
-  m_Name: ThinWoodOutlineFrame
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!224 &6175981742498322933
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4914689358659727215}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 4373965513189792460}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
-  m_Pivot: {x: 0.5, y: 0.5}
---- !u!222 &3163198803391907785
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4914689358659727215}
-  m_CullTransparentMesh: 1
---- !u!114 &1739468867815686648
+--- !u!114 &2215569774966882608
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4914689358659727215}
+  m_GameObject: {fileID: 4772685865530449503}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Script: {fileID: 11500000, guid: 8e4eeabb98e25fd4db3eabf4cfefdeae, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 0
-  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
-  m_OnCullStateChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6ebe4ce13b9a6b3409a0346843127883, type: 3}
-  m_Type: 1
-  m_PreserveAspect: 0
-  m_FillCenter: 0
-  m_FillMethod: 4
-  m_FillAmount: 1
-  m_FillClockwise: 1
-  m_FillOrigin: 0
-  m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
---- !u!114 &1793764628733183095
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4914689358659727215}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 00a7b9bc38114f240b521e05c77ccdca, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: TAD.Runtime::TAD.UI.FarmUiThinWoodOutline
-  outlineSprite: {fileID: 21300000, guid: 6ebe4ce13b9a6b3409a0346843127883, type: 3}
+  m_EditorClassIdentifier: TAD.Runtime::TAD.UI.FarmUiTextPadding
+  contentOwner: {fileID: 4373965513189792460}
+  horizontalPadding: 24
+  verticalPadding: 20
+  keepSingleLine: 0
+  minimumSingleLineFontSize: 8
+  maximumSingleLineFontSize: 0

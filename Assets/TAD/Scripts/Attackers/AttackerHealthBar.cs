@@ -15,6 +15,8 @@ namespace TAD.Attackers
         private const float BarWidthMultiplier = 1.12f;
         private const float BarWorldHeight = 0.055f;
         private const float BarWorldPadding = 0.045f;
+        private const float FrameHorizontalInset = 0.022f;
+        private const float FrameVerticalInset = 0.012f;
         private const int BackgroundOrderOffset = 8;
         private const int FillOrderOffset = 9;
 
@@ -23,6 +25,8 @@ namespace TAD.Attackers
         [SerializeField] private BasicAttacker attacker;
         [SerializeField] private SpriteRenderer backgroundRenderer;
         [SerializeField] private SpriteRenderer fillRenderer;
+        [SerializeField] private Sprite barFrameSprite;
+        [SerializeField] private Sprite barFillSprite;
         [SerializeField] private Color backgroundColor = Color.black;
         [SerializeField] private Color depletedColor = new(0.88f, 0.18f, 0.16f, 1f);
         [SerializeField] private Color fullColor = new(0.18f, 0.78f, 0.28f, 1f);
@@ -92,6 +96,14 @@ namespace TAD.Attackers
         {
             Unsubscribe();
             SetVisible(false);
+        }
+
+        /// <summary>Called by the UI art builder to keep pooled world bars in the same visual family as the HUD.</summary>
+        public void ConfigureArtwork(Sprite frameSprite, Sprite fillSprite)
+        {
+            barFrameSprite = frameSprite;
+            barFillSprite = fillSprite;
+            Refresh();
         }
 
         private void ResolveComponents()
@@ -231,33 +243,52 @@ namespace TAD.Attackers
             var visual = visualRenderer;
             var sortingLayerId = visual != null ? visual.sortingLayerID : 0;
             var sortingOrder = visual != null ? visual.sortingOrder : 0;
-            var sharedSprite = GetSharedBarSprite();
+            var frameSprite = barFrameSprite != null ? barFrameSprite : GetSharedBarSprite();
+            var fillSprite = barFillSprite != null ? barFillSprite : GetSharedBarSprite();
 
             if (backgroundRenderer != null)
             {
-                backgroundRenderer.sprite = sharedSprite;
-                backgroundRenderer.color = backgroundColor;
+                backgroundRenderer.sprite = frameSprite;
+                backgroundRenderer.color = barFrameSprite != null ? Color.white : backgroundColor;
                 backgroundRenderer.sortingLayerID = sortingLayerId;
                 backgroundRenderer.sortingOrder = sortingOrder + BackgroundOrderOffset;
                 backgroundRenderer.transform.localPosition = Vector3.zero;
                 backgroundRenderer.transform.localRotation = Quaternion.identity;
-                backgroundRenderer.transform.localScale = new Vector3(barWidth, BarWorldHeight, 1f);
+                if (barFrameSprite != null)
+                {
+                    ScaleSpriteRenderer(backgroundRenderer, frameSprite, barWidth, BarWorldHeight);
+                }
+                else
+                {
+                    backgroundRenderer.drawMode = SpriteDrawMode.Simple;
+                    backgroundRenderer.transform.localScale = new Vector3(barWidth, BarWorldHeight, 1f);
+                }
             }
 
-            var fillWidth = barWidth * normalizedHealth;
+            var availableFillWidth = Mathf.Max(0f, barWidth - FrameHorizontalInset * 2f);
+            var fillHeight = Mathf.Max(0.005f, BarWorldHeight - FrameVerticalInset * 2f);
+            var fillWidth = availableFillWidth * normalizedHealth;
             hasVisibleFill = fillWidth > 0f;
             if (fillRenderer != null)
             {
-                fillRenderer.sprite = sharedSprite;
+                fillRenderer.sprite = fillSprite;
                 fillRenderer.color = Color.Lerp(depletedColor, fullColor, normalizedHealth);
                 fillRenderer.sortingLayerID = sortingLayerId;
                 fillRenderer.sortingOrder = sortingOrder + FillOrderOffset;
                 fillRenderer.transform.localPosition = new Vector3(
-                    (fillWidth - barWidth) * 0.5f,
+                    -availableFillWidth * 0.5f + fillWidth * 0.5f,
                     0f,
                     -0.01f);
                 fillRenderer.transform.localRotation = Quaternion.identity;
-                fillRenderer.transform.localScale = new Vector3(fillWidth, BarWorldHeight, 1f);
+                if (barFillSprite != null)
+                {
+                    ScaleSpriteRenderer(fillRenderer, fillSprite, fillWidth, fillHeight);
+                }
+                else
+                {
+                    fillRenderer.drawMode = SpriteDrawMode.Simple;
+                    fillRenderer.transform.localScale = new Vector3(fillWidth, fillHeight, 1f);
+                }
             }
         }
 
@@ -272,6 +303,21 @@ namespace TAD.Attackers
             {
                 fillRenderer.enabled = visible && hasVisibleFill;
             }
+        }
+
+        private static void ScaleSpriteRenderer(SpriteRenderer renderer, Sprite sprite, float width, float height)
+        {
+            if (renderer == null || sprite == null)
+            {
+                return;
+            }
+
+            var sourceSize = sprite.bounds.size;
+            renderer.drawMode = SpriteDrawMode.Simple;
+            renderer.transform.localScale = new Vector3(
+                width / Mathf.Max(0.0001f, sourceSize.x),
+                height / Mathf.Max(0.0001f, sourceSize.y),
+                1f);
         }
 
         private static Sprite GetSharedBarSprite()

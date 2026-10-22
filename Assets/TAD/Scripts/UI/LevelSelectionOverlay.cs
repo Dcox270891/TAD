@@ -11,6 +11,9 @@ namespace TAD.UI
     [RequireComponent(typeof(ModalOverlay))]
     public sealed class LevelSelectionOverlay : MonoBehaviour
     {
+        private const float LandscapeSelectionButtonHeight = 80f;
+        private const float PortraitSelectionButtonHeight = 92f;
+
         [SerializeField] private ModalOverlay modalOverlay;
         [SerializeField] private Transform levelButtonContainer;
         [SerializeField] private UnityEngine.UI.Button levelButtonTemplate;
@@ -24,6 +27,7 @@ namespace TAD.UI
         private Action<PlayerRole> onRoleSelected;
         private GameObject selectionAfterClose;
         private bool isSubscribed;
+        private bool portraitLayoutApplied;
         private string defaultTitle;
         private string defaultDescription;
         private string defaultEmptyMessage;
@@ -46,6 +50,31 @@ namespace TAD.UI
         {
             Unsubscribe();
             ClearCallbacks();
+            portraitLayoutApplied = false;
+        }
+
+        private void LateUpdate()
+        {
+            if (modalOverlay == null || !modalOverlay.IsVisible)
+            {
+                portraitLayoutApplied = false;
+                return;
+            }
+
+            var layoutController = GetComponentInParent<MobileUiLayoutController>(true);
+            if (layoutController == null || !layoutController.IsPortraitLayout)
+            {
+                portraitLayoutApplied = false;
+                return;
+            }
+
+            // The overlay can be opened in the same frame as its canvas finishes its own
+            // orientation refresh. Retry once in LateUpdate to guarantee the full-width list
+            // is applied after all generated buttons exist.
+            if (!portraitLayoutApplied)
+            {
+                ApplyMobilePortraitLayout();
+            }
         }
 
         /// <summary>Shows the available level list.</summary>
@@ -63,7 +92,9 @@ namespace TAD.UI
             onLevelSelected = levelSelectedCallback;
             onRoleSelected = null;
             selectionAfterClose = returnSelectionTarget;
+            portraitLayoutApplied = false;
             modalOverlay.Show();
+            ApplyMobilePortraitLayout();
 
             SelectFirstGeneratedButtonOrClose();
             return true;
@@ -104,7 +135,9 @@ namespace TAD.UI
             onLevelSelected = null;
             onRoleSelected = roleSelectedCallback;
             selectionAfterClose = returnSelectionTarget;
+            portraitLayoutApplied = false;
             modalOverlay.Show();
+            ApplyMobilePortraitLayout();
 
             SelectFirstGeneratedButtonOrClose();
             return true;
@@ -171,6 +204,7 @@ namespace TAD.UI
                 buttonLabel.text = label;
             }
 
+            ConfigureSelectionButtonLayout(roleButton, LandscapeSelectionButtonHeight);
             roleButton.onClick.RemoveAllListeners();
             roleButton.onClick.AddListener(() => ChooseRole(role));
             generatedButtons.Add(roleButton);
@@ -271,6 +305,7 @@ namespace TAD.UI
                         label.text = selectedDefinition.DisplayName;
                     }
 
+                    ConfigureSelectionButtonLayout(levelButton, LandscapeSelectionButtonHeight);
                     levelButton.onClick.RemoveAllListeners();
                     levelButton.onClick.AddListener(() => ChooseLevel(selectedDefinition));
                     generatedButtons.Add(levelButton);
@@ -297,6 +332,129 @@ namespace TAD.UI
             }
 
             generatedButtons.Clear();
+        }
+
+        /// <summary>
+        /// Keeps the authored landscape card untouched while converting this compact modal into a
+        /// comfortable portrait phone layout. The level list uses wide, consistently-sized rows
+        /// so the button surface is always as visible and tappable as its bold label.
+        /// </summary>
+        private void ApplyMobilePortraitLayout()
+        {
+            var layoutController = GetComponentInParent<MobileUiLayoutController>(true);
+            if (layoutController == null || !layoutController.IsPortraitLayout)
+            {
+                return;
+            }
+
+            // Let the canvas capture its authored positions before this modal applies its
+            // portrait presentation. This preserves a clean landscape restore on rotation.
+            layoutController.RefreshLayout();
+
+            var panel = transform.Find("LevelSelectionPanel") as RectTransform;
+            var content = levelButtonContainer as RectTransform;
+            if (panel == null || content == null)
+            {
+                return;
+            }
+
+            var safeContent = layoutController.GetSafeContentRect(32f);
+            var panelWidth = Mathf.Min(900f, safeContent.width);
+            var panelHeight = Mathf.Min(880f, safeContent.height);
+            panel.anchorMin = panel.anchorMax = new Vector2(0.5f, 0.5f);
+            panel.pivot = new Vector2(0.5f, 0.5f);
+            panel.anchoredPosition = safeContent.center;
+            panel.sizeDelta = new Vector2(panelWidth, panelHeight);
+
+            var title = titleText != null ? titleText.rectTransform : null;
+            if (title != null)
+            {
+                SetTopCenter(title, 64f, panelWidth - 220f, 70f);
+            }
+
+            var description = descriptionText != null ? descriptionText.rectTransform : null;
+            var descriptionIsVisible = descriptionText != null && descriptionText.gameObject.activeSelf;
+            if (description != null && descriptionIsVisible)
+            {
+                SetTopCenter(description, 136f, panelWidth - 104f, 88f);
+            }
+
+            var closeRect = closeButton != null ? closeButton.transform as RectTransform : null;
+            if (closeRect != null)
+            {
+                SetTopRight(closeRect, 24f, 24f, 190f, 72f);
+                var closeLabel = closeButton.GetComponentInChildren<UnityEngine.UI.Text>(true);
+                if (closeLabel != null && string.IsNullOrWhiteSpace(closeLabel.text))
+                {
+                    closeLabel.text = "CLOSE";
+                }
+            }
+
+            var contentTop = descriptionIsVisible ? 252f : 166f;
+            content.anchorMin = content.anchorMax = new Vector2(0.5f, 1f);
+            content.pivot = new Vector2(0.5f, 1f);
+            content.anchoredPosition = new Vector2(0f, -contentTop);
+            content.sizeDelta = new Vector2(panelWidth - 96f, panelHeight - contentTop - 54f);
+
+            var vertical = content.GetComponent<UnityEngine.UI.VerticalLayoutGroup>();
+            if (vertical != null)
+            {
+                vertical.padding = new RectOffset(0, 0, 0, 0);
+                vertical.spacing = 18f;
+                vertical.childAlignment = TextAnchor.UpperCenter;
+                vertical.childControlWidth = true;
+                vertical.childControlHeight = true;
+                vertical.childForceExpandWidth = true;
+                vertical.childForceExpandHeight = false;
+            }
+
+            foreach (var button in content.GetComponentsInChildren<UnityEngine.UI.Button>(true))
+            {
+                var element = button.GetComponent<UnityEngine.UI.LayoutElement>();
+                if (element == null)
+                {
+                    element = button.gameObject.AddComponent<UnityEngine.UI.LayoutElement>();
+                }
+
+                element.minHeight = Mathf.Max(element.minHeight, PortraitSelectionButtonHeight);
+                element.preferredHeight = Mathf.Max(element.preferredHeight, PortraitSelectionButtonHeight);
+                FarmUiSkin.EnsureReadableWoodButtonLayout(button, PortraitSelectionButtonHeight);
+            }
+
+            UnityEngine.Canvas.ForceUpdateCanvases();
+            UnityEngine.UI.LayoutRebuilder.ForceRebuildLayoutImmediate(content);
+            portraitLayoutApplied = true;
+        }
+
+        private static void ConfigureSelectionButtonLayout(UnityEngine.UI.Button button, float minimumHeight)
+        {
+            FarmUiSkin.EnsureReadableWoodButtonLayout(button, minimumHeight);
+        }
+
+        private static void SetTopCenter(RectTransform target, float top, float width, float height)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            target.anchorMin = target.anchorMax = new Vector2(0.5f, 1f);
+            target.pivot = new Vector2(0.5f, 1f);
+            target.anchoredPosition = new Vector2(0f, -top);
+            target.sizeDelta = new Vector2(width, height);
+        }
+
+        private static void SetTopRight(RectTransform target, float right, float top, float width, float height)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            target.anchorMin = target.anchorMax = new Vector2(1f, 1f);
+            target.pivot = new Vector2(1f, 1f);
+            target.anchoredPosition = new Vector2(-right, -top);
+            target.sizeDelta = new Vector2(width, height);
         }
 
         private void SelectFirstGeneratedButtonOrClose()

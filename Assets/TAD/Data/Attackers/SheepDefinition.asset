@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 694892edc0a468b448e49591a6175013, type: 3}
+  m_Name: SheepDefinition
+  m_EditorClassIdentifier: TAD.Runtime::TAD.Attackers.AttackerDefinition
+  attackerId: 015
+  displayName: Sheep
+  maximumHealth: 24
+  movementSpeed: 2.85
+  size: 1.25
+  sendCost: 35
+  waveIncome: 9
+  expGiven: 12
+  killGain: 7
+  sendSize: 5
+  archetype: 0
+  challengeTier: 6
+  traversalProfile: 0
+  visualDefinition: {fileID: 11400000, guid: 6a93fe6577b1349418781ba7235adb43, type: 2}
+  entrySound: {fileID: 8300000, guid: a0a3fa9f9c956be418f8c53018c179bd, type: 3}
+  deathSound: {fileID: 8300000, guid: b9e21fdd95bb42443ab64ff9411c2a3e, type: 3}

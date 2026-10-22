@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 694892edc0a468b448e49591a6175013, type: 3}
+  m_Name: Musk OxDefinition
+  m_EditorClassIdentifier: TAD.Runtime::TAD.Attackers.AttackerDefinition
+  attackerId: 032
+  displayName: Musk Ox
+  maximumHealth: 86
+  movementSpeed: 3.04
+  size: 1.75
+  sendCost: 126
+  waveIncome: 40
+  expGiven: 40
+  killGain: 34
+  sendSize: 5
+  archetype: 2
+  challengeTier: 9
+  traversalProfile: 0
+  visualDefinition: {fileID: 11400000, guid: feb406714db25a44eb389879ee04f60f, type: 2}
+  entrySound: {fileID: 8300000, guid: 968e73f6489c0fb4c9b5a0a532c9a639, type: 3}
+  deathSound: {fileID: 8300000, guid: 7b635d0756700674e9cf205f2480e87e, type: 3}

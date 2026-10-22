@@ -41,8 +41,13 @@ sysinfo.txt
 
 # Local authoring and Unity conversion by-products
 *.blend1
+*.blend1.meta
 UpgradeLog.htm
 Assets/Temp.meta
+
+# Unity Test Framework creates these transient bootstrap scenes while running Play Mode tests.
+/Assets/InitTestScene*.unity
+/Assets/InitTestScene*.unity.meta
 
 # Unity Asset Store tools
 /[Aa]ssets/AssetStoreTools*

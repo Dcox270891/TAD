@@ -15,8 +15,8 @@ MonoBehaviour:
   attackerId: 003
   displayName: Ram
   maximumHealth: 12
-  movementSpeed: 2.5
-  size: 1.2
+  movementSpeed: 2.4
+  size: 1
   sendCost: 17
   waveIncome: 4
   expGiven: 5
@@ -27,3 +27,4 @@ MonoBehaviour:
   traversalProfile: 0
   visualDefinition: {fileID: 11400000, guid: 81215ee9a03bd0344bb10dfba7aa4fff, type: 2}
   entrySound: {fileID: 8300000, guid: faab445d0ecbf104880099e23bea78ec, type: 3}
+  deathSound: {fileID: 8300000, guid: 747510dedf6830e408e85d54d4dd309a, type: 3}

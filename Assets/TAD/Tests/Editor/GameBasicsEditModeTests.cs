@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using TAD.Attackers;
 using TAD.Defenders;
@@ -94,7 +95,7 @@ namespace TAD.Tests.Editor
         public void AttackerAiPlanner_AvoidsImmediateRepeatsWhenDifferentRouteReadyAttackersExist()
         {
             var basic = Load<AttackerDefinition>("ChickenDefinition");
-            var fast = Load<AttackerDefinition>("GreyhoundDefinition");
+            var fast = Load<AttackerDefinition>("RabbitDefinition");
             var strong = Load<AttackerDefinition>("BullDefinition");
             var route = new[] { new Vector3(-4f, 0f), new Vector3(4f, 0f) };
             var candidates = new List<AttackerAiCandidate>
@@ -109,8 +110,8 @@ namespace TAD.Tests.Editor
                     candidates,
                     new List<AttackerAiDefenderThreat>(),
                     new List<AttackerDefinition> { basic },
-                    // Tier-three contenders intentionally unlock for the AI in the late game;
-                    // the final balance suite separately guards the earlier tier gate.
+                    // Higher-tier contenders intentionally unlock for the AI in the late game;
+                    // the final balance suite separately guards the day-by-day tier gate.
                     day: 6,
                     groupIndex: 0,
                     out var decision),
@@ -124,7 +125,7 @@ namespace TAD.Tests.Editor
         [Test]
         public void DefenderAiPlanner_UsesQueuedRoutesForPlacementAndAWeaponDecision()
         {
-            var flying = Load<AttackerDefinition>("EagleDefinition");
+            var flying = Load<AttackerDefinition>("PigeonDefinition");
             var unarmed = Load<WeaponDefinition>("UnarmedWeaponDefinition");
             var airRifle = Load<WeaponDefinition>("AirRifleWeaponDefinition");
             var route = new[] { new Vector3(-5f, 0f), new Vector3(0f, 0f), new Vector3(5f, 0f) };
@@ -224,21 +225,14 @@ namespace TAD.Tests.Editor
         [Test]
         public void AttackerHitColliders_MatchEveryRenderedMovementSpriteOutline()
         {
-            var attackerPrefabPaths = new[]
-            {
-                "Assets/TAD/Prefabs/Attackers/Chicken.prefab",
-                "Assets/TAD/Prefabs/Attackers/Duck.prefab",
-                "Assets/TAD/Prefabs/Attackers/Boar.prefab",
-                "Assets/TAD/Prefabs/Attackers/Bull.prefab",
-                "Assets/TAD/Prefabs/Attackers/Bison.prefab",
-                "Assets/TAD/Prefabs/Attackers/Fox.prefab",
-                "Assets/TAD/Prefabs/Attackers/Greyhound.prefab",
-                "Assets/TAD/Prefabs/Attackers/Hare.prefab",
-                "Assets/TAD/Prefabs/Attackers/Ram.prefab",
-                "Assets/TAD/Prefabs/Attackers/Crow.prefab",
-                "Assets/TAD/Prefabs/Attackers/Eagle.prefab",
-                "Assets/TAD/Prefabs/Attackers/Hawk.prefab"
-            };
+            var attackerPrefabPaths = AssetDatabase.FindAssets(
+                    "t:Prefab",
+                    new[] { "Assets/TAD/Prefabs/Attackers" })
+                .Select(AssetDatabase.GUIDToAssetPath)
+                .OrderBy(path => path)
+                .ToArray();
+
+            Assert.That(attackerPrefabPaths, Has.Length.EqualTo(40));
 
             foreach (var prefabPath in attackerPrefabPaths)
             {
@@ -308,7 +302,7 @@ namespace TAD.Tests.Editor
         [Test]
         public void DefenderAiPlanner_ChoosesUnarmedOverStandardMeleeAgainstFlyingAttackers()
         {
-            var flying = Load<AttackerDefinition>("EagleDefinition");
+            var flying = Load<AttackerDefinition>("PigeonDefinition");
             var unarmed = LoadAsset<WeaponDefinition>("Assets/TAD/Data/Defenders/UnarmedWeaponDefinition.asset");
             var stick = LoadAsset<WeaponDefinition>("Assets/TAD/Data/Defenders/StickWeaponDefinition.asset");
             var route = new[] { new Vector3(-2f, 0f), new Vector3(2f, 0f) };

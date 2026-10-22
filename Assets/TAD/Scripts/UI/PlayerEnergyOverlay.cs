@@ -145,7 +145,10 @@ namespace TAD.UI
             layout.spacing = 14f;
             layout.childAlignment = TextAnchor.UpperCenter;
             layout.childControlWidth = true;
-            layout.childControlHeight = false;
+            // The title, explanatory copy and action deliberately expose LayoutElement
+            // heights. Honour them on small portrait screens so the panel remains a
+            // readable vertical stack instead of collapsing to the template's height.
+            layout.childControlHeight = true;
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = false;
 

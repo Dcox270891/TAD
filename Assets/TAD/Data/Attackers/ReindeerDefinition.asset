@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 694892edc0a468b448e49591a6175013, type: 3}
+  m_Name: ReindeerDefinition
+  m_EditorClassIdentifier: TAD.Runtime::TAD.Attackers.AttackerDefinition
+  attackerId: 020
+  displayName: Reindeer
+  maximumHealth: 9
+  movementSpeed: 4.2
+  size: 1.5
+  sendCost: 25
+  waveIncome: 5
+  expGiven: 7
+  killGain: 4
+  sendSize: 5
+  archetype: 1
+  challengeTier: 4
+  traversalProfile: 0
+  visualDefinition: {fileID: 11400000, guid: 7a98ae00f8484534e96ed95e20ee5ea9, type: 2}
+  entrySound: {fileID: 8300000, guid: 500251787ccfec84bab91b38eb28a52a, type: 3}
+  deathSound: {fileID: 8300000, guid: 701a6f0278042154f8871d04ec3884c6, type: 3}

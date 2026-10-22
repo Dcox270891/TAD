@@ -15,9 +15,18 @@ namespace TAD.UI
         private ResourceBank defenderBank;
         private bool isSubscribed;
 
+        private void Awake()
+        {
+            // The plaque frames are presentation-only, but they must exist before the first bank
+            // event arrives so all three resource values have a readable wood background at
+            // scene start.
+            ApplyHudPresentation();
+        }
+
         /// <summary>Binds the top-corner labels to the two level banks.</summary>
         public void Bind(ResourceBank attackerSource, ResourceBank defenderSource)
         {
+            ApplyHudPresentation();
             if (attackerBank == attackerSource && defenderBank == defenderSource)
             {
                 Refresh();
@@ -33,6 +42,7 @@ namespace TAD.UI
 
         private void OnEnable()
         {
+            ApplyHudPresentation();
             Subscribe();
             Refresh();
         }
@@ -139,6 +149,12 @@ namespace TAD.UI
 
             var skin = GetComponent<FarmUiSkin>() ?? GetComponentInParent<FarmUiSkin>();
             skin?.ApplyThemeTo(text.transform);
+        }
+
+        private void ApplyHudPresentation()
+        {
+            var skin = GetComponent<FarmUiSkin>() ?? GetComponentInParent<FarmUiSkin>();
+            skin?.ApplyThemeTo(transform);
         }
     }
 }

@@ -39,6 +39,13 @@ namespace TAD.Environment
         /// <summary>Raised once whenever food reaches zero.</summary>
         public event Action FoodDepleted;
 
+        /// <summary>
+        /// Raised when a valid attacker reaches the barn, before the food is consumed. This lets
+        /// wave economy settle the arrival reward even when this specific attacker depletes the
+        /// final food and immediately ends the match.
+        /// </summary>
+        public event Action<IFoodStoreRaider> RaiderReached;
+
         private void Awake()
         {
             ResetFood();
@@ -74,17 +81,34 @@ namespace TAD.Environment
             return foodConsumed;
         }
 
-        private void OnTriggerEnter2D(Collider2D other)
+        /// <summary>
+        /// Resolves one attacker's arrival at the barn. Normally this is called by the food-store
+        /// trigger. Route maps whose visible grass stops at the barn's edge use the same method
+        /// once the animal reaches the last valid grass cell, so its body never has to leave the
+        /// playable ground just to touch an off-edge barn collider.
+        /// </summary>
+        public bool TryAcceptRaider(IFoodStoreRaider raider)
         {
-            var raider = FindRaider(other);
-            if (raider == null || raider.HasReachedFoodStore)
+            if (IsDepleted)
             {
-                return;
+                return false;
             }
 
+            if (raider == null || raider.HasReachedFoodStore)
+            {
+                return false;
+            }
+
+            RaiderReached?.Invoke(raider);
             var foodConsumed = ConsumeFood(raider.RemainingHealth);
             raider.OnFoodStoreReached(this, foodConsumed);
             TadHapticFeedback.PulseFoodStoreReached();
+            return true;
+        }
+
+        private void OnTriggerEnter2D(Collider2D other)
+        {
+            TryAcceptRaider(FindRaider(other));
         }
 
         private static IFoodStoreRaider FindRaider(Collider2D collider)

@@ -15,8 +15,8 @@ MonoBehaviour:
   attackerId: 002
   displayName: Duck
   maximumHealth: 8
-  movementSpeed: 2.3
-  size: 1.05
+  movementSpeed: 2.25
+  size: 0.75
   sendCost: 11
   waveIncome: 2
   expGiven: 3
@@ -27,3 +27,4 @@ MonoBehaviour:
   traversalProfile: 0
   visualDefinition: {fileID: 11400000, guid: 38731593543fc5d4f917c47ee95f1944, type: 2}
   entrySound: {fileID: 8300000, guid: a5b42331304d96842882f570c5f11316, type: 3}
+  deathSound: {fileID: 8300000, guid: 2842a06a44bd386479a88e984c8ac49d, type: 3}

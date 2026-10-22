@@ -153,6 +153,16 @@ namespace TAD.UI
                 return;
             }
 
+            if (MobileUiLayoutController.UsesPortraitLayout(transform))
+            {
+                card.anchorMin = new Vector2(1f, 1f);
+                card.anchorMax = new Vector2(1f, 1f);
+                card.pivot = new Vector2(1f, 1f);
+                card.anchoredPosition = new Vector2(-16f, -208f);
+                card.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, 470f);
+                return;
+            }
+
             card.anchorMin = new Vector2(0f, 1f);
             card.anchorMax = new Vector2(0f, 1f);
             card.pivot = new Vector2(0f, 1f);
@@ -173,7 +183,9 @@ namespace TAD.UI
             }
 
             text.horizontalOverflow = HorizontalWrapMode.Wrap;
-            text.verticalOverflow = VerticalWrapMode.Overflow;
+            // Details cards can grow through FarmUiCardAutoSizer; copy must never render into
+            // an adjacent card while that responsive pass is settling on a compact phone.
+            text.verticalOverflow = VerticalWrapMode.Truncate;
         }
 
         private void Subscribe()

@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 694892edc0a468b448e49591a6175013, type: 3}
+  m_Name: PartridgeDefinition
+  m_EditorClassIdentifier: TAD.Runtime::TAD.Attackers.AttackerDefinition
+  attackerId: 036
+  displayName: Partridge
+  maximumHealth: 18
+  movementSpeed: 3.7
+  size: 1
+  sendCost: 46
+  waveIncome: 13
+  expGiven: 14
+  killGain: 9
+  sendSize: 5
+  archetype: 3
+  challengeTier: 6
+  traversalProfile: 1
+  visualDefinition: {fileID: 11400000, guid: ee67d4167370c8840b896a65f662f07f, type: 2}
+  entrySound: {fileID: 8300000, guid: 3bbd18b765c759146b7dcdac5d629f23, type: 3}
+  deathSound: {fileID: 8300000, guid: b86778f080e87164d9ce2d0be7122494, type: 3}

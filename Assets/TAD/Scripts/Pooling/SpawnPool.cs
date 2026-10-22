@@ -258,7 +258,21 @@ namespace TAD.Pooling
         private void Awake()
         {
             routeMapper ??= GetComponent<FarmRouteMapper>();
+            EnsurePortraitOrientationController();
             Initialize();
+        }
+
+        private void EnsurePortraitOrientationController()
+        {
+            var orientationController = GetComponent<GameplayPortraitOrientationController>();
+            if (orientationController == null)
+            {
+                // Legacy level instances receive the same phone behaviour before the shared level
+                // core has been re-saved by the editor asset repair pass.
+                orientationController = gameObject.AddComponent<GameplayPortraitOrientationController>();
+            }
+
+            orientationController.Configure(mapper: routeMapper);
         }
 
         /// <summary>Activates an available default object of the requested type.</summary>

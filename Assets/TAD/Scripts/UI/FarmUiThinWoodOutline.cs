@@ -57,10 +57,16 @@ namespace TAD.UI
                     typeof(RectTransform),
                     typeof(CanvasRenderer),
                     typeof(Image),
-                    typeof(FarmUiThinWoodOutline));
+                    typeof(LayoutElement));
                 frameObject.layer = surface.gameObject.layer;
                 frameObject.transform.SetParent(surface.transform, false);
                 frameTransform = frameObject.transform;
+
+                // Create the layout marker before adding the outline behaviour.  Awake on the
+                // latter refreshes the image, and Unity does not permit AddComponent calls from
+                // that lifecycle callback.
+                MarkFrameLayoutNeutral(frameTransform, createIfMissing: false);
+                frameObject.AddComponent<FarmUiThinWoodOutline>();
             }
 
             var frameRect = frameTransform as RectTransform;
@@ -81,6 +87,11 @@ namespace TAD.UI
             }
 
             frameImage.raycastTarget = false;
+
+            // Existing author-time frames are normalised by FarmUiSkin after the canvas has
+            // started.  Do not create components here: this helper is also used by UI that is
+            // constructed from Awake callbacks.
+            KeepFrameOutOfLayouts(frameTransform);
             var outline = frameTransform.GetComponent<FarmUiThinWoodOutline>();
             if (outline == null)
             {
@@ -94,7 +105,47 @@ namespace TAD.UI
 
         public void Apply()
         {
+            // Existing authored frames can have their sprite refreshed through the outline
+            // component directly, without passing through EnsureFrame. Keep those frames
+            // layout-neutral as well so the guarantee applies to every menu and HUD panel.
+            KeepFrameOutOfLayouts(transform);
             ApplyTo(GetComponent<Image>());
+        }
+
+        /// <summary>
+        /// Makes an existing outline layout-neutral after its canvas has started. This is kept
+        /// separate from Apply so OnValidate/Awake never try to add a component.
+        /// </summary>
+        public static void EnsureLayoutNeutral(Transform frameTransform)
+        {
+            MarkFrameLayoutNeutral(frameTransform, createIfMissing: true);
+        }
+
+        private static void KeepFrameOutOfLayouts(Transform frameTransform)
+        {
+            MarkFrameLayoutNeutral(frameTransform, createIfMissing: false);
+        }
+
+        private static void MarkFrameLayoutNeutral(Transform frameTransform, bool createIfMissing)
+        {
+            if (frameTransform == null || frameTransform.name != FrameObjectName)
+            {
+                return;
+            }
+
+            // Decorative frames are children of their panel. Mark the frame as layout-neutral so
+            // a Vertical/HorizontalLayoutGroup never gives it a content slot (which previously
+            // made a frame push labels outside compact HUD and menu panels).
+            var frameLayout = frameTransform.GetComponent<LayoutElement>();
+            if (frameLayout == null && createIfMissing)
+            {
+                frameLayout = frameTransform.gameObject.AddComponent<LayoutElement>();
+            }
+
+            if (frameLayout != null)
+            {
+                frameLayout.ignoreLayout = true;
+            }
         }
 
         public void ApplyTo(Image targetImage)

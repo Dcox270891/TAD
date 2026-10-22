@@ -1,3 +1,4 @@
+using System.Linq;
 using NUnit.Framework;
 using TAD.Levels;
 using UnityEditor;
@@ -15,7 +16,8 @@ namespace TAD.Tests.Editor
             var levelOne = CreateLevel("level-01", "Level 1", "Level1", unlocked: true);
             var levelTwo = CreateLevel("level-02", "Level 2", "Level2", unlocked: true);
             var levelThree = CreateLevel("level-03", "Level 3", "Level3", unlocked: true);
-            var catalog = CreateCatalog(levelOne, levelTwo, levelThree);
+            var levelFour = CreateLevel("level-04", "Level 4", "Level4", unlocked: true);
+            var catalog = CreateCatalog(levelOne, levelTwo, levelThree, levelFour);
 
             try
             {
@@ -25,10 +27,16 @@ namespace TAD.Tests.Editor
 
                 Assert.That(catalog.TryGetNextUnlockedLevel("Level2", out nextLevel), Is.True);
                 Assert.That(nextLevel, Is.EqualTo(levelThree));
+
+                Assert.That(catalog.TryGetNextUnlockedLevel("Level3", out nextLevel), Is.True);
+                Assert.That(nextLevel, Is.EqualTo(levelFour));
+
+                Assert.That(catalog.TryGetNextUnlockedLevel("Level4", out nextLevel), Is.False);
+                Assert.That(nextLevel, Is.Null);
             }
             finally
             {
-                DestroyCatalogAndLevels(catalog, levelOne, levelTwo, levelThree);
+                DestroyCatalogAndLevels(catalog, levelOne, levelTwo, levelThree, levelFour);
             }
         }
 
@@ -59,7 +67,8 @@ namespace TAD.Tests.Editor
             {
                 "Assets/TAD/Data/Levels/Level1Definition.asset",
                 "Assets/TAD/Data/Levels/Level2Definition.asset",
-                "Assets/TAD/Data/Levels/Level3Definition.asset"
+                "Assets/TAD/Data/Levels/Level3Definition.asset",
+                "Assets/TAD/Data/Levels/Level4Definition.asset"
             };
 
             foreach (var levelPath in existingLevelPaths)
@@ -69,6 +78,60 @@ namespace TAD.Tests.Editor
                 Assert.That(level.IsUnlocked, Is.True,
                     "The current prototype catalog should keep every shipped level available until win-based progression is added.");
             }
+        }
+
+        [Test]
+        public void AuthoredUnlockedCatalogLevels_ResolveToEnabledBuildScenes()
+        {
+            var catalog = AssetDatabase.LoadAssetAtPath<LevelCatalog>("Assets/TAD/Data/Levels/LevelCatalog.asset");
+            Assert.That(catalog, Is.Not.Null, "The authored level catalog must exist.");
+
+            foreach (var level in catalog.Levels)
+            {
+                if (level == null || !level.IsUnlocked)
+                {
+                    continue;
+                }
+
+                var resolved = false;
+                foreach (var buildScene in EditorBuildSettings.scenes)
+                {
+                    if (!buildScene.enabled || string.IsNullOrWhiteSpace(buildScene.path))
+                    {
+                        continue;
+                    }
+
+                    var buildSceneName = System.IO.Path.GetFileNameWithoutExtension(buildScene.path);
+                    if (string.Equals(buildSceneName, level.SceneName, System.StringComparison.OrdinalIgnoreCase))
+                    {
+                        resolved = true;
+                        break;
+                    }
+                }
+
+                Assert.That(resolved, Is.True,
+                    $"Unlocked catalog level '{level.DisplayName}' targets '{level.SceneName}', which is not an enabled Build Settings scene.");
+            }
+        }
+
+        [Test]
+        public void AuthoredCatalogLevels_MatchEnabledGameplayBuildSceneOrder()
+        {
+            var catalog = AssetDatabase.LoadAssetAtPath<LevelCatalog>("Assets/TAD/Data/Levels/LevelCatalog.asset");
+            Assert.That(catalog, Is.Not.Null, "The authored level catalog must exist.");
+
+            var catalogSceneNames = catalog.Levels
+                .Where(level => level != null && level.IsUnlocked && !string.IsNullOrWhiteSpace(level.SceneName))
+                .Select(level => level.SceneName)
+                .ToArray();
+            var gameplayBuildSceneNames = EditorBuildSettings.scenes
+                .Where(scene => scene.enabled && !string.IsNullOrWhiteSpace(scene.path))
+                .Select(scene => System.IO.Path.GetFileNameWithoutExtension(scene.path))
+                .Where(sceneName => !string.Equals(sceneName, "MainMenu", System.StringComparison.OrdinalIgnoreCase))
+                .ToArray();
+
+            Assert.That(gameplayBuildSceneNames, Is.EqualTo(catalogSceneNames),
+                "The catalogue must contain every enabled gameplay scene in the same progression order.");
         }
 
         private static LevelDefinition CreateLevel(string id, string displayName, string sceneName, bool unlocked)

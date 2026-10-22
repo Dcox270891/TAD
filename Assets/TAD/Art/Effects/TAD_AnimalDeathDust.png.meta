@@ -1,0 +1,379 @@
+fileFormatVersion: 2
+guid: 37108259bd3c5304abe1d0f1c67dd591
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -5444488713148790480
+    second: TAD_AnimalDeathDust_0
+  - first:
+      213: 1640782366199626188
+    second: TAD_AnimalDeathDust_1
+  - first:
+      213: -5726743477091626313
+    second: TAD_AnimalDeathDust_2
+  - first:
+      213: -6987165694189526524
+    second: TAD_AnimalDeathDust_3
+  - first:
+      213: -3820748621308691966
+    second: TAD_AnimalDeathDust_4
+  - first:
+      213: 769193094386913252
+    second: TAD_AnimalDeathDust_5
+  - first:
+      213: -8876981938004572760
+    second: TAD_AnimalDeathDust_6
+  - first:
+      213: 3200337460826566707
+    second: TAD_AnimalDeathDust_7
+  - first:
+      213: 9141117577299599474
+    second: TAD_AnimalDeathDust_8
+  - first:
+      213: 8855638639975626372
+    second: TAD_AnimalDeathDust_9
+  - first:
+      213: 1871052144113478169
+    second: TAD_AnimalDeathDust_10
+  - first:
+      213: 2002477034007479977
+    second: TAD_AnimalDeathDust_11
+  - first:
+      213: -1734271884628235356
+    second: TAD_AnimalDeathDust_12
+  - first:
+      213: 373116786715015229
+    second: TAD_AnimalDeathDust_13
+  - first:
+      213: 6143179468183603043
+    second: TAD_AnimalDeathDust_14
+  - first:
+      213: 7018594179412591610
+    second: TAD_AnimalDeathDust_15
+  - first:
+      213: 3375491324382280014
+    second: TAD_AnimalDeathDust_16
+  - first:
+      213: -5257064262548513372
+    second: TAD_AnimalDeathDust_17
+  - first:
+      213: -6961499952372585465
+    second: TAD_AnimalDeathDust_18
+  - first:
+      213: 5292186309138044931
+    second: TAD_AnimalDeathDust_19
+  - first:
+      213: -7997894115097738033
+    second: TAD_AnimalDeathDust_20
+  - first:
+      213: -3276561616113959072
+    second: TAD_AnimalDeathDust_21
+  - first:
+      213: 7877857217521225110
+    second: TAD_AnimalDeathDust_22
+  - first:
+      213: -4722943801585886841
+    second: TAD_AnimalDeathDust_23
+  - first:
+      213: 2938240096619424329
+    second: TAD_AnimalDeathDust_24
+  - first:
+      213: 8307967850317784749
+    second: TAD_AnimalDeathDust_25
+  - first:
+      213: 1288454200219035680
+    second: TAD_AnimalDeathDust_26
+  - first:
+      213: 5744603255430950085
+    second: TAD_AnimalDeathDust_27
+  - first:
+      213: 4634287002683340177
+    second: TAD_AnimalDeathDust_28
+  - first:
+      213: 1712720034418224067
+    second: TAD_AnimalDeathDust_29
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 512
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationMethod: 0
+  spriteTessellationDetail: -1
+  spriteGeometrySubdivision: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 75
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: iOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: VisionOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: tvOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WindowsStoreApps
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: TAD_AnimalDeathDust_frame0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 512
+        height: 683
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7262cccc7f51ac142bf2cf9ae92ca97c
+      internalID: -350087608
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_AnimalDeathDust_frame1
+      rect:
+        serializedVersion: 2
+        x: 512
+        y: 0
+        width: 512
+        height: 683
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ce7bc9901d40f3d47a6b882fbde3bf7c
+      internalID: 1202117453
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_AnimalDeathDust_frame2
+      rect:
+        serializedVersion: 2
+        x: 1024
+        y: 0
+        width: 512
+        height: 683
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 4561c3316909dc643a7e7df56d337392
+      internalID: -151583709
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_AnimalDeathDust_frame3
+      rect:
+        serializedVersion: 2
+        x: 1536
+        y: 0
+        width: 512
+        height: 683
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 44027ad51ff16ca499fde9517343d2b0
+      internalID: 29249999
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 39448bcb24ca7154c9a02ab729c6cd51
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      TAD_AnimalDeathDust_frame0: -350087608
+      TAD_AnimalDeathDust_frame1: 1202117453
+      TAD_AnimalDeathDust_frame2: -151583709
+      TAD_AnimalDeathDust_frame3: 29249999
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

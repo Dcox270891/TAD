@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 694892edc0a468b448e49591a6175013, type: 3}
+  m_Name: SpringbokDefinition
+  m_EditorClassIdentifier: TAD.Runtime::TAD.Attackers.AttackerDefinition
+  attackerId: 021
+  displayName: Springbok
+  maximumHealth: 11.5
+  movementSpeed: 4.5
+  size: 1
+  sendCost: 32
+  waveIncome: 8
+  expGiven: 9
+  killGain: 5
+  sendSize: 5
+  archetype: 1
+  challengeTier: 5
+  traversalProfile: 0
+  visualDefinition: {fileID: 11400000, guid: 15c3ff0cde33b7f43aa976cde7600251, type: 2}
+  entrySound: {fileID: 8300000, guid: d17b06cb0e8f3a444a965a56fff3909d, type: 3}
+  deathSound: {fileID: 8300000, guid: 8b8b81db764a70a499d34ae1bd3ce27b, type: 3}

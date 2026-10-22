@@ -14,11 +14,16 @@ namespace TAD.UI
         [SerializeField] private UnityEngine.UI.Image fillImage;
         [SerializeField] private UnityEngine.UI.Text amountText;
         [SerializeField] private Sprite squareFillSprite;
+        [SerializeField] private Sprite statusBarFrameSprite;
         [SerializeField] private Color depletedColor = new(0.88f, 0.18f, 0.16f, 1f);
         [SerializeField] private Color fullColor = new(0.18f, 0.78f, 0.28f, 1f);
 
-        private const float BarInset = 7f;
-        private const float LabelHorizontalInset = 14f;
+        private const string LegacyOutlineFrameName = "ThinWoodOutlineFrame";
+        // The new status frame already draws its own recessed edge. The old large offsets left
+        // visible black gaps at both ends of the food fill rather than reading like a health bar.
+        private const float BarHorizontalInset = 6f;
+        private const float BarVerticalInset = 6f;
+        private const float LabelHorizontalInset = 18f;
         private const float LabelVerticalInset = 6f;
 
         private FoodStore foodStore;
@@ -60,6 +65,24 @@ namespace TAD.UI
             }
 
             squareFillSprite = sprite;
+            ConfigureSquareBarGeometry();
+            ConfigureLeftToRightFill();
+            ConfigureEmptyBar();
+        }
+
+        /// <summary>
+        /// Applies the shared recessed wooden frame and softly highlighted tintable fill. It is
+        /// intentionally separate from food state so the HUD remains authoritative only for its
+        /// presentation.
+        /// </summary>
+        public void ConfigureFarmStatusBar(Sprite frameSprite, Sprite fillSprite)
+        {
+            statusBarFrameSprite = frameSprite;
+            if (fillSprite != null)
+            {
+                squareFillSprite = fillSprite;
+            }
+
             ConfigureSquareBarGeometry();
             ConfigureLeftToRightFill();
             ConfigureEmptyBar();
@@ -150,7 +173,13 @@ namespace TAD.UI
         {
             if (backgroundImage != null)
             {
-                backgroundImage.color = Color.black;
+                backgroundImage.sprite = statusBarFrameSprite;
+                backgroundImage.type = statusBarFrameSprite != null
+                    ? UnityEngine.UI.Image.Type.Sliced
+                    : UnityEngine.UI.Image.Type.Simple;
+                backgroundImage.fillCenter = true;
+                backgroundImage.preserveAspect = false;
+                backgroundImage.color = statusBarFrameSprite != null ? Color.white : Color.black;
                 backgroundImage.raycastTarget = false;
             }
         }
@@ -159,8 +188,11 @@ namespace TAD.UI
         {
             if (backgroundImage != null)
             {
-                backgroundImage.sprite = null;
-                backgroundImage.type = UnityEngine.UI.Image.Type.Simple;
+                RemoveLegacyOutlineFrame();
+                backgroundImage.sprite = statusBarFrameSprite;
+                backgroundImage.type = statusBarFrameSprite != null
+                    ? UnityEngine.UI.Image.Type.Sliced
+                    : UnityEngine.UI.Image.Type.Simple;
                 backgroundImage.fillCenter = true;
                 backgroundImage.preserveAspect = false;
             }
@@ -171,8 +203,8 @@ namespace TAD.UI
                 fillRect.anchorMin = Vector2.zero;
                 fillRect.anchorMax = Vector2.one;
                 fillRect.pivot = new Vector2(0.5f, 0.5f);
-                fillRect.offsetMin = Vector2.one * BarInset;
-                fillRect.offsetMax = Vector2.one * -BarInset;
+                fillRect.offsetMin = new Vector2(BarHorizontalInset, BarVerticalInset);
+                fillRect.offsetMax = new Vector2(-BarHorizontalInset, -BarVerticalInset);
                 fillRect.localScale = Vector3.one;
             }
 
@@ -189,9 +221,39 @@ namespace TAD.UI
                 amountText.resizeTextForBestFit = true;
                 amountText.resizeTextMinSize = 12;
                 amountText.resizeTextMaxSize = Mathf.Max(12, amountText.fontSize);
-                amountText.horizontalOverflow = UnityEngine.HorizontalWrapMode.Overflow;
+                amountText.horizontalOverflow = UnityEngine.HorizontalWrapMode.Wrap;
                 amountText.verticalOverflow = UnityEngine.VerticalWrapMode.Truncate;
             }
+        }
+
+        /// <summary>
+        /// Earlier HUDs carried a separate thin outline under the status-bar frame. The art
+        /// family now owns that border in one sprite, so remove the legacy child through Unity's
+        /// object API whenever the HUD is rebuilt or initialised.
+        /// </summary>
+        private void RemoveLegacyOutlineFrame()
+        {
+            if (backgroundImage == null)
+            {
+                return;
+            }
+
+            var legacyFrame = backgroundImage.transform.Find(LegacyOutlineFrameName);
+            if (legacyFrame == null)
+            {
+                return;
+            }
+
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+            {
+                DestroyImmediate(legacyFrame.gameObject);
+                return;
+            }
+#endif
+
+            legacyFrame.gameObject.SetActive(false);
+            Destroy(legacyFrame.gameObject);
         }
 
         private Sprite ResolveSquareFillSprite()

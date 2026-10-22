@@ -11,15 +11,47 @@ namespace TAD.UI
     [DisallowMultipleComponent]
     public sealed class FarmUiSkin : MonoBehaviour
     {
+        /// <summary>
+        /// Bumps whenever the editor art pass needs to revisit existing UI assets for a shared
+        /// layout correction. Keeping this alongside the visual skin avoids one-off prefab edits.
+        /// </summary>
+        public const int CurrentFarmUiLayoutRevision = 5;
+
         private const string ButtonSurfaceObjectName = "FarmUiButtonSurface";
         private const float ButtonSurfaceInset = 7f;
+        private const float OrdinaryButtonHorizontalPadding = 28f;
+        private const float OrdinaryButtonVerticalPadding = 14f;
+        private const float CardButtonHorizontalPadding = 18f;
+        // Card choice buttons can deliberately stack more than one label. Eight pixels leaves
+        // meaningful breathing room without pulling their cost and income rows into each other.
+        private const float CardButtonVerticalPadding = 8f;
+        private const float CardSurfaceHorizontalPadding = 24f;
+        private const float CardSurfaceVerticalPadding = 20f;
         private const float HudBadgeHorizontalInset = 16f;
         private const float HudBadgeVerticalInset = 7f;
         private const float HudBadgeRowGap = 12f;
+        private const int LandscapeBodyFontSize = 22;
+        private const int LandscapeButtonFontSize = 28;
+        private const int LandscapeHudFontSize = 26;
+        private const int LandscapeBadgeFontSize = 22;
+        private const int LandscapeHeadingFontSize = 36;
+        private const int LandscapeAlertFontSize = 28;
+        private const int PortraitBodyFontSize = 26;
+        private const int PortraitButtonFontSize = 34;
+        private const int PortraitHudFontSize = 30;
+        private const int PortraitBadgeFontSize = 26;
+        private const int PortraitHeadingFontSize = 44;
+        private const int PortraitAlertFontSize = 34;
 
         [Header("Farm UI Artwork")]
         [SerializeField] private Sprite menuGrassSprite;
         [SerializeField] private Sprite thinWoodOutlineSprite;
+        [SerializeField] private Sprite woodPlankButtonSprite;
+        [SerializeField] private Sprite parchmentCardSprite;
+        [SerializeField] private Sprite statusBarFrameSprite;
+        [SerializeField] private Sprite statusBarFillSprite;
+        [SerializeField] private Font boldFarmFont;
+        [SerializeField, HideInInspector] private int appliedFarmUiLayoutRevision;
 
         // A single dark ink palette keeps the small mobile UI crisp against its light parchment
         // surfaces. Bold, slightly slanted headings provide the playful hand-painted feel
@@ -67,24 +99,33 @@ namespace TAD.UI
             }
 
             var outlineSprite = ResolveThinWoodOutlineSprite();
+            var font = ResolveBoldFarmFont();
+            var portraitTypography = MobileUiLayoutController.UsesPortraitLayout(subtree);
             foreach (var image in subtree.GetComponentsInChildren<Image>(true))
             {
-                StyleImage(image, outlineSprite);
+                StyleImage(image, outlineSprite, parchmentCardSprite);
             }
 
             foreach (var button in subtree.GetComponentsInChildren<Button>(true))
             {
-                StyleButton(button, outlineSprite);
+                StyleButton(button, outlineSprite, woodPlankButtonSprite);
             }
 
             foreach (var text in subtree.GetComponentsInChildren<Text>(true))
             {
-                StyleText(text);
+                StyleText(text, font, portraitTypography);
             }
 
             foreach (var text in subtree.GetComponentsInChildren<Text>(true))
             {
-                EnsureHudBadge(text, outlineSprite);
+                EnsureHudBadge(text, outlineSprite, woodPlankButtonSprite);
+            }
+
+            // Some early authoring passes created the decorative child before its layout marker.
+            // Normalise those frames once the canvas is running, outside Awake/OnValidate.
+            foreach (var outline in subtree.GetComponentsInChildren<FarmUiThinWoodOutline>(true))
+            {
+                FarmUiThinWoodOutline.EnsureLayoutNeutral(outline.transform);
             }
 
             ArrangeHudBadgeRows(subtree);
@@ -94,7 +135,7 @@ namespace TAD.UI
         /// Used by the editor asset builder to apply the same visual rules to every shipped UI
         /// prefab. It deliberately avoids gameplay bindings and layout components.
         /// </summary>
-        public static void ApplyThinWoodOutlineTheme(Transform subtree, Sprite outlineSprite)
+        public static void ApplyThinWoodOutlineTheme(Transform subtree, Sprite outlineSprite, Font font = null)
         {
             if (subtree == null || outlineSprite == null)
             {
@@ -103,17 +144,59 @@ namespace TAD.UI
 
             foreach (var image in subtree.GetComponentsInChildren<Image>(true))
             {
-                StylePanelImage(image, outlineSprite);
+                StylePanelImage(image, outlineSprite, null);
             }
 
             foreach (var button in subtree.GetComponentsInChildren<Button>(true))
             {
-                StyleButton(button, outlineSprite);
+                StyleButton(button, outlineSprite, null);
             }
 
             foreach (var text in subtree.GetComponentsInChildren<Text>(true))
             {
-                StyleText(text);
+                StyleText(text, font, MobileUiLayoutController.UsesPortraitLayout(text.transform));
+            }
+
+            foreach (var outline in subtree.GetComponentsInChildren<FarmUiThinWoodOutline>(true))
+            {
+                FarmUiThinWoodOutline.EnsureLayoutNeutral(outline.transform);
+            }
+        }
+
+        /// <summary>
+        /// Applies the current carved-wood, parchment and status-bar family to editor-authored
+        /// or runtime-built uGUI content. Gameplay code remains independent of these visuals.
+        /// </summary>
+        public static void ApplyFarmArtDirectionTheme(
+            Transform subtree,
+            Sprite outlineSprite,
+            Sprite buttonSprite,
+            Sprite cardSprite,
+            Font font = null)
+        {
+            if (subtree == null)
+            {
+                return;
+            }
+
+            foreach (var image in subtree.GetComponentsInChildren<Image>(true))
+            {
+                StylePanelImage(image, outlineSprite, cardSprite);
+            }
+
+            foreach (var button in subtree.GetComponentsInChildren<Button>(true))
+            {
+                StyleButton(button, outlineSprite, buttonSprite);
+            }
+
+            foreach (var text in subtree.GetComponentsInChildren<Text>(true))
+            {
+                StyleText(text, font, MobileUiLayoutController.UsesPortraitLayout(text.transform));
+            }
+
+            foreach (var outline in subtree.GetComponentsInChildren<FarmUiThinWoodOutline>(true))
+            {
+                FarmUiThinWoodOutline.EnsureLayoutNeutral(outline.transform);
             }
         }
 
@@ -123,7 +206,96 @@ namespace TAD.UI
             thinWoodOutlineSprite = sprite;
         }
 
+        /// <summary>Assigns the shared visual family used by menus, cards, and status displays.</summary>
+        public void ConfigureFarmArtDirection(
+            Sprite buttonSprite,
+            Sprite cardSprite,
+            Sprite barFrameSprite,
+            Sprite barFillSprite)
+        {
+            woodPlankButtonSprite = buttonSprite;
+            parchmentCardSprite = cardSprite;
+            statusBarFrameSprite = barFrameSprite;
+            statusBarFillSprite = barFillSprite;
+            appliedFarmUiLayoutRevision = CurrentFarmUiLayoutRevision;
+        }
+
+        /// <summary>Assigns the bundled rounded display font used by menus and runtime overlays.</summary>
+        public void ConfigureBoldFarmFont(Font font)
+        {
+            boldFarmFont = font;
+        }
+
+        /// <summary>Assigns the illustrated farm backdrop used by the main menu only.</summary>
+        public void ConfigureMenuBackdrop(Sprite sprite)
+        {
+            menuGrassSprite = sprite;
+        }
+
         public Sprite ThinWoodOutlineSprite => thinWoodOutlineSprite;
+
+        public Sprite WoodPlankButtonSprite => woodPlankButtonSprite;
+
+        public Sprite ParchmentCardSprite => parchmentCardSprite;
+
+        public Sprite StatusBarFrameSprite => statusBarFrameSprite;
+
+        public Sprite StatusBarFillSprite => statusBarFillSprite;
+
+        public Font BoldFarmFont => boldFarmFont;
+
+        /// <summary>Returns the serialized revision consumed by the editor art pass.</summary>
+        public int AppliedFarmUiLayoutRevision => appliedFarmUiLayoutRevision;
+
+        /// <summary>
+        /// Reserves a clear interior for a simple, one-label wood button. Complex selection
+        /// cards, masked queue controls, and icon-only controls deliberately retain their own
+        /// layout because their children have specialised arrangements.
+        /// </summary>
+        public static void EnsureReadableWoodButtonLayout(Button button, float minimumHeight = 0f)
+        {
+            if (!TryGetOrdinarySingleLabel(button, out var label))
+            {
+                return;
+            }
+
+            var labelRect = label.rectTransform;
+            labelRect.anchorMin = Vector2.zero;
+            labelRect.anchorMax = Vector2.one;
+            labelRect.pivot = new Vector2(0.5f, 0.5f);
+            labelRect.offsetMin = new Vector2(OrdinaryButtonHorizontalPadding, OrdinaryButtonVerticalPadding);
+            labelRect.offsetMax = new Vector2(-OrdinaryButtonHorizontalPadding, -OrdinaryButtonVerticalPadding);
+            labelRect.localScale = Vector3.one;
+            label.alignment = TextAnchor.MiddleCenter;
+            FarmUiTextPadding.Ensure(
+                label,
+                button.transform as RectTransform,
+                OrdinaryButtonHorizontalPadding,
+                OrdinaryButtonVerticalPadding,
+                preventWrapping: true);
+
+            if (minimumHeight <= 0f)
+            {
+                return;
+            }
+
+            var layout = button.GetComponent<LayoutElement>() ?? button.gameObject.AddComponent<LayoutElement>();
+            layout.minHeight = Mathf.Max(layout.minHeight, minimumHeight);
+            layout.preferredHeight = Mathf.Max(layout.preferredHeight, minimumHeight);
+        }
+
+        /// <summary>
+        /// Lets the responsive canvas refresh only typography after an orientation change without
+        /// rebuilding panel frames, badges, or gameplay bindings.
+        /// </summary>
+        public void ApplyResponsiveTypography(bool portrait)
+        {
+            var font = ResolveBoldFarmFont();
+            foreach (var text in GetComponentsInChildren<Text>(true))
+            {
+                StyleText(text, font, portrait);
+            }
+        }
 
         /// <summary>
         /// Lets runtime-created overlays use the same visual language as the canvas that owns them.
@@ -144,19 +316,21 @@ namespace TAD.UI
             skin?.ApplyThemeTo(subtree);
         }
 
-        private void StyleImage(Image image, Sprite outlineSprite)
+        private void StyleImage(Image image, Sprite outlineSprite, Sprite cardSprite)
         {
             if (IsMainMenuBackground(image))
             {
-                ApplySprite(image, menuGrassSprite, Image.Type.Tiled);
+                // The refreshed menu uses a composed farm vista, not a repeating grass tile.
+                // Preserve its focal barn and clear button area by stretching it once to the canvas.
+                ApplySprite(image, menuGrassSprite, Image.Type.Simple);
                 image.color = Color.white;
                 return;
             }
 
-            StylePanelImage(image, outlineSprite);
+            StylePanelImage(image, outlineSprite, cardSprite);
         }
 
-        private static void StylePanelImage(Image image, Sprite outlineSprite)
+        private static void StylePanelImage(Image image, Sprite outlineSprite, Sprite cardSprite)
         {
             if (image == null ||
                 image.GetComponent<Mask>() != null ||
@@ -165,6 +339,24 @@ namespace TAD.UI
                 IsGameplayArtwork(image) ||
                 IsLikelyMainMenuBackground(image))
             {
+                return;
+            }
+
+            if (cardSprite != null && ShouldUseParchmentCard(image))
+            {
+                RemoveFrameDecorations(image.transform);
+                var directCardOutline = image.GetComponent<FarmUiThinWoodOutline>();
+                if (directCardOutline != null)
+                {
+                    RemoveDirectThinWoodOutline(directCardOutline);
+                }
+
+                image.sprite = cardSprite;
+                image.type = Image.Type.Sliced;
+                image.fillCenter = true;
+                image.preserveAspect = false;
+                image.color = Color.white;
+                DisableLegacyImageOutline(image);
                 return;
             }
 
@@ -191,7 +383,7 @@ namespace TAD.UI
             FarmUiThinWoodOutline.EnsureFrame(image, outlineSprite);
         }
 
-        private static void StyleButton(Button button, Sprite outlineSprite)
+        private static void StyleButton(Button button, Sprite outlineSprite, Sprite buttonSprite)
         {
             if (button == null)
             {
@@ -213,6 +405,23 @@ namespace TAD.UI
                 if (targetImage.GetComponent<Mask>() != null)
                 {
                     StyleMaskedButtonTarget(targetImage);
+                }
+                else if (buttonSprite != null)
+                {
+                    RemoveFrameDecorations(targetImage.transform);
+                    var oldOutline = targetImage.GetComponent<FarmUiThinWoodOutline>();
+                    if (oldOutline != null)
+                    {
+                        RemoveDirectThinWoodOutline(oldOutline);
+                    }
+
+                    DisableButtonSurface(targetImage);
+                    targetImage.sprite = buttonSprite;
+                    targetImage.type = Image.Type.Sliced;
+                    targetImage.fillCenter = true;
+                    targetImage.preserveAspect = false;
+                    targetImage.color = Color.white;
+                    DisableLegacyImageOutline(targetImage);
                 }
                 else
                 {
@@ -239,6 +448,93 @@ namespace TAD.UI
             colors.colorMultiplier = 1f;
             colors.fadeDuration = 0.08f;
             button.colors = colors;
+
+            EnsureAllButtonLabelPadding(button);
+            EnsureReadableWoodButtonLayout(button);
+        }
+
+        /// <summary>
+        /// Gives every text label owned by a button a four-sided safe area without re-parenting
+        /// its existing visual hierarchy. Direct labels are constrained against the button;
+        /// nested labels retain their local container while still receiving an inset there.
+        /// </summary>
+        private static void EnsureAllButtonLabelPadding(Button button)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            foreach (var label in button.GetComponentsInChildren<Text>(true))
+            {
+                EnsureButtonLabelPadding(label, button);
+            }
+        }
+
+        private static void EnsureButtonLabelPadding(Text text, Button button)
+        {
+            if (text == null || button == null ||
+                text.GetComponentInParent<AttackerCombatRatingBadge>(true) != null ||
+                text.GetComponentInParent<AttackerArchetypeBadge>(true) != null)
+            {
+                return;
+            }
+
+            var owner = text.transform.parent as RectTransform;
+            if (owner == null || owner.GetComponent<LayoutGroup>() != null ||
+                ((owner.GetComponent<Mask>() != null || owner.GetComponent<RectMask2D>() != null) &&
+                 owner != button.transform))
+            {
+                return;
+            }
+
+            var isOrdinaryLabel = owner == button.transform && text.gameObject.name == "Label";
+            FarmUiTextPadding.Ensure(
+                text,
+                owner,
+                isOrdinaryLabel ? OrdinaryButtonHorizontalPadding : CardButtonHorizontalPadding,
+                isOrdinaryLabel ? OrdinaryButtonVerticalPadding : CardButtonVerticalPadding,
+                preventWrapping: true);
+        }
+
+        private static bool TryGetOrdinarySingleLabel(Button button, out Text label)
+        {
+            label = null;
+            if (button == null)
+            {
+                return false;
+            }
+
+            var target = button.targetGraphic as Image ?? button.GetComponent<Image>();
+            if (target != null && target.GetComponent<Mask>() != null)
+            {
+                return false;
+            }
+
+            var labels = button.GetComponentsInChildren<Text>(true);
+            if (labels.Length != 1)
+            {
+                return false;
+            }
+
+            label = labels[0];
+            // The shared plank buttons and menu controls have one direct "Label" child. This
+            // keeps explanatory card copy and compact glyph controls out of the generic padding
+            // pass even when they happen to have a single Text component.
+            if (label.transform.parent != button.transform || label.gameObject.name != "Label")
+            {
+                label = null;
+                return false;
+            }
+
+            var glyph = label.text != null ? label.text.Trim() : string.Empty;
+            if (glyph == ">" || glyph == "<" || glyph == "||" || glyph == "X")
+            {
+                label = null;
+                return false;
+            }
+
+            return true;
         }
 
         /// <summary>
@@ -291,6 +587,44 @@ namespace TAD.UI
             surfaceTransform.SetSiblingIndex(0);
         }
 
+        private static void DisableButtonSurface(Image targetImage)
+        {
+            if (targetImage == null)
+            {
+                return;
+            }
+
+            var surface = targetImage.transform.Find(ButtonSurfaceObjectName);
+            if (surface != null)
+            {
+                surface.gameObject.SetActive(false);
+            }
+        }
+
+        private static void RemoveFrameDecorations(Transform target)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            var frame = target.Find(FarmUiThinWoodOutline.FrameObjectName);
+            if (frame == null)
+            {
+                return;
+            }
+
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+            {
+                DestroyImmediate(frame.gameObject);
+                return;
+            }
+#endif
+
+            Destroy(frame.gameObject);
+        }
+
         /// <summary>Keeps an opaque circular clipping graphic behind the attacker queue's portrait and count.</summary>
         private static void StyleMaskedButtonTarget(Image targetImage)
         {
@@ -338,7 +672,7 @@ namespace TAD.UI
             Destroy(outline);
         }
 
-        private static void StyleText(Text text)
+        private static void StyleText(Text text, Font preferredFont, bool portrait)
         {
             if (text == null)
             {
@@ -347,11 +681,13 @@ namespace TAD.UI
 
             RemoveTextEffects(text);
             text.alignByGeometry = true;
-            switch (ResolveTextTreatment(text))
+            text.font = ResolveTextFont(text, preferredFont);
+            var treatment = ResolveTextTreatment(text);
+            switch (treatment)
             {
                 case TextTreatment.Button:
                     text.color = ButtonText;
-                    text.fontStyle = FontStyle.BoldAndItalic;
+                    text.fontStyle = FontStyle.Bold;
                     // Preserve deliberate top/bottom placement (such as queue count badges),
                     // while always centring labels horizontally inside their own button region.
                     text.alignment = CenterHorizontally(text.alignment);
@@ -361,17 +697,16 @@ namespace TAD.UI
                     text.color = HudText;
                     text.fontStyle = FontStyle.Bold;
                     text.alignment = TextAnchor.MiddleCenter;
-                    ConfigureTextToShrinkBeforeItOverflows(text);
                     break;
 
                 case TextTreatment.Heading:
                     text.color = HeadingText;
-                    text.fontStyle = FontStyle.BoldAndItalic;
+                    text.fontStyle = FontStyle.Bold;
                     break;
 
                 case TextTreatment.Alert:
                     text.color = AlertText;
-                    text.fontStyle = FontStyle.BoldAndItalic;
+                    text.fontStyle = FontStyle.Bold;
                     break;
 
                 case TextTreatment.Badge:
@@ -384,6 +719,65 @@ namespace TAD.UI
                     text.fontStyle = FontStyle.Bold;
                     break;
             }
+
+            ConfigureReadableTextMetrics(text, treatment, portrait);
+            EnsureTextContentPadding(text);
+        }
+
+        /// <summary>
+        /// Adds safe interior bounds to labels which sit directly on a visual card or button
+        /// surface.  Layout-group children retain their group-owned placement; this only protects
+        /// the legacy absolute-positioned labels that previously crossed a wood or parchment edge
+        /// on compact displays.
+        /// </summary>
+        private static void EnsureTextContentPadding(Text text)
+        {
+            if (text == null || text.GetComponentInParent<AttackerCombatRatingBadge>(true) != null)
+            {
+                return;
+            }
+
+            var button = text.GetComponentInParent<Button>(true);
+            if (button != null)
+            {
+                EnsureButtonLabelPadding(text, button);
+                return;
+            }
+
+            var owner = text.transform.parent as RectTransform;
+            if (owner == null || owner.GetComponent<LayoutGroup>() != null ||
+                owner.GetComponent<Mask>() != null || owner.GetComponent<RectMask2D>() != null)
+            {
+                return;
+            }
+
+            var image = owner.GetComponent<Image>();
+            if (image != null && IsTextContentSurface(image))
+            {
+                FarmUiTextPadding.Ensure(text, owner, CardSurfaceHorizontalPadding, CardSurfaceVerticalPadding);
+            }
+        }
+
+        private Font ResolveBoldFarmFont()
+        {
+            return boldFarmFont != null
+                ? boldFarmFont
+                : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        }
+
+        private static Font ResolveTextFont(Text text, Font preferredFont)
+        {
+            if (preferredFont != null)
+            {
+                return preferredFont;
+            }
+
+            if (text != null && text.font != null)
+            {
+                return text.font;
+            }
+
+            return Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         }
 
         private static TextAnchor CenterHorizontally(TextAnchor alignment)
@@ -397,24 +791,145 @@ namespace TAD.UI
             };
         }
 
-        private static void ConfigureTextToShrinkBeforeItOverflows(Text text)
+        private static void ConfigureReadableTextMetrics(Text text, TextTreatment treatment, bool portrait)
         {
             if (text == null)
             {
                 return;
             }
 
-            // Keep a single, centred HUD line. Best-fit can reduce the label if an unusually
-            // large bank value would otherwise reach the thin wood frame.
+            if (text.GetComponentInParent<AttackerCombatRatingBadge>(true) != null ||
+                text.GetComponentInParent<AttackerArchetypeBadge>(true) != null)
+            {
+                ConfigureCombatRatingBadgeTextMetrics(text);
+                return;
+            }
+
+            var preferredSize = GetPreferredFontSize(treatment, portrait);
+            var minimumSize = GetMinimumFontSize(treatment, portrait);
+            text.fontSize = Mathf.Max(text.fontSize, preferredSize);
             text.resizeTextForBestFit = true;
-            text.resizeTextMinSize = Mathf.Min(12, Mathf.Max(1, text.fontSize));
-            text.resizeTextMaxSize = Mathf.Max(12, text.fontSize);
+            text.resizeTextMinSize = Mathf.Min(minimumSize, Mathf.Max(1, text.fontSize));
+            text.resizeTextMaxSize = Mathf.Max(preferredSize, text.fontSize);
+
+            if (text.GetComponentInParent<Button>(true) != null)
+            {
+                // Button labels should remain a single bold line. FarmUiTextPadding performs a
+                // bounded font-size fit once the button's actual padded width is known.
+                text.horizontalOverflow = HorizontalWrapMode.Overflow;
+                text.verticalOverflow = VerticalWrapMode.Truncate;
+                return;
+            }
+
+            if (treatment == TextTreatment.Hud || treatment == TextTreatment.Badge)
+            {
+                // Numeric HUD values stay on one centred line, shrinking only when a value
+                // genuinely needs the room inside its plaque.
+                text.horizontalOverflow = HorizontalWrapMode.Wrap;
+                text.verticalOverflow = VerticalWrapMode.Truncate;
+                return;
+            }
+
+            // A common font and preferred size must never be allowed to escape its card. Let
+            // uGUI wrap and use best-fit first; if the available rectangle is still too small,
+            // clip the final line rather than painting into a neighbouring button or panel.
+            text.horizontalOverflow = HorizontalWrapMode.Wrap;
+            text.verticalOverflow = VerticalWrapMode.Truncate;
+        }
+
+        /// <summary>
+        /// The combat-rating star is intentionally much smaller than a regular HUD plaque.
+        /// Its two labels have a dedicated clipped safe area, so they need a compact best-fit
+        /// range instead of inheriting the ordinary badge minimum that made them spill outside
+        /// the star on narrow attacker cards.
+        /// </summary>
+        private static void ConfigureCombatRatingBadgeTextMetrics(Text text)
+        {
+            text.fontSize = Mathf.Clamp(text.fontSize, 7, 14);
+            text.resizeTextForBestFit = true;
+            text.resizeTextMinSize = Mathf.Min(7, text.fontSize);
+            text.resizeTextMaxSize = Mathf.Max(7, text.fontSize);
             text.horizontalOverflow = HorizontalWrapMode.Overflow;
             text.verticalOverflow = VerticalWrapMode.Truncate;
+            text.alignment = TextAnchor.MiddleCenter;
+            text.supportRichText = false;
+        }
+
+        private static int GetPreferredFontSize(TextTreatment treatment, bool portrait)
+        {
+            return treatment switch
+            {
+                TextTreatment.Button => portrait ? PortraitButtonFontSize : LandscapeButtonFontSize,
+                TextTreatment.Hud => portrait ? PortraitHudFontSize : LandscapeHudFontSize,
+                TextTreatment.Badge => portrait ? PortraitBadgeFontSize : LandscapeBadgeFontSize,
+                TextTreatment.Heading => portrait ? PortraitHeadingFontSize : LandscapeHeadingFontSize,
+                TextTreatment.Alert => portrait ? PortraitAlertFontSize : LandscapeAlertFontSize,
+                _ => portrait ? PortraitBodyFontSize : LandscapeBodyFontSize
+            };
+        }
+
+        private static int GetMinimumFontSize(TextTreatment treatment, bool portrait)
+        {
+            if (portrait)
+            {
+                return treatment switch
+                {
+                    TextTreatment.Heading => 30,
+                    TextTreatment.Button => 24,
+                    TextTreatment.Hud => 22,
+                    TextTreatment.Alert => 24,
+                    TextTreatment.Badge => 18,
+                    _ => 19
+                };
+            }
+
+            return treatment switch
+            {
+                TextTreatment.Heading => 24,
+                TextTreatment.Button => 18,
+                TextTreatment.Hud => 18,
+                TextTreatment.Alert => 20,
+                TextTreatment.Badge => 16,
+                _ => 16
+            };
+        }
+
+        private static bool ShouldWrapText(Text text, TextTreatment treatment)
+        {
+            var name = text.gameObject.name.ToLowerInvariant();
+            if (name == "pageheading" || name == "cardtext")
+            {
+                return true;
+            }
+
+            if (treatment == TextTreatment.Alert)
+            {
+                return true;
+            }
+
+            if (treatment != TextTreatment.Body)
+            {
+                return false;
+            }
+
+            return name.Contains("description") ||
+                   name.Contains("details") ||
+                   name.Contains("instruction") ||
+                   name.Contains("guide") ||
+                   name.Contains("body") ||
+                   name.Contains("copy");
         }
 
         private static TextTreatment ResolveTextTreatment(Text text)
         {
+            // The three pending-upgrade choices are buttons, but their card copy is explanatory
+            // text rather than a one-line button label. Treat it as body copy so it can wrap
+            // inside the larger portrait card instead of overflowing or becoming unreadably small.
+            if (text.gameObject.name == "CardText")
+            {
+                return TextTreatment.Body;
+            }
+
             if (text.GetComponentInParent<Button>(true) != null)
             {
                 return TextTreatment.Button;
@@ -463,7 +978,7 @@ namespace TAD.UI
             }
         }
 
-        private void EnsureHudBadge(Text text, Sprite outlineSprite)
+        private void EnsureHudBadge(Text text, Sprite outlineSprite, Sprite buttonSprite)
         {
             if (text == null || !NeedsHudBadge(text) || text.transform.parent == null)
             {
@@ -523,12 +1038,24 @@ namespace TAD.UI
                 ? Mathf.Max(sourceHeight, text.preferredHeight + HudBadgeVerticalInset * 2f)
                 : Mathf.Max(sourceHeight + 18f, text.preferredHeight + HudBadgeVerticalInset * 2f);
             badgeRect.sizeDelta = new Vector2(desiredWidth, desiredHeight);
-            badge.sprite = null;
-            badge.type = Image.Type.Simple;
+            badge.sprite = buttonSprite;
+            badge.type = buttonSprite != null ? Image.Type.Sliced : Image.Type.Simple;
             badge.fillCenter = true;
             badge.preserveAspect = false;
-            badge.color = HudPanelSurface;
-            FarmUiThinWoodOutline.EnsureFrame(badge, outlineSprite);
+            badge.color = buttonSprite != null ? Color.white : HudPanelSurface;
+            if (buttonSprite != null)
+            {
+                RemoveFrameDecorations(badge.transform);
+                var badgeOutline = badge.GetComponent<FarmUiThinWoodOutline>();
+                if (badgeOutline != null)
+                {
+                    RemoveDirectThinWoodOutline(badgeOutline);
+                }
+            }
+            else
+            {
+                FarmUiThinWoodOutline.EnsureFrame(badge, outlineSprite);
+            }
 
             if (textTransform.parent != badge.transform)
             {
@@ -544,7 +1071,7 @@ namespace TAD.UI
             labelRect.localRotation = Quaternion.identity;
             labelRect.localScale = Vector3.one;
             text.alignment = TextAnchor.MiddleCenter;
-            ConfigureTextToShrinkBeforeItOverflows(text);
+            ConfigureReadableTextMetrics(text, TextTreatment.Hud, MobileUiLayoutController.UsesPortraitLayout(text.transform));
         }
 
         /// <summary>
@@ -634,6 +1161,52 @@ namespace TAD.UI
                     image.GetComponentInParent<AttackerQueuePanel>(true) != null);
         }
 
+        /// <summary>
+        /// Cards are the readable, expandable surfaces in the new farm UI. Compact HUD and
+        /// world-art images deliberately keep their specialised presentation instead.
+        /// </summary>
+        private static bool ShouldUseParchmentCard(Image image)
+        {
+            if (image == null || !ShouldUsePanelSurface(image))
+            {
+                return false;
+            }
+
+            var name = image.gameObject.name.ToLowerInvariant();
+            return name.Contains("panel") ||
+                   name.Contains("card") ||
+                   name.Contains("details") ||
+                   name.Contains("window") ||
+                   name.Contains("selection") ||
+                   name.Contains("queue") ||
+                    name.Contains("scrollview");
+        }
+
+        /// <summary>
+        /// Identifies the readable inner surfaces that own absolute-positioned labels.  Their
+        /// text receives a modest inset through <see cref="FarmUiTextPadding"/>, while artwork,
+        /// health bars, and scroll viewports keep their specialised bounds unchanged.
+        /// </summary>
+        private static bool IsTextContentSurface(Image image)
+        {
+            if (image == null || image.GetComponent<Button>() != null || image.GetComponent<Mask>() != null)
+            {
+                return false;
+            }
+
+            var name = image.gameObject.name.ToLowerInvariant();
+            return name.Contains("panel") ||
+                   name.Contains("card") ||
+                   name.Contains("details") ||
+                   name.Contains("window") ||
+                   name.Contains("selection") ||
+                   name.Contains("upgrade") ||
+                   name.Contains("message") ||
+                   name.Contains("pause") ||
+                   name.Contains("win") ||
+                   name.Contains("energy");
+        }
+
         private Sprite ResolveThinWoodOutlineSprite()
         {
             if (thinWoodOutlineSprite != null)
@@ -707,12 +1280,18 @@ namespace TAD.UI
         {
             var name = text.gameObject.name.ToLowerInvariant();
             return name.Contains("gold") ||
-                   name.Contains("income") ||
-                   name.Contains("day") ||
-                   name.Contains("preparation") ||
-                   name.Contains("amount") ||
-                   name.Contains("count") ||
-                   name.Contains("progress");
+                    name.Contains("income") ||
+                    name.Contains("day") ||
+                    name.Contains("preparation") ||
+                    name.Contains("energy") ||
+                    name.Contains("food") ||
+                    name.Contains("experience") ||
+                    name.Contains("exp") ||
+                    name.Contains("level") ||
+                    name.Contains("timer") ||
+                    name.Contains("amount") ||
+                    name.Contains("count") ||
+                    name.Contains("progress");
         }
 
         private static bool IsHeadingText(Text text)
@@ -720,10 +1299,12 @@ namespace TAD.UI
             var name = text.gameObject.name.ToLowerInvariant();
             return IsTitleText(text) ||
                    name.Contains("heading") ||
-                   name.Contains("header") ||
-                   name.Contains("name") ||
-                   name.Contains("weapon") ||
-                   name.Contains("upnext");
+                    name.Contains("header") ||
+                    name.Contains("name") ||
+                    name.Contains("weapon") ||
+                    name.Contains("section") ||
+                    name.Contains("category") ||
+                    name.Contains("upnext");
         }
 
         private static bool IsTitleText(Text text)

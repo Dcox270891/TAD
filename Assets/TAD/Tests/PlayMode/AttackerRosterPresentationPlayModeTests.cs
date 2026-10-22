@@ -17,13 +17,13 @@ namespace TAD.Tests.PlayMode
         [UnitySetUp]
         public IEnumerator SetUp()
         {
-            yield return GameBasicsTestSupport.DestroyAllTestObjects();
+            yield return GameBasicsTestSupport.ResetToIsolatedTestScene();
         }
 
         [UnityTearDown]
         public IEnumerator TearDown()
         {
-            yield return GameBasicsTestSupport.DestroyAllTestObjects();
+            yield return GameBasicsTestSupport.ResetToIsolatedTestScene();
         }
 
         [Test]
@@ -38,7 +38,7 @@ namespace TAD.Tests.PlayMode
         [UnityTest]
         public IEnumerator ArchetypeBadge_AppearsOnSelectionQueueAndDetailsPortraits()
         {
-            var definition = Resources.Load<AttackerDefinition>("TADTests/EagleDefinition");
+            var definition = Resources.Load<AttackerDefinition>("TADTests/PigeonDefinition");
             Assert.That(definition, Is.Not.Null);
             Assert.That(definition.Archetype, Is.EqualTo(AttackerArchetype.Flying));
 

@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 694892edc0a468b448e49591a6175013, type: 3}
+  m_Name: Highland CowDefinition
+  m_EditorClassIdentifier: TAD.Runtime::TAD.Attackers.AttackerDefinition
+  attackerId: 027
+  displayName: Highland Cow
+  maximumHealth: 31
+  movementSpeed: 2.14
+  size: 1.75
+  sendCost: 39
+  waveIncome: 9
+  expGiven: 9
+  killGain: 8
+  sendSize: 4
+  archetype: 2
+  challengeTier: 4
+  traversalProfile: 0
+  visualDefinition: {fileID: 11400000, guid: 26273112fa7b5c549870f866b5913bff, type: 2}
+  entrySound: {fileID: 8300000, guid: 54e5b1ceb9e5cac47afc344a98468713, type: 3}
+  deathSound: {fileID: 8300000, guid: 57e04d66ae8b15340a3d5815ae74fc21, type: 3}

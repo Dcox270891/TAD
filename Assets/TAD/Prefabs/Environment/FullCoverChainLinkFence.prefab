@@ -103,6 +103,7 @@ GameObject:
   - component: {fileID: 5364537161508656189}
   - component: {fileID: 7248665927443686675}
   - component: {fileID: 103192383693990958}
+  - component: {fileID: 7276085203475058858}
   m_Layer: 9
   m_Name: FullCoverChainLinkFence
   m_TagString: Untagged
@@ -160,7 +161,7 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: -0.022099, y: -0.143646}
+  m_Offset: {x: 0, y: 0}
   m_SpriteTilingProperty:
     border: {x: 0.049999997, y: 0.049999997, z: 0.049999997, w: 0.049999997}
     pivot: {x: 0.5, y: 0.5}
@@ -170,7 +171,7 @@ BoxCollider2D:
     drawMode: 1
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1.779006, y: 1.491713}
+  m_Size: {x: 2, y: 2}
   m_EdgeRadius: 0
 --- !u!114 &103192383693990958
 MonoBehaviour:
@@ -185,3 +186,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TAD.Environment.FarmWall
   cover: 1
+--- !u!114 &7276085203475058858
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2814167053449404042}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cbeb57ffb383be843be5217eee15b08b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TAD.Runtime::TAD.Environment.SpriteBoxColliderSynchronizer
+  visual: {fileID: 4027541934301558008}
+  inset: 0

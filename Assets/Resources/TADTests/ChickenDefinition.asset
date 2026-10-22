@@ -14,11 +14,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TAD.Attackers.AttackerDefinition
   attackerId: 001
   displayName: Chicken
-  maximumHealth: 10
-  movementSpeed: 3
-  size: 1
-  sendCost: 5
+  maximumHealth: 5
+  movementSpeed: 2.1
+  size: 0.75
+  sendCost: 6
   waveIncome: 1
-  expGiven: 1
-  killGain: 10
-  sendSize: 5
+  expGiven: 2
+  killGain: 1
+  sendSize: 4
+  archetype: 0
+  challengeTier: 1
+  traversalProfile: 0
+  visualDefinition: {fileID: 11400000, guid: ec151d6bb6c7ee5439771e72d564513f, type: 2}
+  entrySound: {fileID: 8300000, guid: 13b1693608298644c8b34ad51b096aab, type: 3}
+  deathSound: {fileID: 8300000, guid: cfa2b7f8b3e7f5349831a5b7ba3bbc19, type: 3}

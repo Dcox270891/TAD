@@ -14,6 +14,7 @@ namespace TAD.UI
     public sealed class RestartRoleChoiceOverlay : MonoBehaviour
     {
         private const string OverlayName = "RestartRoleChoiceOverlay";
+        private const float RoleChoiceButtonHeight = 88f;
 
         private Action<PlayerRole> onRoleSelected;
         private Action onCancelled;
@@ -83,7 +84,7 @@ namespace TAD.UI
         private void Build(Button buttonTemplate, Font font)
         {
             var panel = new GameObject(
-                "RoleChoicePanel",
+                "RestartRoleChoicePanel",
                 typeof(RectTransform),
                 typeof(CanvasRenderer),
                 typeof(Image),
@@ -95,7 +96,7 @@ namespace TAD.UI
             panelRect.anchorMin = new Vector2(0.5f, 0.5f);
             panelRect.anchorMax = new Vector2(0.5f, 0.5f);
             panelRect.pivot = new Vector2(0.5f, 0.5f);
-            panelRect.sizeDelta = new Vector2(620f, 500f);
+            panelRect.sizeDelta = new Vector2(620f, 640f);
 
             var panelImage = panel.GetComponent<Image>();
             panelImage.color = new Color(0.075f, 0.16f, 0.21f, 0.99f);
@@ -105,7 +106,9 @@ namespace TAD.UI
             layout.spacing = 16f;
             layout.childAlignment = TextAnchor.MiddleCenter;
             layout.childControlWidth = true;
-            layout.childControlHeight = false;
+            // Every child supplies a deliberate LayoutElement height. Let the group honour those
+            // values so the cloned ATTACK/DEFEND buttons never collapse to the template's size.
+            layout.childControlHeight = true;
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = false;
 
@@ -249,7 +252,9 @@ namespace TAD.UI
                     layout = buttonObject.AddComponent<LayoutElement>();
                 }
 
-                layout.preferredHeight = 62f;
+                layout.minHeight = RoleChoiceButtonHeight;
+                layout.preferredHeight = RoleChoiceButtonHeight;
+                FarmUiSkin.EnsureReadableWoodButtonLayout(button, RoleChoiceButtonHeight);
                 return button;
             }
 
@@ -268,7 +273,9 @@ namespace TAD.UI
 
             var fallbackButton = buttonObjectFallback.GetComponent<Button>();
             fallbackButton.targetGraphic = image;
-            buttonObjectFallback.GetComponent<LayoutElement>().preferredHeight = 62f;
+            var fallbackLayout = buttonObjectFallback.GetComponent<LayoutElement>();
+            fallbackLayout.minHeight = RoleChoiceButtonHeight;
+            fallbackLayout.preferredHeight = RoleChoiceButtonHeight;
 
             Text text = CreateText(
                 buttonObjectFallback.transform,
@@ -284,6 +291,8 @@ namespace TAD.UI
             labelRect.offsetMin = Vector2.zero;
             labelRect.offsetMax = Vector2.zero;
             Destroy(text.GetComponent<LayoutElement>());
+
+            FarmUiSkin.EnsureReadableWoodButtonLayout(fallbackButton, RoleChoiceButtonHeight);
 
             return fallbackButton;
         }

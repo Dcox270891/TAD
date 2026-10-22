@@ -44,6 +44,9 @@ PALETTE = {
     "skin_medium_light": (0.72, 0.38, 0.18, 1.0),
     "skin_deep": (0.18, 0.065, 0.025, 1.0),
     "skin_deep_light": (0.36, 0.14, 0.055, 1.0),
+    "eye_white": (0.98, 0.94, 0.82, 1.0),
+    "eye_dark": (0.045, 0.025, 0.018, 1.0),
+    "cheek": (0.92, 0.22, 0.16, 1.0),
     "hair": (0.13, 0.055, 0.025, 1.0),
     "hair_black": (0.025, 0.02, 0.018, 1.0),
     "shirt": (0.12, 0.33, 0.52, 1.0),
@@ -303,6 +306,17 @@ def create_character(
     skin_light_key, skin_shadow_key = body_materials.get(body_variant, body_materials["Default"])
     add_ico("Head", (0.0, 0.0, 2.45), (0.47, 0.43, 0.52), materials[skin_light_key], body, root)
     add_ico("Nose", (0.0, -0.42, 2.42), (0.09, 0.12, 0.10), materials[skin_shadow_key], body, root)
+    # Facial features deliberately use chunky, high-contrast facets. They are small enough to
+    # keep the top-down silhouette clean, but make every randomised worker feel like a friendly
+    # farm character rather than a generic mannequin at mobile scale.
+    add_ico("LeftEyeWhite", (-0.16, -0.405, 2.56), (0.105, 0.045, 0.12), materials["eye_white"], body, root)
+    add_ico("RightEyeWhite", (0.16, -0.405, 2.56), (0.105, 0.045, 0.12), materials["eye_white"], body, root)
+    add_ico("LeftPupil", (-0.16, -0.452, 2.56), (0.052, 0.026, 0.070), materials["eye_dark"], body, root)
+    add_ico("RightPupil", (0.16, -0.452, 2.56), (0.052, 0.026, 0.070), materials["eye_dark"], body, root)
+    add_cube("LeftBrow", (-0.16, -0.445, 2.70), (0.13, 0.028, 0.028), materials["hair_black"], body, root, (0.0, 0.0, math.radians(-8)))
+    add_cube("RightBrow", (0.16, -0.445, 2.70), (0.13, 0.028, 0.028), materials["hair_black"], body, root, (0.0, 0.0, math.radians(8)))
+    add_ico("LeftCheek", (-0.30, -0.405, 2.36), (0.075, 0.025, 0.050), materials["cheek"], body, root)
+    add_ico("RightCheek", (0.30, -0.405, 2.36), (0.075, 0.025, 0.050), materials["cheek"], body, root)
     add_cylinder_between("LeftArm", (-0.48, 0.0, 1.82), (-0.64, step, 1.24), 0.105, materials[skin_shadow_key], body, root, 6)
     add_cylinder_between("RightArm", (0.48, 0.0, 1.82), (0.64, opposite_step, 1.24), 0.105, materials[skin_shadow_key], body, root, 6)
     add_ico("LeftHand", (-0.65, step, 1.18), (0.13, 0.13, 0.15), materials[skin_light_key], body, root)
@@ -336,16 +350,26 @@ def create_character(
         add_cube("PlaidStripeVertical", (0.0, -0.43, 1.70), (0.075, 0.045, 0.72), materials["plaid_cream"], outfit, root)
         add_cube("PlaidStripeHorizontal", (0.0, -0.44, 1.80), (0.68, 0.045, 0.065), materials["plaid_cream"], outfit, root)
         leg_material = materials["trouser_tan"]
+        sleeve_material = materials["plaid_red"]
     elif outfit_variant == "GreenJacket":
         add_cone("FieldJacket", (0.0, 0.0, 1.70), 0.51, 0.39, 0.94, materials["field_green"], outfit, root, 6)
         add_cube("JacketZip", (0.0, -0.44, 1.70), (0.045, 0.045, 0.64), materials["field_green_light"], outfit, root)
         add_cube("JacketPocketLeft", (-0.22, -0.43, 1.48), (0.14, 0.045, 0.12), materials["field_green_light"], outfit, root)
         add_cube("JacketPocketRight", (0.22, -0.43, 1.48), (0.14, 0.045, 0.12), materials["field_green_light"], outfit, root)
         leg_material = materials["trouser_tan"]
+        sleeve_material = materials["field_green"]
     else:
         add_cone("WorkShirt", (0.0, 0.0, 1.70), 0.49, 0.38, 0.92, materials["shirt"], outfit, root, 6)
         add_cube("OverallsBib", (0.0, -0.42, 1.91), (0.30, 0.055, 0.31), materials["overalls"], outfit, root)
         leg_material = materials["overalls"]
+        sleeve_material = materials["shirt"]
+
+    # Short sleeves, a sturdy belt, and a bright buckle unify all three outfit choices with the
+    # chunky, inviting farm-adventure look used by the attackers and environment pieces.
+    add_cylinder_between("LeftSleeve", (-0.47, 0.0, 1.84), (-0.55, step * 0.52, 1.52), 0.145, sleeve_material, outfit, root, 6)
+    add_cylinder_between("RightSleeve", (0.47, 0.0, 1.84), (0.55, opposite_step * 0.52, 1.52), 0.145, sleeve_material, outfit, root, 6)
+    add_cube("WorkBelt", (0.0, -0.405, 1.34), (0.47, 0.045, 0.07), materials["wood"], outfit, root)
+    add_cube("BeltBuckle", (0.0, -0.462, 1.34), (0.105, 0.032, 0.105), materials["brass"], outfit, root)
 
     add_cylinder_between("LeftLeg", (-0.22, 0.0, 1.22), (-0.23, step, 0.42), 0.17, leg_material, outfit, root, 6)
     add_cylinder_between("RightLeg", (0.22, 0.0, 1.22), (0.23, opposite_step, 0.42), 0.17, leg_material, outfit, root, 6)

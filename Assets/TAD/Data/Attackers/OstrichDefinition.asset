@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 694892edc0a468b448e49591a6175013, type: 3}
+  m_Name: OstrichDefinition
+  m_EditorClassIdentifier: TAD.Runtime::TAD.Attackers.AttackerDefinition
+  attackerId: 026
+  displayName: Ostrich
+  maximumHealth: 25
+  movementSpeed: 5.65
+  size: 1.5
+  sendCost: 84
+  waveIncome: 29
+  expGiven: 30
+  killGain: 18
+  sendSize: 6
+  archetype: 1
+  challengeTier: 10
+  traversalProfile: 0
+  visualDefinition: {fileID: 11400000, guid: 893a10d78b15df949a8fa4d77e0c9a48, type: 2}
+  entrySound: {fileID: 8300000, guid: f46641cf5b0f44445905debf02b4002c, type: 3}
+  deathSound: {fileID: 8300000, guid: 01231adfcb8c5f24192a0d444ff506a9, type: 3}

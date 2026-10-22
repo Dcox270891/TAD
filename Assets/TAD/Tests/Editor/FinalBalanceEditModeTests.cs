@@ -46,11 +46,13 @@ namespace TAD.Tests.Editor
             CollectionAssert.AreEqual(new[] { 2, 2, 2, 3, 3, 3, 4, 4, 4, 5 }, dailyGroups);
             Assert.That(dailyGroups.Sum(), Is.EqualTo(32),
                 "The final match should dispatch substantially more than the former eighteen AI groups.");
-            Assert.That(AttackerWavePlanner.GetMaximumChallengeTierForAiDay(0), Is.EqualTo(1));
-            Assert.That(AttackerWavePlanner.GetMaximumChallengeTierForAiDay(2), Is.EqualTo(1));
-            Assert.That(AttackerWavePlanner.GetMaximumChallengeTierForAiDay(3), Is.EqualTo(2));
-            Assert.That(AttackerWavePlanner.GetMaximumChallengeTierForAiDay(5), Is.EqualTo(2));
-            Assert.That(AttackerWavePlanner.GetMaximumChallengeTierForAiDay(6), Is.EqualTo(3));
+            for (var day = 0; day < 10; day++)
+            {
+                Assert.That(
+                    AttackerWavePlanner.GetMaximumChallengeTierForAiDay(day),
+                    Is.EqualTo(day + 1),
+                    "The ten-day AI curve should unlock its matching roster tier on each day.");
+            }
 
             var goldAfterEachDay = SimulateRecurringIncome(
                 startingGold: 80,
@@ -58,7 +60,7 @@ namespace TAD.Tests.Editor
                 dailyGroups: dailyGroups,
                 out var finalIncome);
 
-            Assert.That(finalIncome, Is.EqualTo(32));
+            Assert.That(finalIncome, Is.EqualTo(dailyGroups.Sum() * (chicken.SendSize + 1) * chicken.WaveIncome));
             Assert.That(finalIncome, Is.GreaterThan(dailyGroups[dailyGroups.Length - 1] * chicken.SendCost),
                 "By the final day recurring income must cover another entry-level five-group attack.");
             Assert.That(goldAfterEachDay[8], Is.GreaterThan(goldAfterEachDay[7]),
@@ -178,7 +180,12 @@ namespace TAD.Tests.Editor
                     Assert.That(gold, Is.GreaterThanOrEqualTo(definition.SendCost),
                         $"Entry-level attacker groups must remain affordable on day {day}.");
                     gold -= definition.SendCost;
+                    // Selecting a card immediately adds recurring income. A group refunds its
+                    // purchase cost once when its first animal reaches the Food Store, then every
+                    // arriving animal contributes the same income again.
                     recurringIncome += definition.WaveIncome;
+                    gold += definition.SendCost;
+                    recurringIncome += definition.WaveIncome * definition.SendSize;
                 }
 
                 // ResourceBank.PayIncome pays the full stored income after every resolved day.

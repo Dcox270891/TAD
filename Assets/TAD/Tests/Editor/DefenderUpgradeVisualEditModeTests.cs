@@ -132,6 +132,37 @@ namespace TAD.Tests.Editor
         }
 
         [Test]
+        public void FarmHandPrefab_UsesAnAuthoredUpgradeMarkerAndEveryWeaponPresentation()
+        {
+            var prefab = LoadAsset<GameObject>("Assets/TAD/Prefabs/Defenders/FarmHand.prefab");
+            var controller = prefab.GetComponent<FarmHandVisualController>();
+            var indicator = prefab.GetComponent<FarmHandUpgradeIndicator>();
+            Assert.That(controller, Is.Not.Null);
+            Assert.That(indicator, Is.Not.Null);
+
+            var indicatorSerialized = new SerializedObject(indicator);
+            var marker = indicatorSerialized.FindProperty("authoredArrowSprite").objectReferenceValue as Sprite;
+            Assert.That(marker, Is.Not.Null,
+                "The upgrade-ready marker should use the authored low-poly asset rather than only a generated fallback.");
+            Assert.That(
+                AssetDatabase.GetAssetPath(marker),
+                Is.EqualTo("Assets/TAD/Art/Farmhands/Indicators/FarmHandUpgradeReady.png"));
+
+            var visuals = new SerializedObject(controller).FindProperty("weaponVisuals");
+            Assert.That(visuals, Is.Not.Null);
+            Assert.That(visuals.arraySize, Is.EqualTo(15),
+                "Every current weapon branch should use an explicit matching held/firing visual.");
+            for (var index = 0; index < visuals.arraySize; index++)
+            {
+                var visual = visuals.GetArrayElementAtIndex(index).objectReferenceValue as FarmHandWeaponVisualDefinition;
+                Assert.That(visual, Is.Not.Null, $"Weapon visual slot {index} is missing.");
+                Assert.That(visual.Weapon, Is.Not.Null, $"Weapon visual slot {index} is not tied to a gameplay weapon.");
+                Assert.That(visual.HasMovementSprites, Is.True, $"Weapon visual slot {index} needs directional held sprites.");
+                Assert.That(visual.HasFiringSprites, Is.True, $"Weapon visual slot {index} needs directional firing sprites.");
+            }
+        }
+
+        [Test]
         public void FarmHandPrefab_AutomaticallyRandomizesThreeCosmeticTypesAndNames()
         {
             var prefab = LoadAsset<GameObject>("Assets/TAD/Prefabs/Defenders/FarmHand.prefab");

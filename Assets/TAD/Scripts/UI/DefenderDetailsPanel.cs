@@ -25,7 +25,7 @@ namespace TAD.UI
         private const float StatsToTargetingSpacing = 8f;
         private const float TargetingControlHeight = 34f;
         private const float TargetingToBarSpacing = 8f;
-        private const float ExperienceBarHeight = 12f;
+        private const float ExperienceBarHeight = 26f;
         private const float BarToExperienceSpacing = 4f;
         private const float ExperienceMinimumHeight = 22f;
         private const float ExperienceToUpgradeSpacing = 8f;
@@ -43,7 +43,10 @@ namespace TAD.UI
         [SerializeField] private UnityEngine.UI.Text weaponText;
         [SerializeField] private UnityEngine.UI.Text statsText;
         [SerializeField] private UnityEngine.UI.Text experienceText;
+        [SerializeField] private UnityEngine.UI.Image experienceBackground;
         [SerializeField] private UnityEngine.UI.Image experienceFill;
+        [SerializeField] private Sprite statusBarFrameSprite;
+        [SerializeField] private Sprite statusBarFillSprite;
         [SerializeField] private UnityEngine.UI.Button upgradeButton;
         [SerializeField] private UnityEngine.UI.Text upgradeButtonText;
         [SerializeField] private UnityEngine.UI.Button moveButton;
@@ -82,6 +85,15 @@ namespace TAD.UI
         {
             placementController = controller;
             Refresh();
+        }
+
+        /// <summary>Assigns the common wooden status-bar artwork without changing EXP state or card bindings.</summary>
+        public void ConfigureFarmStatusBar(Sprite frameSprite, Sprite fillSprite)
+        {
+            statusBarFrameSprite = frameSprite;
+            statusBarFillSprite = fillSprite;
+            ResolveReferences();
+            ConfigureExperienceBarArt();
         }
 
         private void Awake()
@@ -178,6 +190,9 @@ namespace TAD.UI
             experienceBarRect ??= experienceFill != null && experienceFill.transform.parent != null
                 ? experienceFill.transform.parent as RectTransform
                 : null;
+            experienceBackground ??= experienceBarRect != null
+                ? experienceBarRect.GetComponent<UnityEngine.UI.Image>()
+                : null;
             upgradeButtonRect ??= upgradeButton != null ? upgradeButton.GetComponent<RectTransform>() : null;
             moveButtonRect ??= moveButton != null ? moveButton.GetComponent<RectTransform>() : null;
             targetingDropdownRect ??= targetingDropdown != null ? targetingDropdown.GetComponent<RectTransform>() : null;
@@ -188,7 +203,43 @@ namespace TAD.UI
             ConfigureTextWrapping(statsText);
             ConfigureTextWrapping(experienceText);
             ConfigureTextWrapping(targetingReadOnlyText);
+            ConfigureExperienceBarArt();
             FarmUiSkin.ApplyFromCanvas(transform, transform);
+        }
+
+        private void ConfigureExperienceBarArt()
+        {
+            if (experienceBackground != null)
+            {
+                experienceBackground.sprite = statusBarFrameSprite;
+                experienceBackground.type = statusBarFrameSprite != null
+                    ? UnityEngine.UI.Image.Type.Sliced
+                    : UnityEngine.UI.Image.Type.Simple;
+                experienceBackground.fillCenter = true;
+                experienceBackground.preserveAspect = false;
+                experienceBackground.color = statusBarFrameSprite != null ? Color.white : Color.black;
+                experienceBackground.raycastTarget = false;
+            }
+
+            if (experienceFill == null)
+            {
+                return;
+            }
+
+            experienceFill.sprite = statusBarFillSprite != null ? statusBarFillSprite : experienceFill.sprite;
+            experienceFill.type = UnityEngine.UI.Image.Type.Filled;
+            experienceFill.fillMethod = UnityEngine.UI.Image.FillMethod.Horizontal;
+            experienceFill.fillOrigin = (int)UnityEngine.UI.Image.OriginHorizontal.Left;
+            experienceFill.fillCenter = true;
+            experienceFill.preserveAspect = false;
+            experienceFill.color = new Color(1f, 0.79f, 0.16f, 1f);
+            experienceFill.raycastTarget = false;
+
+            var fillRect = experienceFill.rectTransform;
+            fillRect.anchorMin = Vector2.zero;
+            fillRect.anchorMax = Vector2.one;
+            fillRect.offsetMin = new Vector2(14f, 7f);
+            fillRect.offsetMax = new Vector2(-14f, -7f);
         }
 
         private void EnsureUpgradeButton()
@@ -450,7 +501,9 @@ namespace TAD.UI
             }
 
             text.horizontalOverflow = HorizontalWrapMode.Wrap;
-            text.verticalOverflow = VerticalWrapMode.Overflow;
+            // The card's auto-sizer owns extra height.  Truncating during a layout transition
+            // prevents one long stat line from painting through the parchment border.
+            text.verticalOverflow = VerticalWrapMode.Truncate;
         }
 
         private void Subscribe()

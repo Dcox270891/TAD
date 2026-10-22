@@ -4,6 +4,17 @@ using UnityEngine;
 namespace TAD.Attackers
 {
     /// <summary>
+    /// Determines whether a visual set supplies bespoke directional frames or transforms its
+    /// single atlas portrait at runtime. The latter keeps the forty-animal roster compact while
+    /// still producing a clear 16-direction walk and death presentation on mobile devices.
+    /// </summary>
+    public enum AttackerVisualAnimationPresentation
+    {
+        DirectionalSpriteSheets = 0,
+        ProceduralAtlas = 1
+    }
+
+    /// <summary>
     /// Reusable 16-direction visual data for one attacker type. Sprites are stored direction-major:
     /// all movement frames for one direction, then all death frames for that same direction.
     /// </summary>
@@ -16,13 +27,23 @@ namespace TAD.Attackers
 
         [SerializeField] private Sprite[] movementSprites = new Sprite[DirectionCount * MovementFrameCount];
         [SerializeField] private Sprite[] deathSprites = new Sprite[DirectionCount * DeathFrameCount];
+        [SerializeField] private Sprite[] deathEffectSprites = new Sprite[DeathFrameCount];
         [SerializeField, Min(0.01f)] private float movementFrameDuration = 0.16f;
         [SerializeField, Min(0.01f)] private float deathFrameDuration = 0.12f;
+        [Header("Presentation")]
+        [SerializeField] private AttackerVisualAnimationPresentation animationPresentation =
+            AttackerVisualAnimationPresentation.DirectionalSpriteSheets;
+        [SerializeField, Range(-180f, 180f)] private float atlasFacingOffsetDegrees;
 
         public float MovementFrameDuration => movementFrameDuration;
         public float DeathFrameDuration => deathFrameDuration;
+        public AttackerVisualAnimationPresentation AnimationPresentation => animationPresentation;
+        public bool UsesProceduralDirectionalAnimation =>
+            animationPresentation == AttackerVisualAnimationPresentation.ProceduralAtlas;
+        public float AtlasFacingOffsetDegrees => atlasFacingOffsetDegrees;
         public bool HasMovementSprites => HasCompleteSprites(movementSprites, DirectionCount * MovementFrameCount);
         public bool HasDeathSprites => HasCompleteSprites(deathSprites, DirectionCount * DeathFrameCount);
+        public bool HasDeathEffectSprites => HasCompleteSprites(deathEffectSprites, DeathFrameCount);
 
         public Sprite GetMovementSprite(int directionIndex, int frameIndex)
         {
@@ -32,6 +53,17 @@ namespace TAD.Attackers
         public Sprite GetDeathSprite(int directionIndex, int frameIndex)
         {
             return GetSprite(deathSprites, DirectionCount, DeathFrameCount, directionIndex, frameIndex);
+        }
+
+        public Sprite GetDeathEffectSprite(int frameIndex)
+        {
+            if (deathEffectSprites == null || deathEffectSprites.Length < DeathFrameCount)
+            {
+                return null;
+            }
+
+            var safeFrame = ((frameIndex % DeathFrameCount) + DeathFrameCount) % DeathFrameCount;
+            return deathEffectSprites[safeFrame];
         }
 
         private static Sprite GetSprite(
@@ -83,6 +115,11 @@ namespace TAD.Attackers
             if (deathSprites == null || deathSprites.Length != DirectionCount * DeathFrameCount)
             {
                 Array.Resize(ref deathSprites, DirectionCount * DeathFrameCount);
+            }
+
+            if (deathEffectSprites == null || deathEffectSprites.Length != DeathFrameCount)
+            {
+                Array.Resize(ref deathEffectSprites, DeathFrameCount);
             }
         }
 #endif

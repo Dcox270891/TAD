@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 694892edc0a468b448e49591a6175013, type: 3}
+  m_Name: Bactrian CamelDefinition
+  m_EditorClassIdentifier: TAD.Runtime::TAD.Attackers.AttackerDefinition
+  attackerId: 033
+  displayName: Bactrian Camel
+  maximumHealth: 100
+  movementSpeed: 3.22
+  size: 1.75
+  sendCost: 150
+  waveIncome: 51
+  expGiven: 51
+  killGain: 43
+  sendSize: 5
+  archetype: 2
+  challengeTier: 10
+  traversalProfile: 0
+  visualDefinition: {fileID: 11400000, guid: 2474034f235778b4c94d17969a2399a9, type: 2}
+  entrySound: {fileID: 8300000, guid: cf019cc43aa8b0443b6689c2c7c01902, type: 3}
+  deathSound: {fileID: 8300000, guid: 3703fc35a397a83419f302049f7622f1, type: 3}

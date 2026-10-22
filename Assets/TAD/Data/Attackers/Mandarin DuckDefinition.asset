@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 694892edc0a468b448e49591a6175013, type: 3}
+  m_Name: Mandarin DuckDefinition
+  m_EditorClassIdentifier: TAD.Runtime::TAD.Attackers.AttackerDefinition
+  attackerId: 039
+  displayName: Mandarin Duck
+  maximumHealth: 29
+  movementSpeed: 4.3
+  size: 1.25
+  sendCost: 79
+  waveIncome: 28
+  expGiven: 29
+  killGain: 19
+  sendSize: 5
+  archetype: 3
+  challengeTier: 9
+  traversalProfile: 1
+  visualDefinition: {fileID: 11400000, guid: c4fc72e902061144d86e8739918c72ef, type: 2}
+  entrySound: {fileID: 8300000, guid: e6c58dabc89cf3d488cc5a325704befa, type: 3}
+  deathSound: {fileID: 8300000, guid: d877cddc25706b640bbf240fa6579140, type: 3}

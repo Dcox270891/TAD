@@ -1,0 +1,875 @@
+fileFormatVersion: 2
+guid: 377a1088684014f4e8274f88617ea506
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -298248976452777725
+    second: TAD_FastRosterAtlas_0
+  - first:
+      213: 7240831194530758795
+    second: TAD_FastRosterAtlas_1
+  - first:
+      213: -2966522157487492745
+    second: TAD_FastRosterAtlas_2
+  - first:
+      213: 5193444355860945463
+    second: TAD_FastRosterAtlas_3
+  - first:
+      213: 6661564899303452775
+    second: TAD_FastRosterAtlas_4
+  - first:
+      213: -4324110629784833627
+    second: TAD_FastRosterAtlas_5
+  - first:
+      213: -2877492572409211609
+    second: TAD_FastRosterAtlas_6
+  - first:
+      213: 6800857506769084103
+    second: TAD_FastRosterAtlas_7
+  - first:
+      213: 3199997657500350309
+    second: TAD_FastRosterAtlas_8
+  - first:
+      213: 8518504572541203385
+    second: TAD_FastRosterAtlas_9
+  - first:
+      213: 8925210990550067260
+    second: TAD_FastRosterAtlas_10
+  - first:
+      213: 1474639073484416194
+    second: TAD_FastRosterAtlas_11
+  - first:
+      213: 8219636107958515183
+    second: TAD_FastRosterAtlas_12
+  - first:
+      213: 8647435409676441885
+    second: TAD_FastRosterAtlas_13
+  - first:
+      213: 8507265343303189488
+    second: TAD_FastRosterAtlas_14
+  - first:
+      213: 4161982894600679370
+    second: TAD_FastRosterAtlas_15
+  - first:
+      213: -2899186258751593669
+    second: TAD_FastRosterAtlas_16
+  - first:
+      213: -4004528604567817389
+    second: TAD_FastRosterAtlas_17
+  - first:
+      213: 6840754378634913778
+    second: TAD_FastRosterAtlas_18
+  - first:
+      213: 174236886284853250
+    second: TAD_FastRosterAtlas_19
+  - first:
+      213: 828852347937767739
+    second: TAD_FastRosterAtlas_20
+  - first:
+      213: 5283898472310177933
+    second: TAD_FastRosterAtlas_21
+  - first:
+      213: 8343718758672034723
+    second: TAD_FastRosterAtlas_22
+  - first:
+      213: 7257277195262248918
+    second: TAD_FastRosterAtlas_23
+  - first:
+      213: -4080860608368738603
+    second: TAD_FastRosterAtlas_24
+  - first:
+      213: -7268775405603407011
+    second: TAD_FastRosterAtlas_25
+  - first:
+      213: 8732896517144037139
+    second: TAD_FastRosterAtlas_26
+  - first:
+      213: 8413557842659922387
+    second: TAD_FastRosterAtlas_27
+  - first:
+      213: -580292029313161166
+    second: TAD_FastRosterAtlas_28
+  - first:
+      213: 6591107218234419860
+    second: TAD_FastRosterAtlas_29
+  - first:
+      213: 6157979939352563115
+    second: TAD_FastRosterAtlas_30
+  - first:
+      213: 4356124872683979941
+    second: TAD_FastRosterAtlas_31
+  - first:
+      213: 3083887881173080763
+    second: TAD_FastRosterAtlas_32
+  - first:
+      213: -4266801664756787327
+    second: TAD_FastRosterAtlas_33
+  - first:
+      213: -4340030723604748131
+    second: TAD_FastRosterAtlas_34
+  - first:
+      213: -3027392699030675599
+    second: TAD_FastRosterAtlas_35
+  - first:
+      213: 1517146543357601042
+    second: TAD_FastRosterAtlas_36
+  - first:
+      213: -3240158605308382321
+    second: TAD_FastRosterAtlas_37
+  - first:
+      213: -6209368059772718656
+    second: TAD_FastRosterAtlas_38
+  - first:
+      213: -8996906045221333419
+    second: TAD_FastRosterAtlas_39
+  - first:
+      213: 2939956763332083116
+    second: TAD_FastRosterAtlas_40
+  - first:
+      213: -4705468315257954110
+    second: TAD_FastRosterAtlas_41
+  - first:
+      213: -3363362134175935378
+    second: TAD_FastRosterAtlas_42
+  - first:
+      213: 8602464659509067239
+    second: TAD_FastRosterAtlas_43
+  - first:
+      213: 2894871280741233323
+    second: TAD_FastRosterAtlas_44
+  - first:
+      213: -4111648927353307396
+    second: TAD_FastRosterAtlas_45
+  - first:
+      213: -5498205061977052239
+    second: TAD_FastRosterAtlas_46
+  - first:
+      213: -7564701835966094488
+    second: TAD_FastRosterAtlas_47
+  - first:
+      213: -4232667632639663063
+    second: TAD_FastRosterAtlas_48
+  - first:
+      213: 6533842574242022400
+    second: TAD_FastRosterAtlas_49
+  - first:
+      213: 6949643851326242224
+    second: TAD_FastRosterAtlas_50
+  - first:
+      213: 81252671882236704
+    second: TAD_FastRosterAtlas_51
+  - first:
+      213: -3584344932707222289
+    second: TAD_FastRosterAtlas_52
+  - first:
+      213: 2847548738897021980
+    second: TAD_FastRosterAtlas_53
+  - first:
+      213: -4687362523005122213
+    second: TAD_FastRosterAtlas_54
+  - first:
+      213: 5978064115531768097
+    second: TAD_FastRosterAtlas_55
+  - first:
+      213: -4602309327743225611
+    second: TAD_FastRosterAtlas_56
+  - first:
+      213: -6784885103836310159
+    second: TAD_FastRosterAtlas_57
+  - first:
+      213: -5440055356389232184
+    second: TAD_FastRosterAtlas_58
+  - first:
+      213: 3330291314969913792
+    second: TAD_FastRosterAtlas_59
+  - first:
+      213: 8201052709173590304
+    second: TAD_FastRosterAtlas_60
+  - first:
+      213: 8196693442432636313
+    second: TAD_FastRosterAtlas_61
+  - first:
+      213: -6113584440987483505
+    second: TAD_FastRosterAtlas_62
+  - first:
+      213: -6501867318691885410
+    second: TAD_FastRosterAtlas_63
+  - first:
+      213: 3586523424271042270
+    second: TAD_FastRosterAtlas_64
+  - first:
+      213: -8229623049911210953
+    second: TAD_FastRosterAtlas_65
+  - first:
+      213: 6081780911726315691
+    second: TAD_FastRosterAtlas_66
+  - first:
+      213: 4202879057466696149
+    second: TAD_FastRosterAtlas_67
+  - first:
+      213: 227393510914495973
+    second: TAD_FastRosterAtlas_68
+  - first:
+      213: -2611608452927912183
+    second: TAD_FastRosterAtlas_69
+  - first:
+      213: -2737377698842139745
+    second: TAD_FastRosterAtlas_70
+  - first:
+      213: 5906701596115742226
+    second: TAD_FastRosterAtlas_71
+  - first:
+      213: 519240392643761237
+    second: TAD_FastRosterAtlas_72
+  - first:
+      213: 1256093232026791581
+    second: TAD_FastRosterAtlas_73
+  - first:
+      213: -1319196380383974391
+    second: TAD_FastRosterAtlas_74
+  - first:
+      213: 3957596930873606843
+    second: TAD_FastRosterAtlas_75
+  - first:
+      213: -6444311363962208273
+    second: TAD_FastRosterAtlas_76
+  - first:
+      213: 8096398142692105215
+    second: TAD_FastRosterAtlas_77
+  - first:
+      213: 6397637894725486692
+    second: TAD_FastRosterAtlas_78
+  - first:
+      213: -253500324437217109
+    second: TAD_FastRosterAtlas_79
+  - first:
+      213: 5920364736253644163
+    second: TAD_FastRosterAtlas_80
+  - first:
+      213: -5879311254773533202
+    second: TAD_FastRosterAtlas_81
+  - first:
+      213: -2329370312808751564
+    second: TAD_FastRosterAtlas_82
+  - first:
+      213: -6480501696975344668
+    second: TAD_FastRosterAtlas_83
+  - first:
+      213: 5432407519881629975
+    second: TAD_FastRosterAtlas_84
+  - first:
+      213: -6195989772792995081
+    second: TAD_FastRosterAtlas_85
+  - first:
+      213: 5638899763279829709
+    second: TAD_FastRosterAtlas_86
+  - first:
+      213: 6885735792570383046
+    second: TAD_FastRosterAtlas_87
+  - first:
+      213: 5160315181734323152
+    second: TAD_FastRosterAtlas_88
+  - first:
+      213: -8238028531115286737
+    second: TAD_FastRosterAtlas_89
+  - first:
+      213: 4164960173931963390
+    second: TAD_FastRosterAtlas_90
+  - first:
+      213: -3347747860904373540
+    second: TAD_FastRosterAtlas_91
+  - first:
+      213: 4406520399355365888
+    second: TAD_FastRosterAtlas_92
+  - first:
+      213: -6082875989054925958
+    second: TAD_FastRosterAtlas_93
+  - first:
+      213: -2003919885876653016
+    second: TAD_FastRosterAtlas_94
+  - first:
+      213: -1076801733484351028
+    second: TAD_FastRosterAtlas_95
+  - first:
+      213: 4988456264951373794
+    second: TAD_FastRosterAtlas_96
+  - first:
+      213: 3946192393136539234
+    second: TAD_FastRosterAtlas_97
+  - first:
+      213: 1653082915652097389
+    second: TAD_FastRosterAtlas_98
+  - first:
+      213: 602762567323738813
+    second: TAD_FastRosterAtlas_99
+  - first:
+      213: -8060805197627206415
+    second: TAD_FastRosterAtlas_100
+  - first:
+      213: -4355327196525775898
+    second: TAD_FastRosterAtlas_101
+  - first:
+      213: -8264760744056290681
+    second: TAD_FastRosterAtlas_102
+  - first:
+      213: -6032486951461267076
+    second: TAD_FastRosterAtlas_103
+  - first:
+      213: 2846453889823265595
+    second: TAD_FastRosterAtlas_104
+  - first:
+      213: -1850763212682460975
+    second: TAD_FastRosterAtlas_105
+  - first:
+      213: 8241279056818477167
+    second: TAD_FastRosterAtlas_106
+  - first:
+      213: 427403377239153429
+    second: TAD_FastRosterAtlas_107
+  - first:
+      213: 4024644362390108186
+    second: TAD_FastRosterAtlas_108
+  - first:
+      213: 9182673794927187271
+    second: TAD_FastRosterAtlas_109
+  - first:
+      213: 4311809795620136883
+    second: TAD_FastRosterAtlas_110
+  - first:
+      213: -2520939762891842756
+    second: TAD_FastRosterAtlas_111
+  - first:
+      213: 2337606656815421491
+    second: TAD_FastRosterAtlas_112
+  - first:
+      213: 1770583495033997058
+    second: TAD_FastRosterAtlas_113
+  - first:
+      213: 1452722898101881184
+    second: TAD_FastRosterAtlas_114
+  - first:
+      213: -999507991379746477
+    second: TAD_FastRosterAtlas_115
+  - first:
+      213: 636437595407801298
+    second: TAD_FastRosterAtlas_116
+  - first:
+      213: 2589931408566723671
+    second: TAD_FastRosterAtlas_117
+  - first:
+      213: 8770894540354125304
+    second: TAD_FastRosterAtlas_118
+  - first:
+      213: -9182561725322638881
+    second: TAD_FastRosterAtlas_119
+  - first:
+      213: -8438922511835386355
+    second: TAD_FastRosterAtlas_120
+  - first:
+      213: 5934949237988186763
+    second: TAD_FastRosterAtlas_121
+  - first:
+      213: 3155006303083837529
+    second: TAD_FastRosterAtlas_122
+  - first:
+      213: -6334252448354168785
+    second: TAD_FastRosterAtlas_123
+  - first:
+      213: -8137619194664604064
+    second: TAD_FastRosterAtlas_124
+  - first:
+      213: 7510872045062012854
+    second: TAD_FastRosterAtlas_125
+  - first:
+      213: -4594147724411444858
+    second: TAD_FastRosterAtlas_126
+  - first:
+      213: 5717885159623318881
+    second: TAD_FastRosterAtlas_127
+  - first:
+      213: -9062824375611811340
+    second: TAD_FastRosterAtlas_128
+  - first:
+      213: 8761963809070790820
+    second: TAD_FastRosterAtlas_129
+  - first:
+      213: -2103315084729783655
+    second: TAD_FastRosterAtlas_130
+  - first:
+      213: -5939422289407256275
+    second: TAD_FastRosterAtlas_131
+  - first:
+      213: 594046886964885962
+    second: TAD_FastRosterAtlas_132
+  - first:
+      213: -7628483758173434261
+    second: TAD_FastRosterAtlas_133
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 512
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationMethod: 0
+  spriteTessellationDetail: -1
+  spriteGeometrySubdivision: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 75
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: iOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: VisionOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: tvOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WindowsStoreApps
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: TAD_FastRosterAtlas_slot00
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 724
+        width: 362
+        height: 362
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7f79a7988383aaf49a5d0e8ba83436d3
+      internalID: -1589793557
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_FastRosterAtlas_slot01
+      rect:
+        serializedVersion: 2
+        x: 362
+        y: 724
+        width: 362
+        height: 362
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e007a51efbb885a48b260658e92cc0fb
+      internalID: -325061252
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_FastRosterAtlas_slot02
+      rect:
+        serializedVersion: 2
+        x: 724
+        y: 724
+        width: 362
+        height: 362
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 1a6cb20014e3cf9409c7ccf301a95171
+      internalID: 1420821811
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_FastRosterAtlas_slot03
+      rect:
+        serializedVersion: 2
+        x: 1086
+        y: 724
+        width: 362
+        height: 362
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f6ef4881ae1a4bd419b23b9b79f3e952
+      internalID: -1027042406
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_FastRosterAtlas_slot04
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 362
+        width: 362
+        height: 362
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3890e0dc13de5524ca31105c06ea4f5a
+      internalID: -602965753
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_FastRosterAtlas_slot05
+      rect:
+        serializedVersion: 2
+        x: 362
+        y: 362
+        width: 362
+        height: 362
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ceaa6bd9c228d62478d81795c09414a0
+      internalID: 1828275324
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_FastRosterAtlas_slot06
+      rect:
+        serializedVersion: 2
+        x: 724
+        y: 362
+        width: 362
+        height: 362
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 2def267b60e47cd4aa18c6fce2d29c1a
+      internalID: -675266670
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_FastRosterAtlas_slot07
+      rect:
+        serializedVersion: 2
+        x: 1086
+        y: 362
+        width: 362
+        height: 362
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5c96e7e4120e3f845af7fb434b00e531
+      internalID: 759757018
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_FastRosterAtlas_slot08
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 362
+        height: 362
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d07829154acad0e479c82ed965a09769
+      internalID: -889255720
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_FastRosterAtlas_slot09
+      rect:
+        serializedVersion: 2
+        x: 362
+        y: 0
+        width: 362
+        height: 362
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c49f6da6fa455d74595fb178e59cb4b1
+      internalID: -1052733962
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_FastRosterAtlas_slot10
+      rect:
+        serializedVersion: 2
+        x: 724
+        y: 0
+        width: 362
+        height: 362
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b531549c6cf91c84eb4cf2df68296c3d
+      internalID: -379274057
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_FastRosterAtlas_slot11
+      rect:
+        serializedVersion: 2
+        x: 1086
+        y: 0
+        width: 362
+        height: 362
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 38930312939394b478d5bb727514fb02
+      internalID: 1038752797
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: c9d6eb39186596c40802d25901a8cb7d
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      TAD_FastRosterAtlas_slot00: -1589793557
+      TAD_FastRosterAtlas_slot01: -325061252
+      TAD_FastRosterAtlas_slot02: 1420821811
+      TAD_FastRosterAtlas_slot03: -1027042406
+      TAD_FastRosterAtlas_slot04: -602965753
+      TAD_FastRosterAtlas_slot05: 1828275324
+      TAD_FastRosterAtlas_slot06: -675266670
+      TAD_FastRosterAtlas_slot07: 759757018
+      TAD_FastRosterAtlas_slot08: -889255720
+      TAD_FastRosterAtlas_slot09: -1052733962
+      TAD_FastRosterAtlas_slot10: -379274057
+      TAD_FastRosterAtlas_slot11: 1038752797
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

@@ -63,6 +63,25 @@ namespace TAD.UI
         {
             queueScrollView ??= transform.Find("ScrollView") as RectTransform;
             queueHeading ??= transform.Find("Heading") as RectTransform;
+
+            if (MobileUiLayoutController.UsesPortraitLayout(transform))
+            {
+                ConfigureTopLeft(queueScrollView, new Vector2(16f, -208f));
+                if (queueScrollView != null)
+                {
+                    queueScrollView.sizeDelta = new Vector2(148f, 900f);
+                }
+
+                ConfigureTopLeft(queueHeading, new Vector2(16f, -168f));
+                var portraitHeading = queueHeading != null ? queueHeading.GetComponent<UnityEngine.UI.Text>() : null;
+                if (portraitHeading != null)
+                {
+                    portraitHeading.text = "UP NEXT";
+                }
+
+                return;
+            }
+
             ConfigureTopLeft(queueScrollView, new Vector2(16f, QueueScrollTopOffset));
             if (queueScrollView != null)
             {

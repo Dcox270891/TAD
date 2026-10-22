@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 694892edc0a468b448e49591a6175013, type: 3}
+  m_Name: Red DeerDefinition
+  m_EditorClassIdentifier: Assembly-CSharp::TAD.Attackers.AttackerDefinition
+  attackerId: 006
+  displayName: Red Deer
+  maximumHealth: 7
+  movementSpeed: 3.9
+  size: 1.25
+  sendCost: 19
+  waveIncome: 4
+  expGiven: 5
+  killGain: 3
+  sendSize: 5
+  archetype: 1
+  challengeTier: 3
+  traversalProfile: 0
+  visualDefinition: {fileID: 11400000, guid: a52958335ff95174d86a1709b7cc2c0d, type: 2}
+  entrySound: {fileID: 8300000, guid: 23670563ef67ccd45b6cf1e748ac7d72, type: 3}
+  deathSound: {fileID: 8300000, guid: 7fd6923d4a23c16449e1ff4dea8668ea, type: 3}

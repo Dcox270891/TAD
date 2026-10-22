@@ -1,0 +1,803 @@
+fileFormatVersion: 2
+guid: 4df5bc2cfd9f0b3479207676d4e2fc3f
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 7738033699067008673
+    second: TAD_FlyingRosterAtlas_0
+  - first:
+      213: 1901047909544545518
+    second: TAD_FlyingRosterAtlas_1
+  - first:
+      213: 3474335815340636436
+    second: TAD_FlyingRosterAtlas_2
+  - first:
+      213: 2033798811276930530
+    second: TAD_FlyingRosterAtlas_3
+  - first:
+      213: 5488928057600945508
+    second: TAD_FlyingRosterAtlas_4
+  - first:
+      213: -6474957248210495059
+    second: TAD_FlyingRosterAtlas_5
+  - first:
+      213: -6681017152105653020
+    second: TAD_FlyingRosterAtlas_6
+  - first:
+      213: -9060417703581260157
+    second: TAD_FlyingRosterAtlas_7
+  - first:
+      213: 1137595945784371319
+    second: TAD_FlyingRosterAtlas_8
+  - first:
+      213: -9037856323002460671
+    second: TAD_FlyingRosterAtlas_9
+  - first:
+      213: -3474079094968049228
+    second: TAD_FlyingRosterAtlas_10
+  - first:
+      213: -4604476602821025557
+    second: TAD_FlyingRosterAtlas_11
+  - first:
+      213: -6308623915234737202
+    second: TAD_FlyingRosterAtlas_12
+  - first:
+      213: -6508769694499005548
+    second: TAD_FlyingRosterAtlas_13
+  - first:
+      213: -5092911385627737466
+    second: TAD_FlyingRosterAtlas_14
+  - first:
+      213: -3512289034317790983
+    second: TAD_FlyingRosterAtlas_15
+  - first:
+      213: 3880603717642280237
+    second: TAD_FlyingRosterAtlas_16
+  - first:
+      213: 886038046904507654
+    second: TAD_FlyingRosterAtlas_17
+  - first:
+      213: 9075798998252957072
+    second: TAD_FlyingRosterAtlas_18
+  - first:
+      213: -3687777184392561903
+    second: TAD_FlyingRosterAtlas_19
+  - first:
+      213: 198218142641497392
+    second: TAD_FlyingRosterAtlas_20
+  - first:
+      213: 2723754492266266580
+    second: TAD_FlyingRosterAtlas_21
+  - first:
+      213: 7239840604512812774
+    second: TAD_FlyingRosterAtlas_22
+  - first:
+      213: -4827926761985287211
+    second: TAD_FlyingRosterAtlas_23
+  - first:
+      213: 3146043663833022621
+    second: TAD_FlyingRosterAtlas_24
+  - first:
+      213: -1813290209100181588
+    second: TAD_FlyingRosterAtlas_25
+  - first:
+      213: -9042420885748076830
+    second: TAD_FlyingRosterAtlas_26
+  - first:
+      213: 1126204372933340010
+    second: TAD_FlyingRosterAtlas_27
+  - first:
+      213: 2669749518503010314
+    second: TAD_FlyingRosterAtlas_28
+  - first:
+      213: -5468403591752538193
+    second: TAD_FlyingRosterAtlas_29
+  - first:
+      213: -8653936442553137024
+    second: TAD_FlyingRosterAtlas_30
+  - first:
+      213: 3322193655696698380
+    second: TAD_FlyingRosterAtlas_31
+  - first:
+      213: -4417232477874890616
+    second: TAD_FlyingRosterAtlas_32
+  - first:
+      213: -1173961712629739771
+    second: TAD_FlyingRosterAtlas_33
+  - first:
+      213: -2292007306461780499
+    second: TAD_FlyingRosterAtlas_34
+  - first:
+      213: -195154080814553843
+    second: TAD_FlyingRosterAtlas_35
+  - first:
+      213: -3702290290959360845
+    second: TAD_FlyingRosterAtlas_36
+  - first:
+      213: 3809924099230526234
+    second: TAD_FlyingRosterAtlas_37
+  - first:
+      213: -8461418792695682683
+    second: TAD_FlyingRosterAtlas_38
+  - first:
+      213: 6595537650494373678
+    second: TAD_FlyingRosterAtlas_39
+  - first:
+      213: -4356916441247917494
+    second: TAD_FlyingRosterAtlas_40
+  - first:
+      213: -2989598167877595660
+    second: TAD_FlyingRosterAtlas_41
+  - first:
+      213: -4777038939605045334
+    second: TAD_FlyingRosterAtlas_42
+  - first:
+      213: 4533604777514422185
+    second: TAD_FlyingRosterAtlas_43
+  - first:
+      213: -7482115735806362160
+    second: TAD_FlyingRosterAtlas_44
+  - first:
+      213: 1822450308229920792
+    second: TAD_FlyingRosterAtlas_45
+  - first:
+      213: 6076299215122978858
+    second: TAD_FlyingRosterAtlas_46
+  - first:
+      213: -7851335553669017084
+    second: TAD_FlyingRosterAtlas_47
+  - first:
+      213: 604796577605792555
+    second: TAD_FlyingRosterAtlas_48
+  - first:
+      213: -5513357750846376466
+    second: TAD_FlyingRosterAtlas_49
+  - first:
+      213: -3767813777158951073
+    second: TAD_FlyingRosterAtlas_50
+  - first:
+      213: -9219121506689411088
+    second: TAD_FlyingRosterAtlas_51
+  - first:
+      213: -6273654324486190356
+    second: TAD_FlyingRosterAtlas_52
+  - first:
+      213: 7074206164971250084
+    second: TAD_FlyingRosterAtlas_53
+  - first:
+      213: -6282606886165107288
+    second: TAD_FlyingRosterAtlas_54
+  - first:
+      213: 3882984211140374359
+    second: TAD_FlyingRosterAtlas_55
+  - first:
+      213: -8347148360104902065
+    second: TAD_FlyingRosterAtlas_56
+  - first:
+      213: 3514955036154999908
+    second: TAD_FlyingRosterAtlas_57
+  - first:
+      213: 8893069428311838285
+    second: TAD_FlyingRosterAtlas_58
+  - first:
+      213: -1764102085501955230
+    second: TAD_FlyingRosterAtlas_59
+  - first:
+      213: 3486312220206080919
+    second: TAD_FlyingRosterAtlas_60
+  - first:
+      213: 6889977602031320157
+    second: TAD_FlyingRosterAtlas_61
+  - first:
+      213: 38078693478544484
+    second: TAD_FlyingRosterAtlas_62
+  - first:
+      213: -9053810173573101957
+    second: TAD_FlyingRosterAtlas_63
+  - first:
+      213: -7366966815789333448
+    second: TAD_FlyingRosterAtlas_64
+  - first:
+      213: 8744211616229493858
+    second: TAD_FlyingRosterAtlas_65
+  - first:
+      213: -5841701630201582067
+    second: TAD_FlyingRosterAtlas_66
+  - first:
+      213: 992822787870971335
+    second: TAD_FlyingRosterAtlas_67
+  - first:
+      213: 1853178069449729990
+    second: TAD_FlyingRosterAtlas_68
+  - first:
+      213: 7961479902188748514
+    second: TAD_FlyingRosterAtlas_69
+  - first:
+      213: -4063633367688029337
+    second: TAD_FlyingRosterAtlas_70
+  - first:
+      213: -5237218627642925352
+    second: TAD_FlyingRosterAtlas_71
+  - first:
+      213: 1664548630523154920
+    second: TAD_FlyingRosterAtlas_72
+  - first:
+      213: 8089148855409478103
+    second: TAD_FlyingRosterAtlas_73
+  - first:
+      213: 587104588750973527
+    second: TAD_FlyingRosterAtlas_74
+  - first:
+      213: -7173249323184543233
+    second: TAD_FlyingRosterAtlas_75
+  - first:
+      213: 2270959790084226180
+    second: TAD_FlyingRosterAtlas_76
+  - first:
+      213: 7466196903561493537
+    second: TAD_FlyingRosterAtlas_77
+  - first:
+      213: -1511059771626959583
+    second: TAD_FlyingRosterAtlas_78
+  - first:
+      213: 2275145556110406647
+    second: TAD_FlyingRosterAtlas_79
+  - first:
+      213: 2368173236703175275
+    second: TAD_FlyingRosterAtlas_80
+  - first:
+      213: 4495232368663195393
+    second: TAD_FlyingRosterAtlas_81
+  - first:
+      213: -961464227425485550
+    second: TAD_FlyingRosterAtlas_82
+  - first:
+      213: -7550659262320490324
+    second: TAD_FlyingRosterAtlas_83
+  - first:
+      213: 8958409893801645449
+    second: TAD_FlyingRosterAtlas_84
+  - first:
+      213: 868893415108882855
+    second: TAD_FlyingRosterAtlas_85
+  - first:
+      213: 291453128751558709
+    second: TAD_FlyingRosterAtlas_86
+  - first:
+      213: -7505208311886655358
+    second: TAD_FlyingRosterAtlas_87
+  - first:
+      213: -6692183574078457249
+    second: TAD_FlyingRosterAtlas_88
+  - first:
+      213: 5892740188631125755
+    second: TAD_FlyingRosterAtlas_89
+  - first:
+      213: -1336201098175935859
+    second: TAD_FlyingRosterAtlas_90
+  - first:
+      213: 8572584869252162447
+    second: TAD_FlyingRosterAtlas_91
+  - first:
+      213: 7578409443564025347
+    second: TAD_FlyingRosterAtlas_92
+  - first:
+      213: -8694928614398850273
+    second: TAD_FlyingRosterAtlas_93
+  - first:
+      213: -1176908346136349750
+    second: TAD_FlyingRosterAtlas_94
+  - first:
+      213: 5980003373887027691
+    second: TAD_FlyingRosterAtlas_95
+  - first:
+      213: -5016947365424101116
+    second: TAD_FlyingRosterAtlas_96
+  - first:
+      213: 6795300678515552264
+    second: TAD_FlyingRosterAtlas_97
+  - first:
+      213: 1909238367456078942
+    second: TAD_FlyingRosterAtlas_98
+  - first:
+      213: 3593971792075539326
+    second: TAD_FlyingRosterAtlas_99
+  - first:
+      213: -5588886672477775784
+    second: TAD_FlyingRosterAtlas_100
+  - first:
+      213: 137380457266840990
+    second: TAD_FlyingRosterAtlas_101
+  - first:
+      213: -1063648293978305390
+    second: TAD_FlyingRosterAtlas_102
+  - first:
+      213: -8968964293583200661
+    second: TAD_FlyingRosterAtlas_103
+  - first:
+      213: 2010446143701469965
+    second: TAD_FlyingRosterAtlas_104
+  - first:
+      213: 2576324956866052456
+    second: TAD_FlyingRosterAtlas_105
+  - first:
+      213: -6543321559881931996
+    second: TAD_FlyingRosterAtlas_106
+  - first:
+      213: -3596217171163018302
+    second: TAD_FlyingRosterAtlas_107
+  - first:
+      213: 7252827049574250040
+    second: TAD_FlyingRosterAtlas_108
+  - first:
+      213: 8343025721607266215
+    second: TAD_FlyingRosterAtlas_109
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 512
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationMethod: 0
+  spriteTessellationDetail: -1
+  spriteGeometrySubdivision: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 75
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: iOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: VisionOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: tvOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WindowsStoreApps
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: TAD_FlyingRosterAtlas_slot00
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 724
+        width: 362
+        height: 362
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 956b21fe5f2b19745bc61515daa39315
+      internalID: -787206328
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_FlyingRosterAtlas_slot01
+      rect:
+        serializedVersion: 2
+        x: 362
+        y: 724
+        width: 362
+        height: 362
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 837e9510b0cda7442aba23b115d26256
+      internalID: 26327904
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_FlyingRosterAtlas_slot02
+      rect:
+        serializedVersion: 2
+        x: 724
+        y: 724
+        width: 362
+        height: 362
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 365aec6243328bb4993780f2a77f323a
+      internalID: -1512988462
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_FlyingRosterAtlas_slot03
+      rect:
+        serializedVersion: 2
+        x: 1086
+        y: 724
+        width: 362
+        height: 362
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: bb393edb550e0d54d8febf8418eae627
+      internalID: 694589254
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_FlyingRosterAtlas_slot04
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 362
+        width: 362
+        height: 362
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 275cdad1425facc45b47872f896a2648
+      internalID: -1305652855
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_FlyingRosterAtlas_slot05
+      rect:
+        serializedVersion: 2
+        x: 362
+        y: 362
+        width: 362
+        height: 362
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e7a79d48d59665344ac845275e902fda
+      internalID: 1979606422
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_FlyingRosterAtlas_slot06
+      rect:
+        serializedVersion: 2
+        x: 724
+        y: 362
+        width: 362
+        height: 362
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: cc01847cb57682a4ca021b08aa179009
+      internalID: 2058982487
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_FlyingRosterAtlas_slot07
+      rect:
+        serializedVersion: 2
+        x: 1086
+        y: 362
+        width: 362
+        height: 362
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9968f1ca1a59c2a419d0feeafbb4fca5
+      internalID: 1898764029
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_FlyingRosterAtlas_slot08
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 362
+        height: 362
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 112c67c43aae02149bae9874e39b3f0f
+      internalID: 1783387582
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_FlyingRosterAtlas_slot09
+      rect:
+        serializedVersion: 2
+        x: 362
+        y: 0
+        width: 362
+        height: 362
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 96932f727d42e004bb64f2baf7486984
+      internalID: 2125399998
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_FlyingRosterAtlas_slot10
+      rect:
+        serializedVersion: 2
+        x: 724
+        y: 0
+        width: 362
+        height: 362
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 067832ce909815940b18605c62412fda
+      internalID: -191547954
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TAD_FlyingRosterAtlas_slot11
+      rect:
+        serializedVersion: 2
+        x: 1086
+        y: 0
+        width: 362
+        height: 362
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7a965e20b14e9a2409fb2cbc3efe2d26
+      internalID: -734829801
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 7fdbbe5e67375744fa85e007dab6de62
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      TAD_FlyingRosterAtlas_slot00: -787206328
+      TAD_FlyingRosterAtlas_slot01: 26327904
+      TAD_FlyingRosterAtlas_slot02: -1512988462
+      TAD_FlyingRosterAtlas_slot03: 694589254
+      TAD_FlyingRosterAtlas_slot04: -1305652855
+      TAD_FlyingRosterAtlas_slot05: 1979606422
+      TAD_FlyingRosterAtlas_slot06: 2058982487
+      TAD_FlyingRosterAtlas_slot07: 1898764029
+      TAD_FlyingRosterAtlas_slot08: 1783387582
+      TAD_FlyingRosterAtlas_slot09: 2125399998
+      TAD_FlyingRosterAtlas_slot10: -191547954
+      TAD_FlyingRosterAtlas_slot11: -734829801
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
