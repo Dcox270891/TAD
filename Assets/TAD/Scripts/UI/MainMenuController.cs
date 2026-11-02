@@ -12,6 +12,9 @@ namespace TAD.UI
     [DisallowMultipleComponent]
     public sealed class MainMenuController : MonoBehaviour
     {
+        private const string FullGameButtonName = "FullGameButton";
+        private const string SupportDeveloperButtonName = "SupportDeveloperButton";
+
         [Header("Menu Buttons")]
         [SerializeField] private UnityEngine.UI.Button selectLevelButton;
         [SerializeField] private UnityEngine.UI.Button playButton;
@@ -26,6 +29,8 @@ namespace TAD.UI
         [SerializeField] private LevelLoadingOverlay levelLoadingOverlay;
 
         private PlayerProfileData playerProfile;
+        private UnityEngine.UI.Button fullGameButton;
+        private UnityEngine.UI.Button supportDeveloperButton;
         private bool isSubscribed;
         private bool isLoadingLevel;
 
@@ -34,6 +39,7 @@ namespace TAD.UI
             ResolveReferences();
             playerProfile = PlayerSettingsService.Instance.Profile;
             EnsurePlayerEnergyPanel();
+            EnsureMenuUtilityButtons();
         }
 
         private void OnEnable()
@@ -153,12 +159,13 @@ namespace TAD.UI
             levelSelectionOverlay = selectionOverlay;
             notImplementedOverlay = unavailableOverlay;
 
+            EnsurePlayerEnergyPanel();
+            EnsureMenuUtilityButtons();
+
             if (isActiveAndEnabled)
             {
                 Subscribe();
             }
-
-            EnsurePlayerEnergyPanel();
         }
 
         private void ChooseRoleForLevel(LevelDefinition level)
@@ -236,6 +243,7 @@ namespace TAD.UI
 
         private void ShowNotImplemented(UnityEngine.UI.Button sourceButton, string title)
         {
+            notImplementedOverlay ??= UnityEngine.Object.FindAnyObjectByType<NotImplementedOverlay>(FindObjectsInactive.Include);
             if (notImplementedOverlay == null || !notImplementedOverlay.Show(sourceButton != null ? sourceButton.gameObject : null, title))
             {
                 Debug.LogError("Main Menu could not show the not-implemented overlay.", this);
@@ -281,6 +289,16 @@ namespace TAD.UI
                 exitGameButton.onClick.AddListener(ExitGame);
             }
 
+            if (fullGameButton != null)
+            {
+                fullGameButton.onClick.AddListener(OpenFullGameInformation);
+            }
+
+            if (supportDeveloperButton != null)
+            {
+                supportDeveloperButton.onClick.AddListener(OpenSupportDeveloperInformation);
+            }
+
             isSubscribed = true;
         }
 
@@ -314,6 +332,16 @@ namespace TAD.UI
             if (exitGameButton != null)
             {
                 exitGameButton.onClick.RemoveListener(ExitGame);
+            }
+
+            if (fullGameButton != null)
+            {
+                fullGameButton.onClick.RemoveListener(OpenFullGameInformation);
+            }
+
+            if (supportDeveloperButton != null)
+            {
+                supportDeveloperButton.onClick.RemoveListener(OpenSupportDeveloperInformation);
             }
 
             isSubscribed = false;
@@ -359,6 +387,66 @@ namespace TAD.UI
             {
                 PlayerEnergyMenuPanel.Ensure(canvas.transform, playButton);
             }
+        }
+
+        /// <summary>
+        /// Adds the two clearly-labelled utility planks shown around the main-menu vista. They
+        /// deliberately use the standard planned-feature overlay: this pre-release build does not
+        /// offer a transaction or donation flow yet, but the visual menu remains ready for it.
+        /// </summary>
+        private void EnsureMenuUtilityButtons()
+        {
+            var canvas = GetComponent<Canvas>();
+            if (canvas == null || playButton == null)
+            {
+                return;
+            }
+
+            fullGameButton = EnsureUtilityButton(canvas.transform, FullGameButtonName, "FULL GAME");
+            supportDeveloperButton = EnsureUtilityButton(canvas.transform, SupportDeveloperButtonName, "SUPPORT DEV");
+            GetComponent<MobileUiLayoutController>()?.RefreshLayout();
+        }
+
+        private UnityEngine.UI.Button EnsureUtilityButton(Transform canvasRoot, string buttonName, string label)
+        {
+            var existing = canvasRoot.Find(buttonName);
+            var button = existing != null ? existing.GetComponent<UnityEngine.UI.Button>() : null;
+            if (button == null)
+            {
+                var clone = Instantiate(playButton.gameObject, canvasRoot, false);
+                clone.name = buttonName;
+                button = clone.GetComponent<UnityEngine.UI.Button>();
+                if (button == null)
+                {
+                    Destroy(clone);
+                    return null;
+                }
+
+                // A clone made during Awake has no runtime listener from the original menu
+                // button, but clearing listeners also makes the presentation robust if Unity
+                // recreates this controller while retaining the scene hierarchy.
+                button.onClick.RemoveAllListeners();
+            }
+
+            var text = button.GetComponentInChildren<UnityEngine.UI.Text>(true);
+            if (text != null)
+            {
+                text.text = label;
+            }
+
+            button.gameObject.SetActive(true);
+            FarmUiSkin.ApplyFromCanvas(canvasRoot, button.transform);
+            return button;
+        }
+
+        private void OpenFullGameInformation()
+        {
+            ShowNotImplemented(fullGameButton, "FULL GAME");
+        }
+
+        private void OpenSupportDeveloperInformation()
+        {
+            ShowNotImplemented(supportDeveloperButton, "SUPPORT THE DEVELOPER");
         }
 
         private UnityEngine.UI.Button FindButton(string buttonName)

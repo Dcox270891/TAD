@@ -493,7 +493,7 @@ namespace TAD.UI
                 FontStyle.Bold,
                 TextAnchor.MiddleCenter,
                 InkBrown);
-            levelUpFutureChoicesText.text = "Choose an Attacker, Defender, and Random reward for this level.";
+            levelUpFutureChoicesText.text = "Choose ONE reward: Attacker on the left, Random in the centre, or Defender on the right.";
             levelUpFutureChoicesText.horizontalOverflow = HorizontalWrapMode.Wrap;
             SetStretch(levelUpFutureChoicesText.rectTransform, new Vector2(0f, 0.28f), new Vector2(1f, 0.48f),
                 new Vector2(48f, 0f), new Vector2(-48f, 0f));
@@ -502,7 +502,7 @@ namespace TAD.UI
                 "ContinueLevelUpButton",
                 cardObject.transform,
                 buttonTemplate,
-                "CHOOSE UPGRADES",
+                "CHOOSE UPGRADE",
                 new Vector2(240f, 58f));
             var continueRect = levelUpContinueButton.GetComponent<RectTransform>();
             continueRect.anchorMin = new Vector2(0.5f, 0f);

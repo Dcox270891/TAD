@@ -210,7 +210,7 @@ namespace TAD.UI
                     continue;
                 }
 
-                var card = CreateUpgradeCard(cardsRoot, activeChoice, definition);
+                var card = CreateUpgradeCard(cardsRoot, activeChoice, definition, index);
                 firstSelectable ??= card;
             }
 
@@ -223,7 +223,8 @@ namespace TAD.UI
         private GameObject CreateUpgradeCard(
             Transform parent,
             PendingPlayerUpgradeChoiceData pending,
-            PlayerUpgradeDefinition definition)
+            PlayerUpgradeDefinition definition,
+            int offerIndex)
         {
             var card = CreateObject(
                 definition.Id,
@@ -250,7 +251,7 @@ namespace TAD.UI
             var text = CreateText(card.transform, "CardText", 25, FontStyle.Bold, TextAnchor.MiddleCenter);
             text.horizontalOverflow = HorizontalWrapMode.Wrap;
             text.verticalOverflow = VerticalWrapMode.Overflow;
-            text.text = $"{definition.GroupName}\n{definition.Title}\n\n{definition.Description}\n\nRANK {PlayerUpgradeProgression.GetRank(PlayerSettingsService.Instance.Profile, definition.Id)}/{definition.MaxRank}";
+            text.text = $"{GetCardHeading(pending.rewardSlot, offerIndex)}\n{definition.GroupName}\n{definition.Title}\n\n{definition.Description}\n\nRANK {PlayerUpgradeProgression.GetRank(PlayerSettingsService.Instance.Profile, definition.Id)}/{definition.MaxRank}";
             var textRect = text.rectTransform;
             textRect.anchorMin = Vector2.zero;
             textRect.anchorMax = Vector2.one;
@@ -304,7 +305,32 @@ namespace TAD.UI
                 PlayerUpgradeRewardSlot.Defender => "Choose one DEFENDER upgrade.",
                 PlayerUpgradeRewardSlot.Random => "Choose one RANDOM bonus upgrade.",
                 PlayerUpgradeRewardSlot.General => "Choose one milestone GENERAL upgrade.",
+                PlayerUpgradeRewardSlot.Standard =>
+                    "Choose ONE upgrade: ATTACKER on the left, RANDOM in the centre, or DEFENDER on the right.",
                 _ => "Choose an upgrade."
+            };
+        }
+
+        private static string GetCardHeading(PlayerUpgradeRewardSlot slot, int offerIndex)
+        {
+            if (slot == PlayerUpgradeRewardSlot.Standard)
+            {
+                return offerIndex switch
+                {
+                    0 => "ATTACKER UPGRADE",
+                    1 => "RANDOM UPGRADE",
+                    2 => "DEFENDER UPGRADE",
+                    _ => "UPGRADE"
+                };
+            }
+
+            return slot switch
+            {
+                PlayerUpgradeRewardSlot.Attacker => "ATTACKER UPGRADE",
+                PlayerUpgradeRewardSlot.Defender => "DEFENDER UPGRADE",
+                PlayerUpgradeRewardSlot.Random => "RANDOM UPGRADE",
+                PlayerUpgradeRewardSlot.General => "GENERAL UPGRADE",
+                _ => "UPGRADE"
             };
         }
 

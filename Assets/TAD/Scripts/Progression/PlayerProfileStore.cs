@@ -64,7 +64,7 @@ namespace TAD.Progression
     /// </summary>
     public static class PlayerProfileStore
     {
-        public const int CurrentVersion = 5;
+        public const int CurrentVersion = 6;
 
         private const string ProfileKey = "TAD.PlayerProfile";
 
@@ -165,6 +165,14 @@ namespace TAD.Progression
                 // Account levels earned before the tree was introduced still deserve their
                 // rewards. The persistent queue lets players work through those choices safely.
                 PlayerUpgradeProgression.EnqueueChoicesThroughLevel(profile, profile.playerLevel);
+            }
+
+            if (profile.version < 6)
+            {
+                // Level-up rewards now present one ordered Attacker / Random / Defender choice
+                // rather than three sequential reward screens. Existing earned ranks remain
+                // intact; only unselected legacy offers are rebuilt into the new single choice.
+                PlayerUpgradeProgression.MigrateLegacyPendingChoicesToStandard(profile);
             }
         }
 

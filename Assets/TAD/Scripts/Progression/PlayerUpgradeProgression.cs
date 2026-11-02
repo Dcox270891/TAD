@@ -20,7 +20,10 @@ namespace TAD.Progression
         Attacker = 0,
         Defender = 1,
         Random = 2,
-        General = 3
+        General = 3,
+        // Added after the original three-sequential-rewards implementation. Keeping this value
+        // at the end preserves the numeric values already saved for legacy profile cards.
+        Standard = 4
     }
 
     public enum AttackerUpgradeStat
@@ -61,6 +64,7 @@ namespace TAD.Progression
     /// <summary>
     /// A persisted set of offered cards. Saving the offers prevents closing the app to reroll the
     /// random choice, while the selected rank itself remains the authoritative progression state.
+    /// Standard offers contain three ordered cards: Attacker, Random, then Defender.
     /// </summary>
     [Serializable]
     public sealed class PendingPlayerUpgradeChoiceData
@@ -326,7 +330,11 @@ namespace TAD.Progression
             profile.pendingPlayerUpgradeChoices ??= new List<PendingPlayerUpgradeChoiceData>();
         }
 
-        /// <summary>Adds the three standard cards and any milestone general card for one earned player level.</summary>
+        /// <summary>
+        /// Adds one standard three-card choice and any milestone general choice for one earned player level.
+        /// The standard offer is ordered Attacker (left), Random (centre), Defender (right), and the player
+        /// selects exactly one of those cards.
+        /// </summary>
         public static void EnqueueChoicesForLevel(PlayerProfileData profile, int earnedLevel)
         {
             if (profile == null || earnedLevel <= PlayerLevelProgression.StartingLevel ||
@@ -336,13 +344,52 @@ namespace TAD.Progression
             }
 
             EnsureStorage(profile);
-            AddChoiceIfMissing(profile, earnedLevel, PlayerUpgradeRewardSlot.Attacker);
-            AddChoiceIfMissing(profile, earnedLevel, PlayerUpgradeRewardSlot.Defender);
-            AddChoiceIfMissing(profile, earnedLevel, PlayerUpgradeRewardSlot.Random);
+            AddChoiceIfMissing(profile, earnedLevel, PlayerUpgradeRewardSlot.Standard);
             if (IsGeneralUpgradeLevel(earnedLevel))
             {
                 AddChoiceIfMissing(profile, earnedLevel, PlayerUpgradeRewardSlot.General);
             }
+        }
+
+        /// <summary>
+        /// Converts unselected legacy three-screen level rewards into one current-format standard choice.
+        /// Selected ranks are never touched; only unclaimed offers are rebuilt from their current valid pool.
+        /// </summary>
+        public static void MigrateLegacyPendingChoicesToStandard(PlayerProfileData profile)
+        {
+            if (profile == null)
+            {
+                return;
+            }
+
+            EnsureStorage(profile);
+            var levelsToMigrate = new List<int>();
+            for (var index = 0; index < profile.pendingPlayerUpgradeChoices.Count; index++)
+            {
+                var pending = profile.pendingPlayerUpgradeChoices[index];
+                if (pending != null && IsLegacyStandardRewardSlot(pending.rewardSlot) &&
+                    !levelsToMigrate.Contains(pending.playerLevel))
+                {
+                    levelsToMigrate.Add(pending.playerLevel);
+                }
+            }
+
+            foreach (var playerLevel in levelsToMigrate)
+            {
+                for (var index = profile.pendingPlayerUpgradeChoices.Count - 1; index >= 0; index--)
+                {
+                    var pending = profile.pendingPlayerUpgradeChoices[index];
+                    if (pending != null && pending.playerLevel == playerLevel &&
+                        IsLegacyStandardRewardSlot(pending.rewardSlot))
+                    {
+                        profile.pendingPlayerUpgradeChoices.RemoveAt(index);
+                    }
+                }
+
+                AddChoiceIfMissing(profile, playerLevel, PlayerUpgradeRewardSlot.Standard);
+            }
+
+            RefreshExhaustedChoices(profile);
         }
 
         /// <summary>Builds an upgrade backlog for older profiles that had already earned account levels.</summary>
@@ -463,7 +510,8 @@ namespace TAD.Progression
             for (var index = profile.pendingPlayerUpgradeChoices.Count - 1; index >= 0; index--)
             {
                 var pending = profile.pendingPlayerUpgradeChoices[index];
-                if (pending == null || pending.playerLevel <= PlayerLevelProgression.StartingLevel ||
+                if (pending == null || !IsKnownRewardSlot(pending.rewardSlot) ||
+                    pending.playerLevel <= PlayerLevelProgression.StartingLevel ||
                     pending.playerLevel > PlayerLevelProgression.MaximumLevel ||
                     (pending.rewardSlot == PlayerUpgradeRewardSlot.General && !IsGeneralUpgradeLevel(pending.playerLevel)))
                 {
@@ -544,7 +592,12 @@ namespace TAD.Progression
                     }
                 }
 
-                if (!HasAnyEligibleOffer(profile, pending))
+                if (pending.rewardSlot == PlayerUpgradeRewardSlot.Standard &&
+                    !HasCompleteStandardOffer(profile, pending))
+                {
+                    pending.offeredUpgradeIds = BuildOffer(profile, pending.playerLevel, pending.rewardSlot);
+                }
+                else if (!HasAnyEligibleOffer(profile, pending))
                 {
                     pending.offeredUpgradeIds = BuildOffer(profile, pending.playerLevel, pending.rewardSlot);
                 }
@@ -582,18 +635,12 @@ namespace TAD.Progression
             int playerLevel,
             PlayerUpgradeRewardSlot rewardSlot)
         {
-            var eligible = new List<PlayerUpgradeDefinition>();
-            foreach (var definition in AllDefinitionsInternal)
+            if (rewardSlot == PlayerUpgradeRewardSlot.Standard)
             {
-                if (!IsDefinitionEligibleForSlot(definition, playerLevel, rewardSlot) ||
-                    GetRank(profile, definition.Id) >= definition.MaxRank)
-                {
-                    continue;
-                }
-
-                eligible.Add(definition);
+                return BuildStandardOffer(profile, playerLevel);
             }
 
+            var eligible = GetEligibleDefinitions(profile, playerLevel, rewardSlot, null);
             var offers = new List<string>(3);
             if (eligible.Count == 0)
             {
@@ -601,8 +648,8 @@ namespace TAD.Progression
             }
 
             // Persisted seed = same offer after a restart, while players still receive a varied
-            // set of three cards inside the appropriate reward family.
-            var random = new System.Random((playerLevel * 15485863) + ((int)rewardSlot * 32452843) + 47);
+            // set of cards inside legacy and milestone reward families.
+            var random = CreateOfferRandom(playerLevel, rewardSlot);
             while (eligible.Count > 0 && offers.Count < 3)
             {
                 var index = random.Next(eligible.Count);
@@ -611,6 +658,137 @@ namespace TAD.Progression
             }
 
             return offers;
+        }
+
+        private static List<string> BuildStandardOffer(PlayerProfileData profile, int playerLevel)
+        {
+            var random = CreateOfferRandom(playerLevel, PlayerUpgradeRewardSlot.Standard);
+            var selectedIds = new HashSet<string>(StringComparer.Ordinal);
+            var attackerOptions = GetEligibleDefinitions(
+                profile,
+                playerLevel,
+                PlayerUpgradeRewardSlot.Attacker,
+                selectedIds);
+            var defenderOptions = GetEligibleDefinitions(
+                profile,
+                playerLevel,
+                PlayerUpgradeRewardSlot.Defender,
+                selectedIds);
+
+            var attacker = PickRandomDefinition(attackerOptions, random);
+            if (attacker.HasValue)
+            {
+                selectedIds.Add(attacker.Value.Id);
+            }
+
+            // Reserve the defender card before rolling the centre card so the right-most card
+            // remains a defender upgrade whenever that category still has an eligible entry.
+            var defender = PickRandomDefinition(defenderOptions, random);
+            if (defender.HasValue)
+            {
+                selectedIds.Add(defender.Value.Id);
+            }
+
+            var randomOptions = GetEligibleDefinitions(
+                profile,
+                playerLevel,
+                PlayerUpgradeRewardSlot.Random,
+                selectedIds);
+            var randomChoice = PickRandomDefinition(randomOptions, random);
+
+            var offers = new List<string>(3);
+            if (attacker.HasValue)
+            {
+                offers.Add(attacker.Value.Id);
+            }
+
+            if (randomChoice.HasValue)
+            {
+                offers.Add(randomChoice.Value.Id);
+            }
+
+            if (defender.HasValue)
+            {
+                offers.Add(defender.Value.Id);
+            }
+
+            return offers;
+        }
+
+        private static List<PlayerUpgradeDefinition> GetEligibleDefinitions(
+            PlayerProfileData profile,
+            int playerLevel,
+            PlayerUpgradeRewardSlot rewardSlot,
+            ISet<string> excludedIds)
+        {
+            var eligible = new List<PlayerUpgradeDefinition>();
+            foreach (var definition in AllDefinitionsInternal)
+            {
+                if (!IsDefinitionEligibleForSlot(definition, playerLevel, rewardSlot) ||
+                    GetRank(profile, definition.Id) >= definition.MaxRank ||
+                    (excludedIds != null && excludedIds.Contains(definition.Id)))
+                {
+                    continue;
+                }
+
+                eligible.Add(definition);
+            }
+
+            return eligible;
+        }
+
+        private static PlayerUpgradeDefinition? PickRandomDefinition(
+            List<PlayerUpgradeDefinition> eligible,
+            System.Random random)
+        {
+            return eligible == null || eligible.Count == 0
+                ? null
+                : eligible[random.Next(eligible.Count)];
+        }
+
+        private static System.Random CreateOfferRandom(int playerLevel, PlayerUpgradeRewardSlot rewardSlot)
+        {
+            return new System.Random((playerLevel * 15485863) + ((int)rewardSlot * 32452843) + 47);
+        }
+
+        private static bool HasCompleteStandardOffer(
+            PlayerProfileData profile,
+            PendingPlayerUpgradeChoiceData pending)
+        {
+            if (pending?.offeredUpgradeIds == null || pending.offeredUpgradeIds.Count != 3)
+            {
+                return false;
+            }
+
+            return IsOfferCategory(profile, pending.offeredUpgradeIds[0], PlayerUpgradeCategory.Attacker) &&
+                   IsOfferCategory(profile, pending.offeredUpgradeIds[1], PlayerUpgradeCategory.Attacker,
+                       PlayerUpgradeCategory.Defender) &&
+                   IsOfferCategory(profile, pending.offeredUpgradeIds[2], PlayerUpgradeCategory.Defender) &&
+                   pending.offeredUpgradeIds[0] != pending.offeredUpgradeIds[1] &&
+                   pending.offeredUpgradeIds[0] != pending.offeredUpgradeIds[2] &&
+                   pending.offeredUpgradeIds[1] != pending.offeredUpgradeIds[2];
+        }
+
+        private static bool IsOfferCategory(
+            PlayerProfileData profile,
+            string upgradeId,
+            params PlayerUpgradeCategory[] acceptedCategories)
+        {
+            if (!TryGetDefinition(upgradeId, out var definition) ||
+                GetRank(profile, upgradeId) >= definition.MaxRank)
+            {
+                return false;
+            }
+
+            foreach (var category in acceptedCategories)
+            {
+                if (definition.Category == category)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static bool IsDefinitionEligibleForSlot(
@@ -623,13 +801,23 @@ namespace TAD.Progression
                 PlayerUpgradeRewardSlot.Attacker => definition.Category == PlayerUpgradeCategory.Attacker,
                 PlayerUpgradeRewardSlot.Defender => definition.Category == PlayerUpgradeCategory.Defender,
                 PlayerUpgradeRewardSlot.General => definition.Category == PlayerUpgradeCategory.General,
-                // Guarantee one extra rank for each core tree so the 99 dedicated level-up cards
-                // plus the random rewards can complete all 100 attacker and defender ranks by L100.
-                PlayerUpgradeRewardSlot.Random when playerLevel == 2 => definition.Category == PlayerUpgradeCategory.Attacker,
-                PlayerUpgradeRewardSlot.Random when playerLevel == 3 => definition.Category == PlayerUpgradeCategory.Defender,
+                PlayerUpgradeRewardSlot.Standard => definition.Category is PlayerUpgradeCategory.Attacker or PlayerUpgradeCategory.Defender,
                 PlayerUpgradeRewardSlot.Random => definition.Category is PlayerUpgradeCategory.Attacker or PlayerUpgradeCategory.Defender,
                 _ => false
             };
+        }
+
+        private static bool IsLegacyStandardRewardSlot(PlayerUpgradeRewardSlot rewardSlot)
+        {
+            return rewardSlot is PlayerUpgradeRewardSlot.Attacker or PlayerUpgradeRewardSlot.Defender or
+                PlayerUpgradeRewardSlot.Random;
+        }
+
+        private static bool IsKnownRewardSlot(PlayerUpgradeRewardSlot rewardSlot)
+        {
+            return rewardSlot is PlayerUpgradeRewardSlot.Attacker or PlayerUpgradeRewardSlot.Defender or
+                PlayerUpgradeRewardSlot.Random or PlayerUpgradeRewardSlot.General or
+                PlayerUpgradeRewardSlot.Standard;
         }
 
         private static void SetRank(PlayerProfileData profile, string upgradeId, int rank, int maximumRank)
@@ -669,7 +857,22 @@ namespace TAD.Progression
                 return -1;
             }
 
-            return left.rewardSlot.CompareTo(right.rewardSlot);
+            return GetPendingChoiceSortOrder(left.rewardSlot).CompareTo(GetPendingChoiceSortOrder(right.rewardSlot));
+        }
+
+        private static int GetPendingChoiceSortOrder(PlayerUpgradeRewardSlot rewardSlot)
+        {
+            return rewardSlot switch
+            {
+                // A current-format standard reward must always be shown before the extra
+                // milestone general choice, regardless of its appended serialized enum value.
+                PlayerUpgradeRewardSlot.Standard => 0,
+                PlayerUpgradeRewardSlot.Attacker => 0,
+                PlayerUpgradeRewardSlot.Defender => 1,
+                PlayerUpgradeRewardSlot.Random => 2,
+                PlayerUpgradeRewardSlot.General => 3,
+                _ => int.MaxValue
+            };
         }
 
         private static ProjectileType GetProjectileType(WeaponDefinition definition)

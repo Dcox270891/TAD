@@ -27,30 +27,44 @@ namespace TAD.Tests.Editor
         }
 
         [Test]
-        public void UpgradeChoices_LevelTwoCreatesAttackerDefenderAndRandomCards()
+        public void UpgradeChoices_LevelTwoCreatesOneOrderedAttackerRandomDefenderChoice()
         {
             var profile = new PlayerProfileData();
             PlayerUpgradeProgression.EnqueueChoicesForLevel(profile, 2);
 
-            Assert.That(profile.pendingPlayerUpgradeChoices, Has.Count.EqualTo(3));
-            Assert.That(FindChoice(profile, PlayerUpgradeRewardSlot.Attacker).offeredUpgradeIds, Has.Count.GreaterThan(0));
-            Assert.That(FindChoice(profile, PlayerUpgradeRewardSlot.Defender).offeredUpgradeIds, Has.Count.GreaterThan(0));
-            Assert.That(FindChoice(profile, PlayerUpgradeRewardSlot.Random).offeredUpgradeIds, Has.Count.GreaterThan(0));
+            Assert.That(profile.pendingPlayerUpgradeChoices, Has.Count.EqualTo(1));
+            var standard = FindChoice(profile, PlayerUpgradeRewardSlot.Standard);
+            Assert.That(standard.offeredUpgradeIds, Has.Count.EqualTo(3));
+            Assert.That(standard.offeredUpgradeIds, Is.Unique);
             Assert.That(
                 PlayerUpgradeProgression.TryGetDefinition(
-                    FindChoice(profile, PlayerUpgradeRewardSlot.Random).offeredUpgradeIds[0],
-                    out var randomDefinition),
+                    standard.offeredUpgradeIds[0],
+                    out var attackerDefinition),
                 Is.True);
-            Assert.That(randomDefinition.Category, Is.EqualTo(PlayerUpgradeCategory.Attacker));
+            Assert.That(attackerDefinition.Category, Is.EqualTo(PlayerUpgradeCategory.Attacker));
+            Assert.That(
+                PlayerUpgradeProgression.TryGetDefinition(standard.offeredUpgradeIds[1], out var randomDefinition),
+                Is.True);
+            Assert.That(
+                randomDefinition.Category,
+                Is.EqualTo(PlayerUpgradeCategory.Attacker).Or.EqualTo(PlayerUpgradeCategory.Defender));
+            Assert.That(
+                PlayerUpgradeProgression.TryGetDefinition(standard.offeredUpgradeIds[2], out var defenderDefinition),
+                Is.True);
+            Assert.That(defenderDefinition.Category, Is.EqualTo(PlayerUpgradeCategory.Defender));
         }
 
         [Test]
-        public void UpgradeChoices_LevelTwentyAlsoCreatesOneGeneralCard()
+        public void UpgradeChoices_LevelTwentyCreatesAStandardChoiceThenOneGeneralChoice()
         {
             var profile = new PlayerProfileData();
             PlayerUpgradeProgression.EnqueueChoicesForLevel(profile, 20);
 
-            Assert.That(profile.pendingPlayerUpgradeChoices, Has.Count.EqualTo(4));
+            Assert.That(profile.pendingPlayerUpgradeChoices, Has.Count.EqualTo(2));
+            var pending = new List<PendingPlayerUpgradeChoiceData>();
+            Assert.That(PlayerUpgradeProgression.CopyPendingChoicesForLevel(profile, 20, pending), Is.EqualTo(2));
+            Assert.That(pending[0].rewardSlot, Is.EqualTo(PlayerUpgradeRewardSlot.Standard));
+            Assert.That(pending[1].rewardSlot, Is.EqualTo(PlayerUpgradeRewardSlot.General));
             var general = FindChoice(profile, PlayerUpgradeRewardSlot.General);
             Assert.That(general.offeredUpgradeIds, Has.Count.GreaterThan(0));
             Assert.That(PlayerUpgradeProgression.TryGetDefinition(general.offeredUpgradeIds[0], out var definition), Is.True);
@@ -58,22 +72,73 @@ namespace TAD.Tests.Editor
         }
 
         [Test]
-        public void SelectingPersistedCardIncreasesItsRankAndRemovesOnlyThatCard()
+        public void SelectingOneStandardCardIncreasesItsRankAndConsumesTheWholeChoice()
         {
             var profile = new PlayerProfileData();
             PlayerUpgradeProgression.EnqueueChoicesForLevel(profile, 2);
-            var attackerCard = FindChoice(profile, PlayerUpgradeRewardSlot.Attacker);
-            var selectedId = attackerCard.offeredUpgradeIds[0];
+            var standardCard = FindChoice(profile, PlayerUpgradeRewardSlot.Standard);
+            var selectedId = standardCard.offeredUpgradeIds[1];
 
             Assert.That(
                 PlayerUpgradeProgression.TryChooseUpgrade(
                     profile,
-                    attackerCard.playerLevel,
-                    attackerCard.rewardSlot,
+                    standardCard.playerLevel,
+                    standardCard.rewardSlot,
                     selectedId),
                 Is.True);
             Assert.That(PlayerUpgradeProgression.GetRank(profile, selectedId), Is.EqualTo(1));
-            Assert.That(profile.pendingPlayerUpgradeChoices, Has.Count.EqualTo(2));
+            Assert.That(profile.pendingPlayerUpgradeChoices, Is.Empty);
+        }
+
+        [Test]
+        public void LegacyPendingChoices_MigrateToOneOrderedStandardChoiceWithoutChangingRanks()
+        {
+            var profile = new PlayerProfileData
+            {
+                pendingPlayerUpgradeChoices = new List<PendingPlayerUpgradeChoiceData>
+                {
+                    new()
+                    {
+                        playerLevel = 2,
+                        rewardSlot = PlayerUpgradeRewardSlot.Attacker,
+                        offeredUpgradeIds = new List<string>
+                        {
+                            PlayerUpgradeProgression.GetAttackerUpgradeId(
+                                AttackerArchetype.Basic,
+                                AttackerUpgradeStat.Health)
+                        }
+                    },
+                    new()
+                    {
+                        playerLevel = 2,
+                        rewardSlot = PlayerUpgradeRewardSlot.Random,
+                        offeredUpgradeIds = new List<string>
+                        {
+                            PlayerUpgradeProgression.GetDefenderUpgradeId(
+                                ProjectileType.Melee,
+                                DefenderUpgradeStat.Damage)
+                        }
+                    },
+                    new()
+                    {
+                        playerLevel = 2,
+                        rewardSlot = PlayerUpgradeRewardSlot.Defender,
+                        offeredUpgradeIds = new List<string>
+                        {
+                            PlayerUpgradeProgression.GetDefenderUpgradeId(
+                                ProjectileType.Ranged,
+                                DefenderUpgradeStat.Range)
+                        }
+                    }
+                }
+            };
+
+            PlayerUpgradeProgression.MigrateLegacyPendingChoicesToStandard(profile);
+
+            Assert.That(profile.pendingPlayerUpgradeChoices, Has.Count.EqualTo(1));
+            var standard = FindChoice(profile, PlayerUpgradeRewardSlot.Standard);
+            Assert.That(standard.offeredUpgradeIds, Has.Count.EqualTo(3));
+            Assert.That(PlayerUpgradeProgression.GetRank(profile, standard.offeredUpgradeIds[0]), Is.EqualTo(0));
         }
 
         [Test]
@@ -156,10 +221,11 @@ namespace TAD.Tests.Editor
         }
 
         [Test]
-        public void ChoosingEveryAvailableRewardThroughLevelOneHundredCompletesTheEntireTree()
+        public void ChoosingOneStandardRewardPerLevelConsumesTheCorrectNumberOfChoices()
         {
             var profile = new PlayerProfileData();
             var pending = new List<PendingPlayerUpgradeChoiceData>();
+            var selectedChoiceCount = 0;
 
             for (var level = PlayerLevelProgression.StartingLevel + 1;
                  level <= PlayerLevelProgression.MaximumLevel;
@@ -167,9 +233,9 @@ namespace TAD.Tests.Editor
             {
                 PlayerUpgradeProgression.EnqueueChoicesForLevel(profile, level);
 
-                // A player may take any offered card. Selecting the first available option gives
-                // this test a deterministic path while proving that capped ranks cannot trap a
-                // later reward card or leave the account tree incomplete at level 100.
+                // One normal choice is consumed per level; milestone levels additionally retain
+                // their general choice. Selecting deterministic cards proves neither group can
+                // leave a stalled pending reward behind.
                 while (PlayerUpgradeProgression.CopyPendingChoicesForLevel(profile, level, pending) > 0)
                 {
                     var choice = pending[0];
@@ -181,17 +247,24 @@ namespace TAD.Tests.Editor
                             choice.rewardSlot,
                             choice.offeredUpgradeIds[0]),
                         Is.True);
+                    selectedChoiceCount++;
                 }
             }
 
             Assert.That(PlayerUpgradeProgression.GetPendingChoiceCount(profile), Is.EqualTo(0));
+            Assert.That(
+                selectedChoiceCount,
+                Is.EqualTo((PlayerLevelProgression.MaximumLevel - PlayerLevelProgression.StartingLevel) + 5));
+
+            var totalRanks = 0;
             foreach (var definition in PlayerUpgradeProgression.AllDefinitions)
             {
-                Assert.That(
-                    PlayerUpgradeProgression.GetRank(profile, definition.Id),
-                    Is.EqualTo(definition.MaxRank),
-                    definition.Id);
+                var rank = PlayerUpgradeProgression.GetRank(profile, definition.Id);
+                Assert.That(rank, Is.InRange(0, definition.MaxRank), definition.Id);
+                totalRanks += rank;
             }
+
+            Assert.That(totalRanks, Is.EqualTo(selectedChoiceCount));
         }
 
         private static PendingPlayerUpgradeChoiceData FindChoice(

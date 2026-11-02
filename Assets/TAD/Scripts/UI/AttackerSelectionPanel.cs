@@ -7,6 +7,7 @@ using TAD.Pooling;
 using TAD.Progression;
 using TAD.Waves;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace TAD.UI
 {
@@ -18,6 +19,9 @@ namespace TAD.UI
         [SerializeField] private AttackerSelectionButton buttonPrefab;
         [SerializeField] private CanvasGroup inputCanvasGroup;
 
+        private RectTransform legacyContent;
+        private RectTransform railContent;
+        private ScrollRect scrollRect;
         private readonly List<AttackerDefinition> definitions = new();
         private readonly List<AttackerSelectionButton> spawnedButtons = new();
         private bool isOrderInputEnabled = true;
@@ -28,12 +32,19 @@ namespace TAD.UI
 
         private void Awake()
         {
+            EnsureRailContent();
             ApplyOrderInputState();
+        }
+
+        private void OnEnable()
+        {
+            ConfigureRailPresentation(MobileUiLayoutController.UsesPortraitLayout(transform));
         }
 
         /// <summary>Populates one card for each attacker definition configured on the level Spawn Pool.</summary>
         public void Bind(SpawnPool spawnPool, ResourceBank attackerBank, AttackerWaveQueue waveQueue)
         {
+            EnsureRailContent();
             ClearButtons();
             if (spawnPool == null || attackerBank == null || waveQueue == null ||
                 content == null || buttonPrefab == null)
@@ -61,6 +72,38 @@ namespace TAD.UI
             }
 
             ApplyOrderInputState();
+        }
+
+        /// <summary>
+        /// Replaces the former bottom horizontal card tray with a scrollable side-rail grid while
+        /// leaving the original serialized content object intact for old prefab instances.
+        /// </summary>
+        internal void ConfigureRailPresentation(bool portrait)
+        {
+            EnsureRailContent();
+            if (railContent == null)
+            {
+                return;
+            }
+
+            var grid = railContent.GetComponent<GridLayoutGroup>();
+            if (grid != null)
+            {
+                grid.cellSize = portrait ? new Vector2(160f, 205f) : new Vector2(140f, 188f);
+                grid.spacing = new Vector2(12f, 14f);
+                grid.padding = new RectOffset(12, 12, 12, 12);
+                grid.childAlignment = TextAnchor.UpperCenter;
+                grid.startAxis = GridLayoutGroup.Axis.Vertical;
+                grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+                grid.constraintCount = portrait ? 1 : 2;
+            }
+
+            if (scrollRect != null)
+            {
+                scrollRect.horizontal = false;
+                scrollRect.vertical = true;
+                scrollRect.movementType = ScrollRect.MovementType.Clamped;
+            }
         }
 
         /// <summary>
@@ -161,6 +204,69 @@ namespace TAD.UI
             inputCanvasGroup.alpha = isPresentationVisible
                 ? isOrderInputEnabled ? 1f : 0.5f
                 : 0f;
+        }
+
+        private void EnsureRailContent()
+        {
+            scrollRect ??= transform.Find("ScrollView")?.GetComponent<ScrollRect>();
+            var viewport = scrollRect != null
+                ? scrollRect.viewport ?? transform.Find("ScrollView/Viewport") as RectTransform
+                : null;
+            if (viewport == null)
+            {
+                return;
+            }
+
+            legacyContent ??= viewport.Find("Content") as RectTransform;
+            railContent ??= viewport.Find("RailContent") as RectTransform;
+            if (railContent == null)
+            {
+                var railObject = new GameObject(
+                    "RailContent",
+                    typeof(RectTransform),
+                    typeof(CanvasRenderer),
+                    typeof(GridLayoutGroup),
+                    typeof(ContentSizeFitter));
+                railObject.layer = gameObject.layer;
+                railObject.transform.SetParent(viewport, false);
+                railContent = railObject.GetComponent<RectTransform>();
+                railContent.anchorMin = new Vector2(0f, 1f);
+                railContent.anchorMax = new Vector2(1f, 1f);
+                railContent.pivot = new Vector2(0.5f, 1f);
+                railContent.anchoredPosition = Vector2.zero;
+                railContent.sizeDelta = Vector2.zero;
+
+                var fitter = railObject.GetComponent<ContentSizeFitter>();
+                fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+                fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+                // Retain any runtime-created cards if a presentation refresh happened after the
+                // selection panel had already been bound during a retained play session.
+                if (legacyContent != null)
+                {
+                    while (legacyContent.childCount > 0)
+                    {
+                        legacyContent.GetChild(0).SetParent(railContent, false);
+                    }
+                }
+            }
+
+            if (legacyContent != null && legacyContent != railContent)
+            {
+                var oldLayout = legacyContent.GetComponent<HorizontalLayoutGroup>();
+                if (oldLayout != null)
+                {
+                    oldLayout.enabled = false;
+                }
+
+                legacyContent.gameObject.SetActive(false);
+            }
+
+            content = railContent;
+            if (scrollRect != null)
+            {
+                scrollRect.content = railContent;
+            }
         }
 
         private bool ResolveInputCanvasGroup()

@@ -5,25 +5,23 @@ using TAD.Pooling;
 using TAD.Progression;
 using TAD.Waves;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace TAD.UI
 {
     /// <summary>
-    /// Presents each distinct player-selected attacker group as a left-side circular control and
+    /// Presents each distinct player-selected attacker group in the top-wave rail and
     /// coordinates the non-modal details card, route highlight, and local ordering-input suspension.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class AttackerQueuePanel : MonoBehaviour
     {
-        // The attacker bank uses two stacked plaques. Keep the queue below both and stop before
-        // the bottom attacker-card tray, rather than relying on the old single-label offset.
-        private const float QueueScrollTopOffset = -212f;
-        private const float QueueScrollHeight = 602f;
-        private const float QueueHeadingTopOffset = -189f;
-
         [SerializeField] private RectTransform content;
         [SerializeField] private AttackerQueueGroupButton groupButtonPrefab;
 
+        private RectTransform legacyContent;
+        private RectTransform queueRailContent;
+        private ScrollRect scrollRect;
         private readonly Dictionary<long, AttackerQueueGroupButton> groupButtons = new();
         private readonly Dictionary<long, AttackerRoutePreview> allQueuedRoutePreviews = new();
         private readonly List<long> staleGroupIds = new();
@@ -48,7 +46,7 @@ namespace TAD.UI
 
         private void Awake()
         {
-            content ??= transform.Find("ScrollView/Viewport/Content") as RectTransform;
+            EnsureTopRailContent();
             queueScrollView ??= transform.Find("ScrollView") as RectTransform;
             queueHeading ??= transform.Find("Heading") as RectTransform;
             ApplyResponsiveLayout();
@@ -61,57 +59,143 @@ namespace TAD.UI
         /// </summary>
         public void ApplyResponsiveLayout()
         {
-            ConfigureLeftSideLayout();
+            ConfigureTopRailPresentation();
+            queueHeading ??= transform.Find("Heading") as RectTransform;
+            var headingText = queueHeading != null ? queueHeading.GetComponent<UnityEngine.UI.Text>() : null;
+            if (headingText != null)
+            {
+                headingText.text = "NEXT WAVE QUEUE";
+            }
+
+            // Every queue prefab owns a MobileUiLayoutController. Ask its canvas-level owner to
+            // apply the current landscape or portrait rail rather than keeping a second set of
+            // fixed offsets here that could fight the responsive profile on rotation.
+            var layoutController = GetComponent<MobileUiLayoutController>();
+            if (layoutController != null)
+            {
+                layoutController.RefreshLayout();
+                return;
+            }
+
+            ConfigureTopRailFallback();
         }
 
-        private void ConfigureLeftSideLayout()
+        /// <summary>
+        /// Presents queued groups in one horizontal row without replacing the serialized vertical
+        /// content container. Unity permits only one LayoutGroup on an object, so the row owns a
+        /// sibling content transform and the original prefab content remains available for older
+        /// instances that may still be loaded.
+        /// </summary>
+        internal void ConfigureTopRailPresentation()
+        {
+            EnsureTopRailContent();
+            if (queueRailContent == null)
+            {
+                return;
+            }
+
+            var horizontal = queueRailContent.GetComponent<HorizontalLayoutGroup>();
+            if (horizontal != null)
+            {
+                horizontal.padding = new RectOffset(10, 10, 4, 4);
+                horizontal.spacing = 10f;
+                horizontal.childAlignment = TextAnchor.MiddleLeft;
+                horizontal.childControlWidth = false;
+                horizontal.childControlHeight = false;
+                horizontal.childForceExpandWidth = false;
+                horizontal.childForceExpandHeight = false;
+            }
+
+            if (scrollRect != null)
+            {
+                scrollRect.horizontal = true;
+                scrollRect.vertical = false;
+                scrollRect.movementType = ScrollRect.MovementType.Clamped;
+            }
+        }
+
+        private void ConfigureTopRailFallback()
         {
             queueScrollView ??= transform.Find("ScrollView") as RectTransform;
             queueHeading ??= transform.Find("Heading") as RectTransform;
 
-            if (MobileUiLayoutController.UsesPortraitLayout(transform))
+            ConfigureTopCenter(queueScrollView, 0f, -54f, 980f, 112f);
+            ConfigureTopCenter(queueHeading, 0f, -12f, 980f, 34f);
+        }
+
+        private void EnsureTopRailContent()
+        {
+            queueScrollView ??= transform.Find("ScrollView") as RectTransform;
+            scrollRect ??= queueScrollView != null ? queueScrollView.GetComponent<ScrollRect>() : null;
+            var viewport = scrollRect != null
+                ? scrollRect.viewport ?? queueScrollView?.Find("Viewport") as RectTransform
+                : null;
+            if (viewport == null)
             {
-                ConfigureTopLeft(queueScrollView, new Vector2(16f, -208f));
-                if (queueScrollView != null)
-                {
-                    queueScrollView.sizeDelta = new Vector2(148f, 900f);
-                }
-
-                ConfigureTopLeft(queueHeading, new Vector2(16f, -168f));
-                var portraitHeading = queueHeading != null ? queueHeading.GetComponent<UnityEngine.UI.Text>() : null;
-                if (portraitHeading != null)
-                {
-                    portraitHeading.text = "UP NEXT";
-                }
-
                 return;
             }
 
-            ConfigureTopLeft(queueScrollView, new Vector2(16f, QueueScrollTopOffset));
-            if (queueScrollView != null)
+            legacyContent ??= viewport.Find("Content") as RectTransform;
+            queueRailContent ??= viewport.Find("QueueRailContent") as RectTransform;
+            if (queueRailContent == null)
             {
-                queueScrollView.sizeDelta = new Vector2(queueScrollView.sizeDelta.x, QueueScrollHeight);
+                var railObject = new GameObject(
+                    "QueueRailContent",
+                    typeof(RectTransform),
+                    typeof(CanvasRenderer),
+                    typeof(HorizontalLayoutGroup),
+                    typeof(ContentSizeFitter));
+                railObject.layer = gameObject.layer;
+                railObject.transform.SetParent(viewport, false);
+                queueRailContent = railObject.GetComponent<RectTransform>();
+                queueRailContent.anchorMin = new Vector2(0f, 0f);
+                queueRailContent.anchorMax = new Vector2(0f, 1f);
+                queueRailContent.pivot = new Vector2(0f, 0.5f);
+                queueRailContent.anchoredPosition = Vector2.zero;
+                queueRailContent.sizeDelta = Vector2.zero;
+
+                var fitter = railObject.GetComponent<ContentSizeFitter>();
+                fitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+                fitter.verticalFit = ContentSizeFitter.FitMode.Unconstrained;
+
+                if (legacyContent != null)
+                {
+                    while (legacyContent.childCount > 0)
+                    {
+                        legacyContent.GetChild(0).SetParent(queueRailContent, false);
+                    }
+                }
             }
 
-            ConfigureTopLeft(queueHeading, new Vector2(16f, QueueHeadingTopOffset));
-            var headingText = queueHeading != null ? queueHeading.GetComponent<UnityEngine.UI.Text>() : null;
-            if (headingText != null)
+            if (legacyContent != null && legacyContent != queueRailContent)
             {
-                headingText.text = "UP NEXT";
+                var oldLayout = legacyContent.GetComponent<VerticalLayoutGroup>();
+                if (oldLayout != null)
+                {
+                    oldLayout.enabled = false;
+                }
+
+                legacyContent.gameObject.SetActive(false);
+            }
+
+            content = queueRailContent;
+            if (scrollRect != null)
+            {
+                scrollRect.content = queueRailContent;
             }
         }
 
-        private static void ConfigureTopLeft(RectTransform target, Vector2 anchoredPosition)
+        private static void ConfigureTopCenter(RectTransform target, float x, float y, float width, float height)
         {
             if (target == null)
             {
                 return;
             }
 
-            target.anchorMin = new Vector2(0f, 1f);
-            target.anchorMax = new Vector2(0f, 1f);
-            target.pivot = new Vector2(0f, 1f);
-            target.anchoredPosition = anchoredPosition;
+            target.anchorMin = target.anchorMax = new Vector2(0.5f, 1f);
+            target.pivot = new Vector2(0.5f, 1f);
+            target.anchoredPosition = new Vector2(x, y);
+            target.sizeDelta = new Vector2(width, height);
         }
 
         private void OnEnable()

@@ -257,5 +257,141 @@ namespace TAD.Tests.Editor
                 Object.DestroyImmediate(canvasRoot);
             }
         }
+
+        [Test]
+        public void GameplayRailLayout_LandscapePlacesQueueAcrossTopAndSelectionOnLeft()
+        {
+            var queuePrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/TAD/Prefabs/UI/AttackerQueuePanel.prefab");
+            var selectionPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/TAD/Prefabs/UI/AttackerSelectionPanel.prefab");
+            Assert.That(queuePrefab, Is.Not.Null);
+            Assert.That(selectionPrefab, Is.Not.Null);
+
+            var queueInstance = Object.Instantiate(queuePrefab);
+            var selectionInstance = Object.Instantiate(selectionPrefab);
+            try
+            {
+                var queueLayout = queueInstance.GetComponent<MobileUiLayoutController>();
+                var selectionLayout = selectionInstance.GetComponent<MobileUiLayoutController>();
+                Assert.That(queueLayout, Is.Not.Null);
+                Assert.That(selectionLayout, Is.Not.Null);
+
+                queueLayout.SetPortraitTestOverride(false);
+                selectionLayout.SetPortraitTestOverride(false);
+
+                var queueScroll = queueInstance.transform.Find("ScrollView")?.GetComponent<ScrollRect>();
+                var queueContent = queueInstance.transform.Find("ScrollView/Viewport/QueueRailContent");
+                var queueHeading = queueInstance.transform.Find("Heading")?.GetComponent<Text>();
+                Assert.That(queueScroll, Is.Not.Null);
+                Assert.That(queueScroll.horizontal, Is.True);
+                Assert.That(queueScroll.vertical, Is.False);
+                Assert.That(queueScroll.content, Is.EqualTo(queueContent.GetComponent<RectTransform>()));
+                Assert.That(queueInstance.transform.Find("ScrollView/Viewport/Content")?.gameObject.activeSelf, Is.False);
+                Assert.That(queueContent.GetComponent<HorizontalLayoutGroup>().enabled, Is.True);
+                Assert.That(queueHeading.text, Is.EqualTo("NEXT WAVE QUEUE"));
+                Assert.That(queueScroll.GetComponent<RectTransform>().anchorMin, Is.EqualTo(new Vector2(0.5f, 1f)));
+
+                var selectionScroll = selectionInstance.transform.Find("ScrollView")?.GetComponent<ScrollRect>();
+                var selectionContent = selectionInstance.transform.Find("ScrollView/Viewport/RailContent");
+                Assert.That(selectionScroll, Is.Not.Null);
+                Assert.That(selectionScroll.horizontal, Is.False);
+                Assert.That(selectionScroll.vertical, Is.True);
+                Assert.That(selectionScroll.content, Is.EqualTo(selectionContent.GetComponent<RectTransform>()));
+                Assert.That(selectionInstance.transform.Find("ScrollView/Viewport/Content")?.gameObject.activeSelf, Is.False);
+                Assert.That(selectionContent.GetComponent<GridLayoutGroup>(), Is.Not.Null);
+                Assert.That(selectionScroll.GetComponent<RectTransform>().anchorMin, Is.EqualTo(new Vector2(0f, 1f)));
+            }
+            finally
+            {
+                Object.DestroyImmediate(queueInstance);
+                Object.DestroyImmediate(selectionInstance);
+            }
+        }
+
+        [Test]
+        public void GameplayRailLayout_PortraitKeepsQueueTopAndSelectionInSingleColumn()
+        {
+            var selectionPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/TAD/Prefabs/UI/AttackerSelectionPanel.prefab");
+            Assert.That(selectionPrefab, Is.Not.Null);
+
+            var selectionInstance = Object.Instantiate(selectionPrefab);
+            try
+            {
+                var controller = selectionInstance.GetComponent<MobileUiLayoutController>();
+                Assert.That(controller, Is.Not.Null);
+                controller.SetPortraitTestOverride(true);
+
+                var scroll = selectionInstance.transform.Find("ScrollView")?.GetComponent<ScrollRect>();
+                var content = selectionInstance.transform.Find("ScrollView/Viewport/RailContent");
+                var grid = content.GetComponent<GridLayoutGroup>();
+                Assert.That(scroll, Is.Not.Null);
+                Assert.That(scroll.vertical, Is.True);
+                Assert.That(grid, Is.Not.Null);
+                Assert.That(grid.constraint, Is.EqualTo(GridLayoutGroup.Constraint.FixedColumnCount));
+                Assert.That(grid.constraintCount, Is.EqualTo(1));
+                Assert.That(scroll.GetComponent<RectTransform>().anchorMin, Is.EqualTo(new Vector2(0f, 1f)));
+            }
+            finally
+            {
+                Object.DestroyImmediate(selectionInstance);
+            }
+        }
+
+        [Test]
+        public void GameplayRails_KeepPortraitAndLandscapeControlsOutOfEachOthersTouchAreas()
+        {
+            var root = new GameObject(
+                "GameplayRailSpacingTest",
+                typeof(Canvas),
+                typeof(CanvasScaler),
+                typeof(MobileUiLayoutController));
+            try
+            {
+                var food = CreateRectChild(root.transform, "TopCentreFoodBar");
+                var defenderGold = CreateRectChild(root.transform, "DefenderGoldText");
+                var pause = CreateRectChild(root.transform, "PauseButton");
+                var play = CreateRectChild(root.transform, "PlayButton");
+                var day = CreateRectChild(root.transform, "BottomCentreDayPanel");
+                var buy = CreateRectChild(root.transform, "BuyButton");
+                var confirm = CreateRectChild(root.transform, "ConfirmButton");
+                var cancel = CreateRectChild(root.transform, "CancelButton");
+                var controller = root.GetComponent<MobileUiLayoutController>();
+
+                controller.SetPortraitTestOverride(true);
+
+                Assert.That(food.anchorMin, Is.EqualTo(new Vector2(1f, 1f)));
+                Assert.That(defenderGold.anchorMin, Is.EqualTo(new Vector2(1f, 1f)));
+                var foodTop = -food.anchoredPosition.y;
+                var defenderBottom = -defenderGold.anchoredPosition.y + defenderGold.rect.height;
+                Assert.That(foodTop, Is.GreaterThanOrEqualTo(defenderBottom + 10f));
+
+                Assert.That(pause.anchorMin, Is.EqualTo(new Vector2(1f, 0f)));
+                Assert.That(play.anchorMin, Is.EqualTo(new Vector2(1f, 0f)));
+                Assert.That(pause.anchoredPosition.y,
+                    Is.GreaterThanOrEqualTo(confirm.anchoredPosition.y + confirm.rect.height + 18f));
+                Assert.That(play.anchoredPosition.y,
+                    Is.GreaterThanOrEqualTo(cancel.anchoredPosition.y + cancel.rect.height + 18f));
+                Assert.That(day.anchorMin, Is.EqualTo(new Vector2(0.5f, 0f)));
+
+                controller.SetPortraitTestOverride(false);
+                Assert.That(pause.anchorMin, Is.EqualTo(new Vector2(0f, 0f)));
+                Assert.That(play.anchorMin, Is.EqualTo(new Vector2(0f, 0f)));
+                Assert.That(pause.anchoredPosition.x,
+                    Is.GreaterThanOrEqualTo(buy.anchoredPosition.x + buy.rect.width + 90f));
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        private static RectTransform CreateRectChild(Transform parent, string name)
+        {
+            var child = new GameObject(name, typeof(RectTransform));
+            child.transform.SetParent(parent, false);
+            return child.GetComponent<RectTransform>();
+        }
     }
 }

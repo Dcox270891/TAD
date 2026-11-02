@@ -16,6 +16,18 @@ namespace TAD.UI
     {
         private static readonly Vector2 LandscapeReferenceResolution = new(1920f, 1080f);
         private static readonly Vector2 PortraitReferenceResolution = new(1080f, 1920f);
+        // The game world deliberately continues to use the full camera viewport because route
+        // mapping, spawning, and placement all derive their playable bounds from it. These values
+        // therefore describe UI-only rails which frame the level without changing gameplay space.
+        private const float LandscapeOuterInset = 24f;
+        private const float LandscapeSideRailWidth = 316f;
+        private const float LandscapeTopRailHeight = 154f;
+        private const float LandscapeBottomRailHeight = 132f;
+        private const float PortraitSideRailWidth = 200f;
+        private const float PortraitTopRailHeight = 174f;
+        // Portrait needs room for the day display plus placement/confirmation controls. Reserving
+        // two compact rows prevents those controls from sitting on top of a scroll rail.
+        private const float PortraitBottomRailHeight = 208f;
 
         [Header("Preview")]
         [SerializeField]
@@ -245,6 +257,7 @@ namespace TAD.UI
                 RestoreLandscapeLayouts();
                 RestoreLandscapeUpgradeChoices();
                 RestoreMainMenuLayout();
+                ApplyLandscapeLayout();
                 LayoutPlayerEnergyMenu(portrait: false);
                 pendingPostBuildRefreshes = 0;
             }
@@ -288,16 +301,31 @@ namespace TAD.UI
             // prefab-driven and several canvases are created at runtime, so this can improve every
             // level without replacing bindings or creating a duplicate set of controls.
             portraitSafeInsets = ResolvePortraitSafeInsets();
-            LayoutMainMenu();
+            LayoutMainMenu(portrait: true);
             LayoutPlayerEnergyMenu(portrait: true);
-            LayoutFoodStoreHud();
-            LayoutResourceBanks();
-            LayoutTopControls();
-            LayoutAttackerSelection();
-            LayoutAttackerQueue();
-            LayoutDetailsCards();
-            LayoutFarmHandPlacementControls();
+            LayoutFoodStoreHud(portrait: true);
+            LayoutResourceBanks(portrait: true);
+            LayoutTopControls(portrait: true);
+            LayoutAttackerSelection(portrait: true);
+            LayoutAttackerQueue(portrait: true);
+            LayoutDetailsCards(portrait: true);
+            LayoutFarmHandPlacementControls(portrait: true);
             LayoutGenericOverlayCard();
+        }
+
+        private void ApplyLandscapeLayout()
+        {
+            // The landscape reference follows the wide wireframe: game interaction remains in the
+            // clear central field, while the attacker controls live on the left, defender/food
+            // state lives on the right, and the queued wave reads across the top.
+            LayoutMainMenu(portrait: false);
+            LayoutFoodStoreHud(portrait: false);
+            LayoutResourceBanks(portrait: false);
+            LayoutTopControls(portrait: false);
+            LayoutAttackerSelection(portrait: false);
+            LayoutAttackerQueue(portrait: false);
+            LayoutDetailsCards(portrait: false);
+            LayoutFarmHandPlacementControls(portrait: false);
         }
 
         private void ApplyResponsiveTypography(bool portrait)
@@ -306,7 +334,7 @@ namespace TAD.UI
             skin?.ApplyResponsiveTypography(portrait);
         }
 
-        private void LayoutMainMenu()
+        private void LayoutMainMenu(bool portrait)
         {
             var panel = FindRect("MainMenuPanel");
             if (panel == null || canvasRect == null)
@@ -314,9 +342,10 @@ namespace TAD.UI
                 return;
             }
 
-            var safe = portraitSafeInsets;
-            var availableWidth = Mathf.Max(0f, canvasRect.rect.width - safe.Left - safe.Right - 48f);
-            var availableHeight = Mathf.Max(0f, canvasRect.rect.height - safe.Top - safe.Bottom - 72f);
+            var safe = portrait ? portraitSafeInsets : default;
+            var outerInset = portrait ? 48f : 96f;
+            var availableWidth = Mathf.Max(0f, canvasRect.rect.width - safe.Left - safe.Right - outerInset);
+            var availableHeight = Mathf.Max(0f, canvasRect.rect.height - safe.Top - safe.Bottom - outerInset);
             panel.anchorMin = new Vector2(0.5f, 0.5f);
             panel.anchorMax = new Vector2(0.5f, 0.5f);
             panel.pivot = new Vector2(0.5f, 0.5f);
@@ -324,17 +353,19 @@ namespace TAD.UI
                 (safe.Left - safe.Right) * 0.5f,
                 (safe.Bottom - safe.Top) * 0.5f);
             panel.sizeDelta = new Vector2(
-                Mathf.Min(880f, availableWidth),
-                // Keep enough breathing room for large phone-sized targets while preserving
-                // more of the illustrated farm scene around the focused menu card.
-                Mathf.Min(1080f, availableHeight));
+                Mathf.Min(portrait ? 880f : 700f, availableWidth),
+                // Landscape leaves more of the illustrated barn-and-sky vista visible around the
+                // centred wooden menu; portrait retains large thumb-sized menu targets.
+                Mathf.Min(portrait ? 1080f : 760f, availableHeight));
 
             var layout = panel.GetComponent<VerticalLayoutGroup>();
             if (layout != null)
             {
                 CaptureMainMenuLayout(layout);
-                layout.padding = new RectOffset(54, 54, 82, 66);
-                layout.spacing = 16f;
+                layout.padding = portrait
+                    ? new RectOffset(54, 54, 82, 66)
+                    : new RectOffset(62, 62, 74, 58);
+                layout.spacing = portrait ? 16f : 18f;
             }
 
             foreach (var button in panel.GetComponentsInChildren<Button>(false))
@@ -346,13 +377,37 @@ namespace TAD.UI
                 }
 
                 CaptureMainMenuButton(element);
-                // The bold farm display font needs more vertical timber around it than the old
-                // compact profile provided. This keeps menu labels clear of the plank edges on
-                // narrow portrait phones as well as meeting a comfortable touch target size.
-                element.minHeight = Mathf.Max(element.minHeight, 92f);
-                element.preferredHeight = Mathf.Max(element.preferredHeight, 92f);
-                FarmUiSkin.EnsureReadableWoodButtonLayout(button, 92f);
+                var minimumHeight = portrait ? 92f : 82f;
+                // The bold farm display font needs enough vertical timber around it that labels
+                // never touch the plank edge, whether the menu is viewed tall or wide.
+                element.minHeight = Mathf.Max(element.minHeight, minimumHeight);
+                element.preferredHeight = Mathf.Max(element.preferredHeight, minimumHeight);
+                FarmUiSkin.EnsureReadableWoodButtonLayout(button, minimumHeight);
             }
+
+            LayoutMainMenuUtilityButtons(portrait);
+        }
+
+        private void LayoutMainMenuUtilityButtons(bool portrait)
+        {
+            var fullGameButton = FindRect("FullGameButton");
+            var supportButton = FindRect("SupportDeveloperButton");
+            if (fullGameButton == null && supportButton == null)
+            {
+                return;
+            }
+
+            if (portrait)
+            {
+                // Keep the two planned-service controls outside the central menu stack so the
+                // original gameplay buttons retain their generous tap targets.
+                SetBottomLeft(fullGameButton, portraitSafeInsets.Left + 22f, portraitSafeInsets.Bottom + 20f, 236f, 72f);
+                SetBottomRight(supportButton, portraitSafeInsets.Right + 22f, portraitSafeInsets.Bottom + 20f, 236f, 72f);
+                return;
+            }
+
+            SetBottomLeft(fullGameButton, 32f, 30f, 260f, 74f);
+            SetBottomRight(supportButton, 32f, 30f, 260f, 74f);
         }
 
         private void LayoutPlayerEnergyMenu(bool portrait)
@@ -418,7 +473,7 @@ namespace TAD.UI
             }
         }
 
-        private void LayoutFoodStoreHud()
+        private void LayoutFoodStoreHud(bool portrait)
         {
             var foodBar = FindRect("TopCentreFoodBar");
             if (foodBar == null)
@@ -426,36 +481,89 @@ namespace TAD.UI
                 return;
             }
 
-            var safe = portraitSafeInsets;
-            SetTopStretch(foodBar, safe.Top + 76f, 72f, Mathf.Max(204f, Mathf.Max(safe.Left, safe.Right) + 170f));
+            if (portrait)
+            {
+                SetTopRight(
+                    foodBar,
+                    portraitSafeInsets.Right,
+                    // The defender bank occupies the first line below the wave rail. Keep the
+                    // food bar on the second line so the two right-hand plaques never overlap.
+                    portraitSafeInsets.Top + PortraitTopRailHeight + 76f,
+                    PortraitSideRailWidth,
+                    86f);
+                return;
+            }
+
+            SetTopRight(
+                foodBar,
+                LandscapeOuterInset,
+                LandscapeTopRailHeight + 12f,
+                LandscapeSideRailWidth,
+                76f);
         }
 
-        private void LayoutResourceBanks()
+        private void LayoutResourceBanks(bool portrait)
         {
             // FarmUiSkin may wrap these texts in content-sized plaque objects after this controller
             // wakes. Target that wrapper when it exists and otherwise target the original text.
-            var safe = portraitSafeInsets;
-            SetTopLeft(FindHudRect("AttackerGoldText"), safe.Left, safe.Top + 10f, 196f, 56f);
-            SetTopLeft(FindHudRect("AttackerIncomeText"), safe.Left, safe.Top + 76f, 196f, 54f);
-            SetTopRight(FindHudRect("DefenderGoldText"), safe.Right, safe.Top + 10f, 196f, 56f);
+            if (portrait)
+            {
+                var top = portraitSafeInsets.Top + PortraitTopRailHeight + 10f;
+                SetTopLeft(FindHudRect("AttackerGoldText"), portraitSafeInsets.Left, top, PortraitSideRailWidth, 56f);
+                SetTopLeft(FindHudRect("AttackerIncomeText"), portraitSafeInsets.Left, top + 66f, PortraitSideRailWidth, 54f);
+                SetTopRight(FindHudRect("DefenderGoldText"), portraitSafeInsets.Right, top, PortraitSideRailWidth, 56f);
+                return;
+            }
+
+            SetTopLeft(FindHudRect("AttackerGoldText"), LandscapeOuterInset, 16f, LandscapeSideRailWidth, 56f);
+            SetTopLeft(FindHudRect("AttackerIncomeText"), LandscapeOuterInset, 82f, LandscapeSideRailWidth, 54f);
+            SetTopRight(FindHudRect("DefenderGoldText"), LandscapeOuterInset, 16f, LandscapeSideRailWidth, 56f);
         }
 
-        private void LayoutTopControls()
+        private void LayoutTopControls(bool portrait)
         {
-            var safe = portraitSafeInsets;
-            SetTopCenter(FindRect("PauseButton"), -56f, safe.Top + 10f, 64f, 58f);
-            SetTopCenter(FindRect("PlayButton"), 56f, safe.Top + 10f, 64f, 58f);
+            var dayHud = FindFirstRect("BottomCentreDayPanel", "DayCycleHud");
+            if (portrait)
+            {
+                // Keep both controls to the right of the centred day panel. The buy button
+                // owns the left corner in portrait, so placing the pause/play pair there would
+                // make the touch targets overlap.
+                SetBottomRight(
+                    FindRect("PauseButton"),
+                    portraitSafeInsets.Right + 94f,
+                    portraitSafeInsets.Bottom + 118f,
+                    66f,
+                    62f);
+                SetBottomRight(
+                    FindRect("PlayButton"),
+                    portraitSafeInsets.Right + 16f,
+                    portraitSafeInsets.Bottom + 118f,
+                    66f,
+                    62f);
+                if (dayHud != null)
+                {
+                    SetBottomCenter(dayHud, 0f, portraitSafeInsets.Bottom + 24f, 400f, 88f);
+                }
 
-            var dayHud = FindRect("DayCycleHud");
+                return;
+            }
+
+            // The farmhand buy button owns the lower-left corner in a defender match. Keep the
+            // universal pause/play controls just inside the level area instead of stacking two
+            // interactive controls in the same space.
+            var controlLeft = LandscapeOuterInset + LandscapeSideRailWidth + 38f;
+            SetBottomLeft(FindRect("PauseButton"), controlLeft, LandscapeOuterInset, 66f, 62f);
+            SetBottomLeft(FindRect("PlayButton"), controlLeft + 78f, LandscapeOuterInset, 66f, 62f);
             if (dayHud != null)
             {
-                SetTopCenter(dayHud, 0f, safe.Top + 178f, 420f, 92f);
+                SetBottomCenter(dayHud, 0f, LandscapeOuterInset, 400f, 88f);
             }
         }
 
-        private void LayoutAttackerSelection()
+        private void LayoutAttackerSelection(bool portrait)
         {
-            if (GetComponentInChildren<AttackerSelectionPanel>(true) == null)
+            var selectionPanel = GetComponentInChildren<AttackerSelectionPanel>(true);
+            if (selectionPanel == null)
             {
                 return;
             }
@@ -466,60 +574,98 @@ namespace TAD.UI
                 return;
             }
 
-            // Keep the card tray as a horizontal, thumb-reachable strip. It becomes taller than
-            // landscape so card artwork and tier badges remain legible on narrow screens.
-            var safe = portraitSafeInsets;
-            scrollView.anchorMin = new Vector2(0f, 0f);
-            scrollView.anchorMax = new Vector2(1f, 0f);
-            scrollView.pivot = new Vector2(0.5f, 0f);
-            scrollView.offsetMin = new Vector2(safe.Left, safe.Bottom);
-            scrollView.offsetMax = new Vector2(-safe.Right, 330f);
+            selectionPanel.ConfigureRailPresentation(portrait);
+            if (portrait)
+            {
+                var top = portraitSafeInsets.Top + PortraitTopRailHeight + 140f;
+                var height = Mathf.Max(
+                    420f,
+                    canvasRect.rect.height - top - portraitSafeInsets.Bottom - PortraitBottomRailHeight - 12f);
+                SetTopLeft(scrollView, portraitSafeInsets.Left, top, PortraitSideRailWidth, height);
+                return;
+            }
+
+            var landscapeHeight = Mathf.Max(
+                420f,
+                canvasRect.rect.height - LandscapeTopRailHeight - LandscapeBottomRailHeight - LandscapeOuterInset);
+            SetTopLeft(
+                scrollView,
+                LandscapeOuterInset,
+                LandscapeTopRailHeight,
+                LandscapeSideRailWidth,
+                landscapeHeight);
         }
 
-        private void LayoutAttackerQueue()
+        private void LayoutAttackerQueue(bool portrait)
         {
-            if (GetComponentInChildren<AttackerQueuePanel>(true) == null)
+            var queuePanel = GetComponentInChildren<AttackerQueuePanel>(true);
+            if (queuePanel == null)
             {
                 return;
             }
 
             var scrollView = FindRect("ScrollView");
             var heading = FindRect("Heading");
-            var safe = portraitSafeInsets;
-            var hudHeight = Mathf.Max(topHudHeight, 238f);
+            queuePanel.ConfigureTopRailPresentation();
+            ConfigureAttackerQueueHeading(heading);
+            var queueWidth = portrait
+                ? Mathf.Max(420f, canvasRect.rect.width - portraitSafeInsets.Left - portraitSafeInsets.Right - 32f)
+                : Mathf.Max(520f, canvasRect.rect.width - (LandscapeSideRailWidth * 2f) - (LandscapeOuterInset * 4f));
+            var queueHeight = portrait
+                ? Mathf.Min(108f, Mathf.Max(96f, topHudHeight - 66f))
+                : 112f;
             if (scrollView != null)
             {
-                scrollView.anchorMin = new Vector2(0f, 1f);
-                scrollView.anchorMax = new Vector2(0f, 1f);
-                scrollView.pivot = new Vector2(0f, 1f);
-                scrollView.anchoredPosition = new Vector2(safe.Left, -(hudHeight + safe.Top));
-                scrollView.sizeDelta = new Vector2(172f, 900f);
+                SetTopCenter(
+                    scrollView,
+                    0f,
+                    (portrait ? portraitSafeInsets.Top : 0f) + 54f,
+                    queueWidth,
+                    queueHeight);
             }
 
             if (heading != null)
             {
-                heading.anchorMin = new Vector2(0f, 1f);
-                heading.anchorMax = new Vector2(0f, 1f);
-                heading.pivot = new Vector2(0f, 1f);
-                heading.anchoredPosition = new Vector2(safe.Left, -(hudHeight - 28f + safe.Top));
+                SetTopCenter(
+                    heading,
+                    0f,
+                    (portrait ? portraitSafeInsets.Top : 0f) + 12f,
+                    queueWidth,
+                    34f);
             }
         }
 
-        private void LayoutDetailsCards()
+        private static void ConfigureAttackerQueueHeading(RectTransform heading)
         {
-            var safe = portraitSafeInsets;
-            var hudHeight = Mathf.Max(topHudHeight, 238f);
+            if (heading != null)
+            {
+                var headingText = heading.GetComponent<Text>();
+                if (headingText != null)
+                {
+                    headingText.text = "NEXT WAVE QUEUE";
+                    headingText.alignment = TextAnchor.MiddleCenter;
+                }
+            }
+        }
+
+        private void LayoutDetailsCards(bool portrait)
+        {
+            var outerInset = portrait ? portraitSafeInsets.Left + portraitSafeInsets.Right : LandscapeOuterInset * 2f;
+            var sideRails = portrait ? PortraitSideRailWidth * 2f : LandscapeSideRailWidth;
             var availableWidth = canvasRect != null
-                ? Mathf.Max(420f, canvasRect.rect.width - safe.Left - safe.Right - 210f)
+                ? Mathf.Max(360f, canvasRect.rect.width - outerInset - sideRails - 32f)
                 : 520f;
-            var cardWidth = Mathf.Min(520f, availableWidth);
+            var cardWidth = Mathf.Min(portrait ? 520f : 500f, availableWidth);
+            var cardBottom = portrait
+                ? portraitSafeInsets.Bottom + PortraitBottomRailHeight + 18f
+                : LandscapeBottomRailHeight + 16f;
             var attackerPanel = GetComponentInChildren<AttackerDetailsPanel>(true);
             if (attackerPanel != null)
             {
                 var card = FindRect("Card");
                 if (card != null)
                 {
-                    SetTopRight(card, safe.Right, hudHeight + safe.Top, cardWidth, card.rect.height);
+                    SetBottomRight(card, portrait ? portraitSafeInsets.Right : LandscapeOuterInset, cardBottom, cardWidth, card.rect.height);
                 }
             }
 
@@ -529,22 +675,29 @@ namespace TAD.UI
                 var card = FindRect("Card");
                 if (card != null)
                 {
-                    SetTopRight(card, safe.Right, hudHeight + safe.Top, cardWidth, card.rect.height);
+                    SetBottomRight(card, portrait ? portraitSafeInsets.Right : LandscapeOuterInset, cardBottom, cardWidth, card.rect.height);
                 }
             }
         }
 
-        private void LayoutFarmHandPlacementControls()
+        private void LayoutFarmHandPlacementControls(bool portrait)
         {
             if (FindRect("BuyButton") == null && FindRect("ConfirmButton") == null && FindRect("CancelButton") == null)
             {
                 return;
             }
 
-            var safe = portraitSafeInsets;
-            SetBottomCenter(FindRect("BuyButton"), -230f, safe.Bottom + 22f, 276f, 82f);
-            SetBottomCenter(FindRect("ConfirmButton"), 118f, safe.Bottom + 22f, 138f, 82f);
-            SetBottomCenter(FindRect("CancelButton"), 286f, safe.Bottom + 22f, 138f, 82f);
+            if (portrait)
+            {
+                SetBottomLeft(FindRect("BuyButton"), portraitSafeInsets.Left + 14f, portraitSafeInsets.Bottom + 20f, 210f, 80f);
+                SetBottomRight(FindRect("ConfirmButton"), portraitSafeInsets.Right + 108f, portraitSafeInsets.Bottom + 20f, 96f, 80f);
+                SetBottomRight(FindRect("CancelButton"), portraitSafeInsets.Right + 12f, portraitSafeInsets.Bottom + 20f, 86f, 80f);
+                return;
+            }
+
+            SetBottomLeft(FindRect("BuyButton"), LandscapeOuterInset, LandscapeOuterInset, 264f, 80f);
+            SetBottomRight(FindRect("ConfirmButton"), LandscapeOuterInset + 108f, LandscapeOuterInset, 96f, 80f);
+            SetBottomRight(FindRect("CancelButton"), LandscapeOuterInset + 12f, LandscapeOuterInset, 86f, 80f);
         }
 
         private void LayoutGenericOverlayCard()
@@ -906,6 +1059,32 @@ namespace TAD.UI
             target.anchorMin = target.anchorMax = new Vector2(0.5f, 0f);
             target.pivot = new Vector2(0.5f, 0f);
             target.anchoredPosition = new Vector2(x, bottom);
+            target.sizeDelta = new Vector2(width, height);
+        }
+
+        private static void SetBottomLeft(RectTransform target, float left, float bottom, float width, float height)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            target.anchorMin = target.anchorMax = new Vector2(0f, 0f);
+            target.pivot = new Vector2(0f, 0f);
+            target.anchoredPosition = new Vector2(left, bottom);
+            target.sizeDelta = new Vector2(width, height);
+        }
+
+        private static void SetBottomRight(RectTransform target, float right, float bottom, float width, float height)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            target.anchorMin = target.anchorMax = new Vector2(1f, 0f);
+            target.pivot = new Vector2(1f, 0f);
+            target.anchoredPosition = new Vector2(-right, bottom);
             target.sizeDelta = new Vector2(width, height);
         }
 

@@ -1,5 +1,20 @@
 # TAD development catalogue
 
+## 2026-11-02 — responsive game UI and player-upgrade choice pass
+
+![Live Main Menu capture showing the responsive wood-and-parchment presentation](DevelopmentEvidence/2026-11-02-responsive-ui-layout.png)
+
+The live UI now follows the current hand-drawn layout plan without changing camera or route-mapping bounds. Landscape play places the next-wave queue across the top, attacker controls in a left rail, food and defender information in a right rail, and keeps the level unobstructed in the centre. Portrait uses a top queue and a single-column attacker rail, with dedicated safe space for the food store, banks, day panel, placement controls, and pause/play buttons. The main menu keeps the illustrated farm backdrop and centred wood-and-parchment card, with the player-energy display plus the new Full Game and Support Dev planks; both use the standard planned-feature modal until those flows are implemented.
+
+Player level-up choices now preserve three distinct options: a random attacker upgrade on the left, a fully random centre option, and a random defender upgrade on the right. The revised presentation is covered by responsive layout and progression tests, including tests that prevent HUD and placement-control overlap.
+
+Validation completed before publication:
+
+- Live Unity Play Mode Game-view capture of the Main Menu recorded above; it visibly shows the new menu shell and utility controls.
+- Unity compilation: clean, with no Console errors. The only Editor warning recorded before validation was the capture pipeline reporting an already-active Play Mode command, not a game-code warning.
+- Required Game Basics gate: EditMode 130/130 and PlayMode 59/59 passed, with zero failures, errors, or inconclusive results.
+- Responsive UI regression checks: 10/10 passed, including portrait food/bank and control-spacing coverage.
+
 ## 2026-11-02 — responsiveness and motion performance pass
 
 ![Level 1 Game-view capture used for the performance and movement validation](DevelopmentEvidence/2026-11-02-performance-input-smoothing-level1.png)
