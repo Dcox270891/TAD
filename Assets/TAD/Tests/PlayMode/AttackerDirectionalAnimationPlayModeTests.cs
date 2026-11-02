@@ -82,5 +82,73 @@ namespace TAD.Tests.PlayMode
 
             reusedObject.GetComponent<PooledInstance>().ReturnToPool();
         }
+
+        [UnityTest]
+        public IEnumerator ProceduralAtlasAttacker_KeepsItsPhysicsFootprintStableDuringCosmeticWalkFrames()
+        {
+            var pool = GameBasicsTestSupport.CreateSpawnPool();
+            Assert.That(pool, Is.Not.Null);
+            yield return null;
+
+            var definitions = new List<AttackerDefinition>();
+            pool.CopyAvailableAttackerDefinitions(definitions);
+            var chicken = definitions.Single(definition => definition.DisplayName == "Chicken");
+            var attackerObject = pool.SpawnAttacker(chicken, Vector3.zero, Quaternion.identity);
+            var attacker = attackerObject.GetComponent<BasicAttacker>();
+            var bodyCollider = attackerObject.GetComponent<PolygonCollider2D>();
+
+            Assert.That(attacker, Is.Not.Null);
+            Assert.That(bodyCollider, Is.Not.Null);
+
+            attacker.SetMoveDirection(Vector2.right);
+            yield return null;
+            Physics2D.SyncTransforms();
+            var initialShapeHash = bodyCollider.GetShapeHash();
+
+            // The procedural roster repeats one atlas sprite. Its alternating walk frame is only
+            // a visual bob/squash, so it must not rebuild the active PolygonCollider2D.
+            yield return new WaitForSeconds(0.2f);
+            Physics2D.SyncTransforms();
+            Assert.That(bodyCollider.GetShapeHash(), Is.EqualTo(initialShapeHash));
+
+            attackerObject.GetComponent<PooledInstance>().ReturnToPool();
+        }
+
+        [UnityTest]
+        public IEnumerator PooledAttackers_UseTheSharedNonBlockingAttackerLayerRule()
+        {
+            var pool = GameBasicsTestSupport.CreateSpawnPool();
+            Assert.That(pool, Is.Not.Null);
+            yield return null;
+
+            var definitions = new List<AttackerDefinition>();
+            pool.CopyAvailableAttackerDefinitions(definitions);
+            var chicken = definitions.Single(definition => definition.DisplayName == "Chicken");
+            var firstObject = pool.SpawnAttacker(chicken, Vector3.zero, Quaternion.identity);
+            var secondObject = pool.SpawnAttacker(chicken, Vector3.right * 2f, Quaternion.identity);
+            var firstCollider = firstObject.GetComponent<PolygonCollider2D>();
+            var secondCollider = secondObject.GetComponent<PolygonCollider2D>();
+
+            Assert.That(firstCollider, Is.Not.Null);
+            Assert.That(secondCollider, Is.Not.Null);
+            yield return new WaitForFixedUpdate();
+            var attackerLayer = LayerMask.NameToLayer("Attacker");
+            Assert.That(attackerLayer, Is.GreaterThanOrEqualTo(0));
+            Assert.That(Physics2D.GetIgnoreLayerCollision(attackerLayer, attackerLayer), Is.True);
+
+            firstObject.GetComponent<PooledInstance>().ReturnToPool();
+            yield return null;
+            var reusedObject = pool.SpawnAttacker(chicken, Vector3.left * 2f, Quaternion.identity);
+            var reusedCollider = reusedObject.GetComponent<PolygonCollider2D>();
+
+            Assert.That(reusedObject, Is.SameAs(firstObject));
+            Assert.That(reusedCollider, Is.Not.Null);
+            yield return new WaitForFixedUpdate();
+            Assert.That(Physics2D.GetIgnoreLayerCollision(attackerLayer, attackerLayer), Is.True,
+                "Pooled attackers must retain their shared non-blocking body collision rule after reuse.");
+
+            reusedObject.GetComponent<PooledInstance>().ReturnToPool();
+            secondObject.GetComponent<PooledInstance>().ReturnToPool();
+        }
     }
 }

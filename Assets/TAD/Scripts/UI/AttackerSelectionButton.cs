@@ -21,6 +21,10 @@ namespace TAD.UI
         private ResourceBank attackerBank;
         private AttackerWaveQueue attackerWaveQueue;
         private bool isSubscribed;
+        // GoldChanged and QueueChanged are both raised by a single successful card press. With
+        // forty cards, refreshing synchronously in both handlers turns one tap into dozens of
+        // duplicate route/readiness checks on the same input frame.
+        private bool interactableRefreshQueued;
 
         /// <summary>Gets the attacker data represented by this card.</summary>
         public AttackerDefinition Definition => definition;
@@ -52,6 +56,7 @@ namespace TAD.UI
 
         private void OnEnable()
         {
+            interactableRefreshQueued = false;
             if (selectionButton != null)
             {
                 selectionButton.onClick.AddListener(HandlePressed);
@@ -63,6 +68,7 @@ namespace TAD.UI
 
         private void OnDisable()
         {
+            interactableRefreshQueued = false;
             if (selectionButton != null)
             {
                 selectionButton.onClick.RemoveListener(HandlePressed);
@@ -74,6 +80,17 @@ namespace TAD.UI
         private void OnDestroy()
         {
             Unsubscribe();
+        }
+
+        private void LateUpdate()
+        {
+            if (!interactableRefreshQueued)
+            {
+                return;
+            }
+
+            interactableRefreshQueued = false;
+            RefreshInteractableState();
         }
 
         private UnityEngine.UI.Text FindText(string childName)
@@ -161,12 +178,17 @@ namespace TAD.UI
 
         private void HandleGoldChanged(int gold)
         {
-            RefreshInteractableState();
+            RequestInteractableRefresh();
         }
 
         private void HandleQueueChanged()
         {
-            RefreshInteractableState();
+            RequestInteractableRefresh();
+        }
+
+        private void RequestInteractableRefresh()
+        {
+            interactableRefreshQueued = true;
         }
 
         private void RefreshInteractableState()

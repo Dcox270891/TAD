@@ -1254,6 +1254,9 @@ namespace TAD.Defenders
             }
 
             rangeBody.bodyType = RigidbodyType2D.Kinematic;
+            // Relocation uses MovePosition from FixedUpdate. Interpolation keeps the displayed
+            // farmhand in between physics steps instead of visibly hopping at the fixed timestep.
+            rangeBody.interpolation = RigidbodyInterpolation2D.Interpolate;
             rangeBody.gravityScale = 0f;
             rangeBody.useFullKinematicContacts = true;
             rangeBody.constraints = isRelocating

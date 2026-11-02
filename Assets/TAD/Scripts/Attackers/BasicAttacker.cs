@@ -64,14 +64,14 @@ namespace TAD.Attackers
         private readonly HashSet<FarmHand> helpedToKillDefenders = new();
         private readonly Dictionary<FarmHand, long> helpedToKillActivationSessions = new();
         private readonly List<Collider2D> ignoredHalfCoverColliders = new();
-        // Physical farmhand colliders are never navigation obstacles. The actual range and projectile colliders
-        // remain triggers, so they are deliberately left alone to preserve targeting and damage callbacks.
-        private readonly List<Collider2D> ignoredFarmHandColliders = new();
-        // Animals follow shared routes and should never physically queue or push one another.
-        private readonly List<Collider2D> ignoredAttackerColliders = new();
         // Terrain owns its authored values; the attacker owns the transient overlap state so pooled
         // instances cannot retain a modifier from the location where they were last used.
         private readonly List<TerrainSpeedModifier> activeTerrainSpeedModifiers = new();
+
+        // Attacker bodies never need to push one another. Applying this once at the layer level
+        // prevents every new pooled animal from scanning all live animals and creating O(N²)
+        // IgnoreCollision pairs when a large wave enters the level.
+        private static bool hasConfiguredAttackerLayerCollisions;
 
         private Rigidbody2D body;
         private PolygonCollider2D bodyCollider;
@@ -180,38 +180,27 @@ namespace TAD.Attackers
 
         private void Awake()
         {
+            ConfigureNonBlockingAttackerLayer();
             body = GetComponent<Rigidbody2D>();
             bodyCollider = GetComponent<PolygonCollider2D>();
             pooledInstance = GetComponent<PooledInstance>();
             visualController = GetComponentInChildren<AttackerVisualController>(true);
-            ResetRuntimeState();
+            // OnEnable performs the collision setup once the object is actually active. Doing it
+            // here would scan every live attacker and farmhand again when a newly-created pool
+            // instance is immediately disabled during prewarming.
+            ResetRuntimeState(configureTraversalCollisions: false);
         }
 
         private void OnEnable()
         {
-            FarmHand.FarmHandEnabled += HandleFarmHandEnabled;
-            // IgnoreCollision state is reset by Unity when a pooled object is reactivated.
+            ConfigureNonBlockingAttackerLayer();
             ConfigureTraversalCollisions();
         }
 
         private void OnDisable()
         {
-            FarmHand.FarmHandEnabled -= HandleFarmHandEnabled;
             RestoreTraversalCollisions();
             activeTerrainSpeedModifiers.Clear();
-        }
-
-        private void OnCollisionEnter2D(Collision2D collision)
-        {
-            IgnoreFarmHandCollision(collision);
-            IgnoreAttackerCollision(collision);
-        }
-
-        private void OnCollisionStay2D(Collision2D collision)
-        {
-            // Covers a farmhand or another attacker created after this attacker has already begun moving.
-            IgnoreFarmHandCollision(collision);
-            IgnoreAttackerCollision(collision);
         }
 
         private void OnTriggerEnter2D(Collider2D other)
@@ -308,11 +297,10 @@ namespace TAD.Attackers
         }
 
         /// <summary>Assigns the map used to navigate this attacker toward the Food Store.</summary>
-        public void SetRouteMapper(FarmRouteMapper mapper)
+        public bool SetRouteMapper(FarmRouteMapper mapper)
         {
             routeMapper = mapper;
-            TryClampToVisibleMap();
-            BuildCachedRoute();
+            return TryClampToVisibleMap() && BuildCachedRoute();
         }
 
         /// <summary>
@@ -322,7 +310,9 @@ namespace TAD.Attackers
         public void ConfigureDefinition(AttackerDefinition attackerDefinition)
         {
             definition = attackerDefinition;
-            ResetRuntimeState();
+            // Data-driven spawners may assign a definition before SetActive(true). In that case
+            // OnEnable owns the one required collision pass after Unity restores physics state.
+            ResetRuntimeState(configureTraversalCollisions: isActiveAndEnabled);
             visualController ??= GetComponentInChildren<AttackerVisualController>(true);
             visualController?.RefreshFromAttackerDefinition();
             BuildCachedRoute();
@@ -577,7 +567,11 @@ namespace TAD.Attackers
             }
 
             runtimeInstanceId = pooledInstance != null ? pooledInstance.RuntimeInstanceId : 0L;
-            ResetRuntimeState();
+            // SpawnPool invokes this while the instance is still inactive. Unity clears
+            // Physics2D.IgnoreCollision state as that instance is reactivated, so the single
+            // authoritative configuration belongs in OnEnable rather than doing the same global
+            // scan both before and after SetActive(true).
+            ResetRuntimeState(configureTraversalCollisions: false);
         }
 
         void IPoolLifecycle.OnReturnedToPool()
@@ -594,7 +588,7 @@ namespace TAD.Attackers
             }
         }
 
-        private void ResetRuntimeState()
+        private void ResetRuntimeState(bool configureTraversalCollisions = true)
         {
             currentHealth = MaximumHealth;
             hasReachedFoodStore = false;
@@ -620,7 +614,11 @@ namespace TAD.Attackers
                 bodyCollider.enabled = true;
             }
 
-            ConfigureTraversalCollisions();
+            if (configureTraversalCollisions)
+            {
+                ConfigureTraversalCollisions();
+            }
+
             NotifyHealthChanged();
         }
 
@@ -651,7 +649,7 @@ namespace TAD.Attackers
             resolvesArrivalAtGrassBoundary = false;
 
             if (body == null || routeMapper == null ||
-                !routeMapper.TryGetFastestRoute(body.position, definition, routePoints) ||
+                !routeMapper.TryGetFastestRouteWaypoints(body.position, definition, routePoints) ||
                 routePoints.Count < 2)
             {
                 return false;
@@ -740,11 +738,30 @@ namespace TAD.Attackers
         private void ConfigureTraversalCollisions()
         {
             RestoreTraversalCollisions();
-            ConfigureAttackerCollisionSafety();
-            ConfigureFarmHandCollisionSafety();
 
             if (bodyCollider == null || TraversalProfile != AttackerTraversalProfile.IgnoresHalfCover)
             {
+                return;
+            }
+
+            // Static level walls are already collected by the mapper at route-build time. Use
+            // that cache for flying animals so a mixed flying wave does not repeat a global wall
+            // search per activation. The scene-wide fallback preserves manual/test attackers that
+            // receive a route mapper only after they are first enabled.
+            routeMapper ??= pooledInstance != null && pooledInstance.Owner != null
+                ? pooledInstance.Owner.RouteMapper
+                : null;
+            if (routeMapper != null && routeMapper.CachedRouteFieldCount > 0)
+            {
+                routeMapper.CopyHalfCoverWallColliders(ignoredHalfCoverColliders);
+                foreach (var wallCollider in ignoredHalfCoverColliders)
+                {
+                    if (wallCollider != null)
+                    {
+                        Physics2D.IgnoreCollision(bodyCollider, wallCollider, true);
+                    }
+                }
+
                 return;
             }
 
@@ -762,122 +779,11 @@ namespace TAD.Attackers
             }
         }
 
-        /// <summary>
-        /// Preserves the rule that farmhands can target animals but cannot form a solid wall.
-        /// Only unexpected non-trigger colliders on a farmhand hierarchy are ignored. Trigger colliders
-        /// (the range sensor and pooled projectile hitboxes) continue to receive their normal callbacks.
-        /// </summary>
-        private void ConfigureFarmHandCollisionSafety()
-        {
-            if (bodyCollider == null)
-            {
-                return;
-            }
-
-            var farmHands = Object.FindObjectsByType<FarmHand>(FindObjectsInactive.Exclude);
-            foreach (var farmHand in farmHands)
-            {
-                IgnoreFarmHandColliders(farmHand);
-            }
-        }
-
-        private void HandleFarmHandEnabled(FarmHand farmHand)
-        {
-            // Farmhands can be placed while a wave is in progress, after this attacker was activated.
-            IgnoreFarmHandColliders(farmHand);
-        }
-
-        private void IgnoreFarmHandColliders(FarmHand farmHand)
-        {
-            if (bodyCollider == null || farmHand == null)
-            {
-                return;
-            }
-
-            var farmHandColliders = farmHand.GetComponentsInChildren<Collider2D>(true);
-            foreach (var farmHandCollider in farmHandColliders)
-            {
-                IgnoreFarmHandCollider(farmHandCollider);
-            }
-        }
-
-        private void ConfigureAttackerCollisionSafety()
-        {
-            if (bodyCollider == null)
-            {
-                return;
-            }
-
-            var attackers = Object.FindObjectsByType<BasicAttacker>(FindObjectsInactive.Exclude);
-            foreach (var attacker in attackers)
-            {
-                if (attacker == null || attacker == this)
-                {
-                    continue;
-                }
-
-                var attackerColliders = attacker.GetComponentsInChildren<Collider2D>(true);
-                foreach (var attackerCollider in attackerColliders)
-                {
-                    IgnoreAttackerCollider(attackerCollider);
-                }
-            }
-        }
-
-        private void IgnoreFarmHandCollision(Collision2D collision)
-        {
-            if (collision == null)
-            {
-                return;
-            }
-
-            // Unity exposes both sides of a 2D collision. One is this attacker and the other may be a farmhand.
-            IgnoreFarmHandCollider(collision.collider);
-            IgnoreFarmHandCollider(collision.otherCollider);
-        }
-
-        private void IgnoreAttackerCollision(Collision2D collision)
-        {
-            if (collision == null)
-            {
-                return;
-            }
-
-            IgnoreAttackerCollider(collision.collider);
-            IgnoreAttackerCollider(collision.otherCollider);
-        }
-
-        private void IgnoreFarmHandCollider(Collider2D collider)
-        {
-            if (bodyCollider == null || collider == null || collider == bodyCollider || collider.isTrigger ||
-                ignoredFarmHandColliders.Contains(collider) || collider.GetComponentInParent<FarmHand>() == null)
-            {
-                return;
-            }
-
-            Physics2D.IgnoreCollision(bodyCollider, collider, true);
-            ignoredFarmHandColliders.Add(collider);
-        }
-
-        private void IgnoreAttackerCollider(Collider2D collider)
-        {
-            if (bodyCollider == null || collider == null || collider == bodyCollider || collider.isTrigger ||
-                ignoredAttackerColliders.Contains(collider) || collider.GetComponentInParent<BasicAttacker>() == null)
-            {
-                return;
-            }
-
-            Physics2D.IgnoreCollision(bodyCollider, collider, true);
-            ignoredAttackerColliders.Add(collider);
-        }
-
         private void RestoreTraversalCollisions()
         {
             if (bodyCollider == null)
             {
                 ignoredHalfCoverColliders.Clear();
-                ignoredFarmHandColliders.Clear();
-                ignoredAttackerColliders.Clear();
                 return;
             }
 
@@ -889,25 +795,32 @@ namespace TAD.Attackers
                 }
             }
 
-            foreach (var farmHandCollider in ignoredFarmHandColliders)
-            {
-                if (farmHandCollider != null)
-                {
-                    Physics2D.IgnoreCollision(bodyCollider, farmHandCollider, false);
-                }
-            }
-
-            foreach (var attackerCollider in ignoredAttackerColliders)
-            {
-                if (attackerCollider != null)
-                {
-                    Physics2D.IgnoreCollision(bodyCollider, attackerCollider, false);
-                }
-            }
-
             ignoredHalfCoverColliders.Clear();
-            ignoredFarmHandColliders.Clear();
-            ignoredAttackerColliders.Clear();
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetAttackerLayerCollisionSetup()
+        {
+            hasConfiguredAttackerLayerCollisions = false;
+        }
+
+        private static void ConfigureNonBlockingAttackerLayer()
+        {
+            if (hasConfiguredAttackerLayerCollisions)
+            {
+                return;
+            }
+
+            var attackerLayer = LayerMask.NameToLayer("Attacker");
+            if (attackerLayer < 0)
+            {
+                return;
+            }
+
+            // Do not disable Attacker x Defender: projectile hits and defender range triggers
+            // rely on that interaction. Only attacker body-to-body contact is non-gameplay work.
+            Physics2D.IgnoreLayerCollision(attackerLayer, attackerLayer, true);
+            hasConfiguredAttackerLayerCollisions = true;
         }
 
         private void ReturnToPool()

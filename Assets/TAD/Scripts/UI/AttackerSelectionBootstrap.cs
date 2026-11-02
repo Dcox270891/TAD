@@ -4,6 +4,7 @@ using TAD.Pooling;
 using TAD.Waves;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.UI;
 
 namespace TAD.UI
@@ -17,6 +18,10 @@ namespace TAD.UI
     [RequireComponent(typeof(AttackerWaveQueue))]
     public sealed class AttackerSelectionBootstrap : MonoBehaviour
     {
+        private const int MinimumMobileTapDragThreshold = 18;
+        private const int MaximumMobileTapDragThreshold = 24;
+        private const float MobileTapDragThresholdInches = 0.075f;
+
         [SerializeField] private AttackerSelectionPanel selectionPanelPrefab;
         [SerializeField] private AttackerQueuePanel queuePanelPrefab;
         [SerializeField] private AttackerDetailsPanel detailsPanelPrefab;
@@ -47,7 +52,7 @@ namespace TAD.UI
                 return;
             }
 
-            EnsureEventSystem();
+            ConfigureMobileTapSlop(EnsureEventSystem());
             if (!EnsurePresenters())
             {
                 return;
@@ -168,11 +173,11 @@ namespace TAD.UI
             }
         }
 
-        private static void EnsureEventSystem()
+        private static EventSystem EnsureEventSystem()
         {
             if (EventSystem.current != null)
             {
-                return;
+                return EventSystem.current;
             }
 
             var eventSystemObject = new GameObject(
@@ -186,6 +191,28 @@ namespace TAD.UI
             }
 
             eventSystemObject.GetComponent<InputSystemUIInputModule>().AssignDefaultActions();
+            return eventSystemObject.GetComponent<EventSystem>();
+        }
+
+        private static void ConfigureMobileTapSlop(EventSystem eventSystem)
+        {
+            // Attacker cards live in a horizontal ScrollRect. Unity cancels a Button click once
+            // a touch moves past pixelDragThreshold, and the desktop default of ten pixels is
+            // too tight for a natural mobile tap. Preserve mouse behaviour while allowing a
+            // small, DPI-aware finger drift; deliberate swipes remain comfortably above it.
+            if (eventSystem == null || (!Application.isMobilePlatform && Touchscreen.current == null))
+            {
+                return;
+            }
+
+            var dpiScaledThreshold = Screen.dpi > 0f
+                ? Mathf.RoundToInt(Screen.dpi * MobileTapDragThresholdInches)
+                : 20;
+            var mobileThreshold = Mathf.Clamp(
+                dpiScaledThreshold,
+                MinimumMobileTapDragThreshold,
+                MaximumMobileTapDragThreshold);
+            eventSystem.pixelDragThreshold = Mathf.Max(eventSystem.pixelDragThreshold, mobileThreshold);
         }
     }
 }

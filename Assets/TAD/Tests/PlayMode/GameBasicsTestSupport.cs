@@ -84,6 +84,17 @@ namespace TAD.Tests.PlayMode
         internal static BasicAttacker CreateAttacker(AttackerDefinition definition)
         {
             var attackerObject = new GameObject(TestPrefix + "Attacker");
+            // Keep hand-built test actors on the same layer as the authored attacker prefabs.
+            // The game deliberately ignores attacker-to-attacker body contact at the layer level
+            // so a dense wave never pushes itself apart; leaving fixtures on Default would test
+            // different physics from the game and can move them outside a defender's range.
+            var attackerLayer = LayerMask.NameToLayer("Attacker");
+            if (attackerLayer < 0)
+            {
+                throw new System.InvalidOperationException("The TAD Attacker layer is required for Play Mode tests.");
+            }
+
+            attackerObject.layer = attackerLayer;
             attackerObject.SetActive(false);
             var attacker = attackerObject.AddComponent<BasicAttacker>();
             attacker.ConfigureDefinition(definition);

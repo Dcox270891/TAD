@@ -1,5 +1,21 @@
 # TAD development catalogue
 
+## 2026-11-02 — responsiveness and motion performance pass
+
+![Level 1 Game-view capture used for the performance and movement validation](DevelopmentEvidence/2026-11-02-performance-input-smoothing-level1.png)
+
+This pass targets the playtest issues where attacker-send taps could be missed and characters could appear to jump rather than move smoothly. Mobile attacker cards now tolerate a small, natural finger drift without being treated as a tray scroll. Send-time work was reduced by batching card and queue refreshes, reusing exact spawn routes, sharing same-frame route-readiness checks, and removing the old per-attacker collision scans. Pools also warm enough attackers for an initial group before a player first sends it.
+
+Attackers no longer use the abrupt vertical walk-frame hop, and relocating farmhands now use Rigidbody interpolation. The defender placement range preview reuses its mesh data and throttles only its non-authoritative visual line-of-sight redraw while a player drags a placement ghost. Combat, collision with the environment, and live targeting rules remain unchanged.
+
+Validation completed before publication:
+
+- Unity compilation: clean, with no current Console errors or warnings.
+- Focused route-cache Play Mode validation: 3/3 tests passed, including exact-route reuse and rebuild invalidation.
+- Focused attacker animation/collision validation: 3/3 tests passed earlier in the same validation pass.
+- Required Game Basics gate: EditMode 126/126 and PlayMode 59/59 passed, with zero failures, errors, or inconclusive results. The targeting fixture now uses the same non-blocking Attacker layer as the shipped attacker prefabs.
+- Screenshot captured in the live Level 1 Game view before the Git push. Android device profiling remains the final target-device confirmation; Editor/Windows uses a higher visual quality preset than the mobile targets.
+
 ## 2026-10-22 — grass-bounded attacker and defender movement
 
 ![Level 1 Game-view capture of the authored grass play field](DevelopmentEvidence/2026-10-22-grass-bounded-movement-level1.png)

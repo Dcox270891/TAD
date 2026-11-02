@@ -25,6 +25,7 @@ namespace TAD.UI
 
         private RectTransform textRect;
         private Text text;
+        private readonly Vector3[] worldCorners = new Vector3[4];
         private int pendingLayoutFrames;
 
         /// <summary>Horizontal breathing room reserved inside the decorated surface.</summary>
@@ -302,15 +303,14 @@ namespace TAD.UI
             text ??= GetComponent<Text>();
         }
 
-        private static Rect GetBoundsInOwnerSpace(RectTransform target, RectTransform owner)
+        private Rect GetBoundsInOwnerSpace(RectTransform target, RectTransform owner)
         {
-            var corners = new Vector3[4];
-            target.GetWorldCorners(corners);
-            var minimum = owner.InverseTransformPoint(corners[0]);
+            target.GetWorldCorners(worldCorners);
+            var minimum = owner.InverseTransformPoint(worldCorners[0]);
             var maximum = minimum;
-            for (var index = 1; index < corners.Length; index++)
+            for (var index = 1; index < worldCorners.Length; index++)
             {
-                var local = owner.InverseTransformPoint(corners[index]);
+                var local = owner.InverseTransformPoint(worldCorners[index]);
                 minimum = Vector3.Min(minimum, local);
                 maximum = Vector3.Max(maximum, local);
             }

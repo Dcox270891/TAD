@@ -37,8 +37,14 @@ namespace TAD.UI
         private bool lastPortrait;
         private Rect lastSafeArea;
         private Vector2Int lastScreenSize;
-        private int lastRectTransformCount;
+        // UI roots can be reused for the full duration of a match.  Scanning every descendant
+        // RectTransform in LateUpdate just to discover a newly-created card allocated an array
+        // every frame on each HUD canvas.  Direct root changes and explicit presenter refreshes
+        // now mark this flag instead; the bounded portrait post-build passes remain in place for
+        // nested decorative elements created during initial UI construction.
+        private bool layoutRefreshRequested;
         private int pendingPostBuildRefreshes;
+        private readonly HashSet<MobileUiLayoutHierarchyRelay> hierarchyChangeRelays = new();
         private SafeAreaInsets portraitSafeInsets;
         private bool hasCapturedMainMenuLayout;
         private VerticalLayoutGroup mainMenuLayoutGroup;
@@ -70,6 +76,20 @@ namespace TAD.UI
         private void OnEnable()
         {
             hasAppliedLayout = false;
+            layoutRefreshRequested = true;
+        }
+
+        private void OnDisable()
+        {
+            foreach (var relay in hierarchyChangeRelays)
+            {
+                if (relay != null)
+                {
+                    relay.Unregister(this);
+                }
+            }
+
+            hierarchyChangeRelays.Clear();
         }
 
         private void LateUpdate()
@@ -77,9 +97,8 @@ namespace TAD.UI
             var portrait = ResolvePortraitLayout();
             var safeArea = Screen.safeArea;
             var size = new Vector2Int(Screen.width, Screen.height);
-            var currentRectTransformCount = GetComponentsInChildren<RectTransform>(true).Length;
             if (!hasAppliedLayout || portrait != lastPortrait || safeArea != lastSafeArea || size != lastScreenSize ||
-                currentRectTransformCount != lastRectTransformCount)
+                layoutRefreshRequested)
             {
                 ApplyLayout(force: true);
                 return;
@@ -93,6 +112,11 @@ namespace TAD.UI
                 pendingPostBuildRefreshes--;
                 ApplyLayout(force: true);
             }
+        }
+
+        private void OnTransformChildrenChanged()
+        {
+            RequestLayoutRefresh();
         }
 
 #if UNITY_EDITOR
@@ -124,7 +148,16 @@ namespace TAD.UI
         /// <summary>Explicit refresh point for presenters that build their card contents at runtime.</summary>
         public void RefreshLayout()
         {
+            RequestLayoutRefresh();
             ApplyLayout(force: true);
+        }
+
+        internal void RequestLayoutRefresh()
+        {
+            // Runtime HUD roots occasionally receive a complete panel/prefab as a direct child.
+            // Nested containers are covered by MobileUiLayoutHierarchyRelay. Both paths defer the
+            // actual layout work to LateUpdate so a presenter can finish constructing a card first.
+            layoutRefreshRequested = true;
         }
 
         /// <summary>
@@ -217,12 +250,36 @@ namespace TAD.UI
             }
 
             ApplyResponsiveTypography(portrait);
+            EnsureHierarchyChangeRelays();
 
             lastPortrait = portrait;
             lastSafeArea = safeArea;
             lastScreenSize = size;
-            lastRectTransformCount = GetComponentsInChildren<RectTransform>(true).Length;
+            layoutRefreshRequested = false;
             hasAppliedLayout = true;
+        }
+
+        private void EnsureHierarchyChangeRelays()
+        {
+            // The legacy implementation counted every descendant RectTransform in every
+            // LateUpdate. Register a lightweight event relay while we are already refreshing
+            // instead, which also catches additions beneath pre-existing queue/card containers.
+            foreach (var rect in GetComponentsInChildren<RectTransform>(true))
+            {
+                if (rect == null || rect == canvasRect)
+                {
+                    continue;
+                }
+
+                var relay = rect.GetComponent<MobileUiLayoutHierarchyRelay>();
+                if (relay == null)
+                {
+                    relay = rect.gameObject.AddComponent<MobileUiLayoutHierarchyRelay>();
+                }
+
+                relay.Register(this);
+                hierarchyChangeRelays.Add(relay);
+            }
         }
 
         private void ApplyPortraitLayout()
@@ -953,6 +1010,46 @@ namespace TAD.UI
             {
                 element.minHeight = minHeight;
                 element.preferredHeight = preferredHeight;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Observes structural changes below a reusable uGUI canvas without asking its controller to
+    /// scan the whole hierarchy every frame. A relay can serve nested canvases too, so a card
+    /// added below a queue container refreshes every relevant parent controller.
+    /// </summary>
+    [AddComponentMenu("")]
+    [DisallowMultipleComponent]
+    internal sealed class MobileUiLayoutHierarchyRelay : MonoBehaviour
+    {
+        private readonly List<MobileUiLayoutController> listeners = new();
+
+        internal void Register(MobileUiLayoutController controller)
+        {
+            if (controller != null && !listeners.Contains(controller))
+            {
+                listeners.Add(controller);
+            }
+        }
+
+        internal void Unregister(MobileUiLayoutController controller)
+        {
+            listeners.Remove(controller);
+        }
+
+        private void OnTransformChildrenChanged()
+        {
+            for (var index = listeners.Count - 1; index >= 0; index--)
+            {
+                var controller = listeners[index];
+                if (controller == null)
+                {
+                    listeners.RemoveAt(index);
+                    continue;
+                }
+
+                controller.RequestLayoutRefresh();
             }
         }
     }

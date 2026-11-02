@@ -145,6 +145,10 @@ public sealed class FarmRouteMapper : MonoBehaviour
     private const float SizeKeyScale = 1000f;
     private const int MaxRecoveryCellRadius = 8;
     private const float MapBoundaryEpsilon = 0.0001f;
+    // Wave members originate from the same spawn point and use the same route profile. Keep the
+    // fully smoothed presentation route for that exact start position so a large send pays the
+    // smoothing cost once rather than once per animal.
+    private const int MaximumCachedWaypointRoutes = 128;
     [SerializeField]
     [Tooltip("The target all attacking animals try to reach. If blank, the first Food Store in the scene is used.")]
     private FoodStore foodStore;
@@ -173,7 +177,13 @@ public sealed class FarmRouteMapper : MonoBehaviour
     [Tooltip("Maximum flow-field cells a route may skip when a clear line smooths a wall corner.")]
     private int cornerSmoothingLookAheadCells = 8;
     private readonly Dictionary<RouteKey, RouteField> routeFields = new();
+    private readonly Dictionary<WaypointRouteCacheKey, CachedWaypointRoute> cachedWaypointRoutes = new();
     private readonly List<RouteKey> precomputedRouteKeys = new();
+    // SpawnPool registers its complete data-driven roster during Awake. Keeping definitions rather
+    // than instantiated pooled animals lets the map build every required field before optional
+    // pool warmup finishes, without a scene-wide inactive-object scan.
+    private readonly List<AttackerDefinition> pooledAttackerDefinitionsToPrecompute = new();
+    private bool hasRegisteredPooledAttackerDefinitions;
     private FarmWall[] walls = Array.Empty<FarmWall>();
     // Terrain is discovered once with the rest of the static level geometry. Runtime movement still
     // uses trigger overlaps on BasicAttacker; this cache exists only for startup path weighting and
@@ -212,6 +222,16 @@ public sealed class FarmRouteMapper : MonoBehaviour
         : new Rect((Vector2)transform.position - (mapSize * 0.5f), mapSize);
     public int CachedRouteFieldCount => routeFields.Count;
     public int PrecomputedAttackerSizeCount => precomputedRouteKeys.Count;
+    /// <summary>
+    /// Monotonically increases whenever previously generated route geometry becomes invalid.
+    /// Route previews use this to avoid showing a cached line after a destination or map-boundary
+    /// change that occurs before the next full rebuild.
+    /// </summary>
+    public int RouteRevision { get; private set; }
+    /// <summary>Diagnostic count of immutable gameplay waypoint routes retained for repeated spawns.</summary>
+    public int CachedWaypointRouteCount => cachedWaypointRoutes.Count;
+    /// <summary>Diagnostic count of waypoint-route builds performed by this mapper instance.</summary>
+    public int WaypointRouteCacheMissCount { get; private set; }
 
     /// <summary>
     /// Explicitly assigns the food destination used by this mapper. Production levels normally
@@ -227,7 +247,33 @@ public sealed class FarmRouteMapper : MonoBehaviour
 
         foodStore = store;
         routeFields.Clear();
+        cachedWaypointRoutes.Clear();
         hasBuiltMap = false;
+        RouteRevision++;
+    }
+
+    /// <summary>
+    /// Registers an attacker definition owned by a <see cref="TAD.Pooling.SpawnPool"/>. The pool
+    /// performs this before the level's first route build, so optional pooled instances can be
+    /// warmed over subsequent frames without losing their startup route fields.
+    /// </summary>
+    public void RegisterPooledAttackerDefinition(AttackerDefinition definition)
+    {
+        if (definition == null || pooledAttackerDefinitionsToPrecompute.Contains(definition))
+        {
+            return;
+        }
+
+        pooledAttackerDefinitionsToPrecompute.Add(definition);
+        hasRegisteredPooledAttackerDefinitions = true;
+
+        // A late registration is uncommon, but retaining the key preserves diagnostics and causes
+        // the normal lazy field creation path to build the new variant on its first route request.
+        if (hasBuiltMap)
+        {
+            AddDefinitionRouteKey(definition);
+            precomputedRouteKeys.Sort();
+        }
     }
 
     /// <summary>Returns the actual world-space bounds of the rendered grass ground, when present.</summary>
@@ -268,7 +314,9 @@ public sealed class FarmRouteMapper : MonoBehaviour
         playableArea = area;
         hasResolvedScenePlayableArea = true;
         routeFields.Clear();
+        cachedWaypointRoutes.Clear();
         hasBuiltMap = false;
+        RouteRevision++;
     }
 
     /// <summary>
@@ -286,7 +334,9 @@ public sealed class FarmRouteMapper : MonoBehaviour
         hasResolvedSceneGrassBackdrop = true;
         hasRefreshedPlayableGrassBounds = false;
         routeFields.Clear();
+        cachedWaypointRoutes.Clear();
         hasBuiltMap = false;
+        RouteRevision++;
     }
 
     /// <summary>Copies the static terrain tiles captured by the most recent map rebuild.</summary>
@@ -308,6 +358,32 @@ public sealed class FarmRouteMapper : MonoBehaviour
 
         return results.Count;
     }
+
+    /// <summary>
+    /// Copies the half-cover colliders captured during the current route-map build. Flying
+    /// attackers use this cached static geometry when configuring their one permitted collision
+    /// exception, avoiding a scene-wide wall search for each spawned animal.
+    /// </summary>
+    public int CopyHalfCoverWallColliders(List<Collider2D> results)
+    {
+        if (results == null)
+        {
+            throw new ArgumentNullException(nameof(results));
+        }
+
+        results.Clear();
+        foreach (var wall in walls)
+        {
+            if (wall != null && wall.Cover == FarmWallCover.Half &&
+                wall.TryGetComponent<BoxCollider2D>(out var wallCollider) && wallCollider.enabled)
+            {
+                results.Add(wallCollider);
+            }
+        }
+
+        return results.Count;
+    }
+
     public int CopyPrecomputedAttackerSizes(List<float> results)
     {
         if (results == null)
@@ -364,6 +440,77 @@ public sealed class FarmRouteMapper : MonoBehaviour
         return TryGetFastestRoute(startingPosition, definition, routePoints, out _);
     }
 
+    /// <summary>
+    /// Returns the movement waypoints for a concrete attacker without constructing the terrain
+    /// timing snapshot used by AI scoring. Pooled attackers consume only these waypoints, so a
+    /// normal spawn does not allocate timing samples that gameplay immediately discards.
+    /// </summary>
+    public bool TryGetFastestRouteWaypoints(
+        Vector3 startingPosition,
+        AttackerDefinition definition,
+        List<Vector3> routePoints)
+    {
+        if (definition == null)
+        {
+            if (routePoints == null)
+            {
+                throw new ArgumentNullException(nameof(routePoints));
+            }
+
+            routePoints.Clear();
+            return false;
+        }
+
+        if (routePoints == null)
+        {
+            throw new ArgumentNullException(nameof(routePoints));
+        }
+
+        routePoints.Clear();
+        if (!hasBuiltMap || foodStore == null)
+        {
+            return false;
+        }
+
+        var routeKey = new RouteKey(
+            GetSizeKey(Mathf.Max(0.01f, definition.NavigationDiameter)),
+            definition.TraversalProfile,
+            definition.Archetype == AttackerArchetype.Flying);
+        var cacheKey = new WaypointRouteCacheKey(routeKey, startingPosition);
+        if (cachedWaypointRoutes.TryGetValue(cacheKey, out var cachedRoute))
+        {
+            if (!cachedRoute.HasRoute)
+            {
+                return false;
+            }
+
+            routePoints.AddRange(cachedRoute.Points);
+            return true;
+        }
+
+        WaypointRouteCacheMissCount++;
+        var hasRoute = TryGetFastestRouteInternal(
+            startingPosition,
+            definition.NavigationDiameter,
+            definition.TraversalProfile,
+            definition.Archetype == AttackerArchetype.Flying,
+            routePoints,
+            includeTiming: false,
+            out _);
+
+        // This cache is only a mobile-frame-time optimisation, never authoritative state. A
+        // bounded clear prevents arbitrary runtime callers from retaining unbounded routes.
+        if (cachedWaypointRoutes.Count >= MaximumCachedWaypointRoutes)
+        {
+            cachedWaypointRoutes.Clear();
+        }
+
+        cachedWaypointRoutes[cacheKey] = new CachedWaypointRoute(
+            hasRoute,
+            hasRoute ? routePoints.ToArray() : Array.Empty<Vector3>());
+        return hasRoute;
+    }
+
     /// <summary>Returns a terrain-aware route and the timing data consumed by both AI planners.</summary>
     public bool TryGetFastestRoute(
         Vector3 startingPosition,
@@ -383,12 +530,13 @@ public sealed class FarmRouteMapper : MonoBehaviour
             return false;
         }
 
-        return TryGetFastestRoute(
+        return TryGetFastestRouteInternal(
             startingPosition,
             definition.NavigationDiameter,
             definition.TraversalProfile,
             definition.Archetype == AttackerArchetype.Flying,
             routePoints,
+            includeTiming: true,
             out timing);
     }
 
@@ -417,6 +565,25 @@ public sealed class FarmRouteMapper : MonoBehaviour
         AttackerTraversalProfile traversalProfile,
         bool ignoresTerrainEffects,
         List<Vector3> routePoints,
+        out FarmRouteTiming timing)
+    {
+        return TryGetFastestRouteInternal(
+            startingPosition,
+            attackerSize,
+            traversalProfile,
+            ignoresTerrainEffects,
+            routePoints,
+            includeTiming: true,
+            out timing);
+    }
+
+    private bool TryGetFastestRouteInternal(
+        Vector3 startingPosition,
+        float attackerSize,
+        AttackerTraversalProfile traversalProfile,
+        bool ignoresTerrainEffects,
+        List<Vector3> routePoints,
+        bool includeTiming,
         out FarmRouteTiming timing)
     {
         if (routePoints == null)
@@ -451,6 +618,11 @@ public sealed class FarmRouteMapper : MonoBehaviour
             }
             routePoints.Add(startingPosition);
             routePoints.Add(destination);
+            if (!includeTiming)
+            {
+                return HasRouteSegment(routePoints);
+            }
+
             timing = BuildRouteTiming(routePoints, ignoresTerrainEffects);
             return timing.IsValid;
         }
@@ -514,6 +686,11 @@ public sealed class FarmRouteMapper : MonoBehaviour
         {
             routePoints.Add(destination);
         }
+        if (!includeTiming)
+        {
+            return HasRouteSegment(routePoints);
+        }
+
         timing = BuildRouteTiming(routePoints, ignoresTerrainEffects);
         return routePoints.Count >= 2 && timing.IsValid;
     }
@@ -689,9 +866,11 @@ public sealed class FarmRouteMapper : MonoBehaviour
         walls = UnityEngine.Object.FindObjectsByType<FarmWall>(FindObjectsInactive.Exclude);
         terrainSpeedModifiers = UnityEngine.Object.FindObjectsByType<TerrainSpeedModifier>(FindObjectsInactive.Exclude);
         routeFields.Clear();
+        cachedWaypointRoutes.Clear();
         CollectStartupRouteData();
         hasBuiltMap = true;
         BuildStartupRouteFields();
+        RouteRevision++;
         return true;
     }
     public bool TryClampToVisibleMap(Vector2 position, out Vector2 clampedPosition)
@@ -829,26 +1008,26 @@ public sealed class FarmRouteMapper : MonoBehaviour
         {
             foreach (var definition in attackerDefinitionsToPrecompute)
             {
-                if (definition != null)
-                {
-                    AddUniqueKey(new RouteKey(
-                        GetSizeKey(definition.NavigationDiameter),
-                        definition.TraversalProfile,
-                        definition.Archetype == AttackerArchetype.Flying));
-                }
+                AddDefinitionRouteKey(definition);
             }
         }
-        // Spawn Pool prewarming occurs in Awake, before this component's Start, so inactive pooled animals
-        // are available to the initial scan without making the pool navigation-specific.
-        var pooledAttackers = UnityEngine.Object.FindObjectsByType<BasicAttacker>(FindObjectsInactive.Include);
-        foreach (var attacker in pooledAttackers)
+        foreach (var definition in pooledAttackerDefinitionsToPrecompute)
         {
-            if (attacker != null && attacker.Definition != null)
+            AddDefinitionRouteKey(definition);
+        }
+
+        // Legacy maps without a SpawnPool still discover manually prewarmed inactive animals. A
+        // configured pool supplies data directly, so avoid scanning every pooled object while its
+        // optional buckets are deliberately being warmed over later frames.
+        if (!hasRegisteredPooledAttackerDefinitions)
+        {
+            var pooledAttackers = UnityEngine.Object.FindObjectsByType<BasicAttacker>(FindObjectsInactive.Include);
+            foreach (var attacker in pooledAttackers)
             {
-                AddUniqueKey(new RouteKey(
-                    GetSizeKey(attacker.NavigationDiameter),
-                    attacker.TraversalProfile,
-                    attacker.IsFlying));
+                if (attacker != null)
+                {
+                    AddDefinitionRouteKey(attacker.Definition);
+                }
             }
         }
         precomputedRouteKeys.Sort();
@@ -947,10 +1126,9 @@ public sealed class FarmRouteMapper : MonoBehaviour
             }
         }
         field.TravelCosts = distances;
-        // Corner smoothing is intentionally evaluated only for the handful of cells on a route
-        // when that route is requested. Precomputing it for every cell in every animal-size field
-        // multiplied startup work enough to stall level loading after the roster grew to 40 animals.
-        Array.Copy(field.NextIndices, field.SmoothedNextIndices, field.NextIndices.Length);
+        // Corner smoothing is intentionally evaluated lazily only for cells that a requested
+        // route traverses, then retained in SmoothedNextIndices for the next animal from the same
+        // spawn. Precomputing every cell in every animal-size field would stall level loading.
         return field;
     }
     private int GetSmoothedNextIndex(
@@ -960,9 +1138,16 @@ public sealed class FarmRouteMapper : MonoBehaviour
         AttackerTraversalProfile traversalProfile,
         bool ignoresTerrainEffects)
     {
+        var cachedIndex = field.SmoothedNextIndices[originIndex];
+        if (cachedIndex != int.MinValue)
+        {
+            return cachedIndex;
+        }
+
         var bestIndex = field.NextIndices[originIndex];
         if (bestIndex < 0)
         {
+            field.SmoothedNextIndices[originIndex] = -1;
             return -1;
         }
 
@@ -994,6 +1179,7 @@ public sealed class FarmRouteMapper : MonoBehaviour
             currentIndex = candidateIndex;
         }
 
+        field.SmoothedNextIndices[originIndex] = bestIndex;
         return bestIndex;
     }
 
@@ -1458,6 +1644,35 @@ public sealed class FarmRouteMapper : MonoBehaviour
             precomputedRouteKeys.Add(key);
         }
     }
+    private void AddDefinitionRouteKey(AttackerDefinition definition)
+    {
+        if (definition == null)
+        {
+            return;
+        }
+
+        AddUniqueKey(new RouteKey(
+            GetSizeKey(definition.NavigationDiameter),
+            definition.TraversalProfile,
+            definition.Archetype == AttackerArchetype.Flying));
+    }
+    private static bool HasRouteSegment(IReadOnlyList<Vector3> routePoints)
+    {
+        if (routePoints == null)
+        {
+            return false;
+        }
+
+        for (var index = 1; index < routePoints.Count; index++)
+        {
+            if (((Vector2)routePoints[index] - (Vector2)routePoints[index - 1]).sqrMagnitude > 0.00000001f)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
     private static int GetSizeKey(float size)
     {
         return Mathf.Max(1, Mathf.RoundToInt(Mathf.Max(0.001f, size) * SizeKeyScale));
@@ -1567,6 +1782,43 @@ public sealed class FarmRouteMapper : MonoBehaviour
                 : IgnoresTerrainEffects.CompareTo(other.IgnoresTerrainEffects);
         }
     }
+    private readonly struct WaypointRouteCacheKey : IEquatable<WaypointRouteCacheKey>
+    {
+        public WaypointRouteCacheKey(RouteKey routeKey, Vector3 startPosition)
+        {
+            RouteKey = routeKey;
+            StartPosition = startPosition;
+        }
+
+        private RouteKey RouteKey { get; }
+        private Vector3 StartPosition { get; }
+
+        public bool Equals(WaypointRouteCacheKey other)
+        {
+            return RouteKey.Equals(other.RouteKey) && StartPosition.Equals(other.StartPosition);
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is WaypointRouteCacheKey other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(RouteKey, StartPosition);
+        }
+    }
+    private readonly struct CachedWaypointRoute
+    {
+        public CachedWaypointRoute(bool hasRoute, Vector3[] points)
+        {
+            HasRoute = hasRoute;
+            Points = points ?? Array.Empty<Vector3>();
+        }
+
+        public bool HasRoute { get; }
+        public Vector3[] Points { get; }
+    }
     private sealed class RouteField
     {
         public RouteField(int cellCount)
@@ -1575,7 +1827,8 @@ public sealed class FarmRouteMapper : MonoBehaviour
             NextIndices = new int[cellCount];
             SmoothedNextIndices = new int[cellCount];
             Array.Fill(NextIndices, -1);
-            Array.Fill(SmoothedNextIndices, -1);
+            // int.MinValue means "not smoothed yet". -1 remains a cached no-route result.
+            Array.Fill(SmoothedNextIndices, int.MinValue);
         }
         public bool[] Walkable { get; }
         public int[] NextIndices { get; }

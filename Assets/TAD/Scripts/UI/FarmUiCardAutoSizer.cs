@@ -18,8 +18,12 @@ namespace TAD.UI
 
         private RectTransform cardRect;
         private Canvas parentCanvas;
+        private ModalOverlay enclosingModalOverlay;
+        private Text[] contentTexts;
+        private readonly Vector3[] worldCorners = new Vector3[4];
         private int lastContentHash = int.MinValue;
         private bool layoutRequested = true;
+        private bool wasHiddenByModal;
 
         public void Configure(float minimumCardHeight, float padding = 24f)
         {
@@ -36,6 +40,7 @@ namespace TAD.UI
         private void Awake()
         {
             ResolveReferences();
+            RefreshContentReferences();
             if (cardRect != null)
             {
                 minimumHeight = Mathf.Max(minimumHeight, cardRect.rect.height);
@@ -44,6 +49,15 @@ namespace TAD.UI
 
         private void OnEnable()
         {
+            RefreshContentReferences();
+            RequestLayout();
+        }
+
+        private void OnTransformChildrenChanged()
+        {
+            // Runtime cards occasionally add or remove a content row. Cache the text collection
+            // at that point rather than allocating a new component array every rendered frame.
+            RefreshContentReferences();
             RequestLayout();
         }
 
@@ -60,6 +74,24 @@ namespace TAD.UI
             }
 
             ResolveReferences();
+            if (enclosingModalOverlay != null && !enclosingModalOverlay.IsVisible)
+            {
+                // Modal overlays hide by CanvasGroup rather than deactivating their hierarchy.
+                // Avoid walking every child text and calculating preferred heights while that card
+                // cannot be seen or interacted with; this otherwise continues every frame during
+                // active combat behind hidden details/win/pause cards.
+                wasHiddenByModal = true;
+                return;
+            }
+
+            if (wasHiddenByModal)
+            {
+                // Copy may have changed while the overlay was hidden. Rebuild once as it becomes
+                // visible again, then return to the normal low-frequency content-hash path.
+                wasHiddenByModal = false;
+                RequestLayout();
+            }
+
             var contentHash = CalculateContentHash();
             if (contentHash != lastContentHash)
             {
@@ -80,14 +112,16 @@ namespace TAD.UI
         {
             cardRect ??= transform as RectTransform;
             parentCanvas ??= GetComponentInParent<Canvas>();
+            enclosingModalOverlay ??= GetComponentInParent<ModalOverlay>(true);
         }
 
         private int CalculateContentHash()
         {
+            contentTexts ??= GetComponentsInChildren<Text>(true);
             unchecked
             {
                 var hash = 17;
-                foreach (var text in GetComponentsInChildren<Text>(true))
+                foreach (var text in contentTexts)
                 {
                     if (text == null || !text.gameObject.activeInHierarchy)
                     {
@@ -110,10 +144,11 @@ namespace TAD.UI
                 return;
             }
 
+            contentTexts ??= GetComponentsInChildren<Text>(true);
             Canvas.ForceUpdateCanvases();
             var top = cardRect.rect.yMax;
             var lowestContent = top - minimumHeight + bottomPadding;
-            foreach (var text in GetComponentsInChildren<Text>(true))
+            foreach (var text in contentTexts)
             {
                 if (text == null || !text.gameObject.activeInHierarchy ||
                     text.transform.IsChildOf(transform) == false ||
@@ -122,11 +157,10 @@ namespace TAD.UI
                     continue;
                 }
 
-                var corners = new Vector3[4];
-                text.rectTransform.GetWorldCorners(corners);
-                for (var index = 0; index < corners.Length; index++)
+                text.rectTransform.GetWorldCorners(worldCorners);
+                for (var index = 0; index < worldCorners.Length; index++)
                 {
-                    lowestContent = Mathf.Min(lowestContent, cardRect.InverseTransformPoint(corners[index]).y);
+                    lowestContent = Mathf.Min(lowestContent, cardRect.InverseTransformPoint(worldCorners[index]).y);
                 }
             }
 
@@ -143,6 +177,11 @@ namespace TAD.UI
             {
                 cardRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, requiredHeight);
             }
+        }
+
+        private void RefreshContentReferences()
+        {
+            contentTexts = GetComponentsInChildren<Text>(true);
         }
 
         private static bool IsDecoration(Transform candidate)

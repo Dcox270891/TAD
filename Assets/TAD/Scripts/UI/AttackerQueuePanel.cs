@@ -27,6 +27,7 @@ namespace TAD.UI
         private readonly Dictionary<long, AttackerQueueGroupButton> groupButtons = new();
         private readonly Dictionary<long, AttackerRoutePreview> allQueuedRoutePreviews = new();
         private readonly List<long> staleGroupIds = new();
+        private readonly List<long> staleRoutePreviewIds = new();
         private readonly List<AttackerQueuedGroupInfo> displayGroups = new();
         private AttackerWaveQueue attackerWaveQueue;
         private SpawnPool spawnPool;
@@ -40,6 +41,10 @@ namespace TAD.UI
         private long selectedGroupId;
         private bool isSubscribed;
         private bool isClosingSelection;
+        // A dispatch can spawn several attackers in a single rendered frame. Refreshing every
+        // card and every optional route preview synchronously for each spawn blocks taps on the
+        // attacker tray, so coalesce presentation work to the next frame.
+        private bool isRefreshQueued;
 
         private void Awake()
         {
@@ -121,8 +126,20 @@ namespace TAD.UI
 
         private void OnDisable()
         {
+            isRefreshQueued = false;
             Unsubscribe();
             CloseSelectedGroup(false);
+        }
+
+        private void LateUpdate()
+        {
+            if (!isRefreshQueued)
+            {
+                return;
+            }
+
+            isRefreshQueued = false;
+            Refresh();
         }
 
         private void OnDestroy()
@@ -181,7 +198,7 @@ namespace TAD.UI
                 return;
             }
 
-            attackerWaveQueue.QueueChanged += Refresh;
+            attackerWaveQueue.QueueChanged += ScheduleRefresh;
             isSubscribed = true;
         }
 
@@ -194,7 +211,7 @@ namespace TAD.UI
 
             if (attackerWaveQueue != null)
             {
-                attackerWaveQueue.QueueChanged -= Refresh;
+                attackerWaveQueue.QueueChanged -= ScheduleRefresh;
             }
 
             isSubscribed = false;
@@ -202,6 +219,7 @@ namespace TAD.UI
 
         private void Refresh()
         {
+            isRefreshQueued = false;
             if (attackerWaveQueue == null || content == null || groupButtonPrefab == null)
             {
                 return;
@@ -389,7 +407,12 @@ namespace TAD.UI
                 return;
             }
 
-            var stalePreviewIds = new List<long>(allQueuedRoutePreviews.Keys);
+            staleRoutePreviewIds.Clear();
+            foreach (var routePreviewId in allQueuedRoutePreviews.Keys)
+            {
+                staleRoutePreviewIds.Add(routePreviewId);
+            }
+
             for (var index = 0; index < displayGroups.Count; index++)
             {
                 var group = displayGroups[index];
@@ -398,7 +421,7 @@ namespace TAD.UI
                     continue;
                 }
 
-                stalePreviewIds.Remove(group.Id);
+                staleRoutePreviewIds.Remove(group.Id);
                 if (!allQueuedRoutePreviews.TryGetValue(group.Id, out var preview) || preview == null)
                 {
                     var previewObject = new GameObject("Queued Attacker Route " + group.Id, typeof(AttackerRoutePreview));
@@ -409,9 +432,9 @@ namespace TAD.UI
                 preview.Show(spawnPool.RouteMapper, waveController.SpawnPosition, group.Definition);
             }
 
-            for (var index = 0; index < stalePreviewIds.Count; index++)
+            for (var index = 0; index < staleRoutePreviewIds.Count; index++)
             {
-                var id = stalePreviewIds[index];
+                var id = staleRoutePreviewIds[index];
                 if (allQueuedRoutePreviews.TryGetValue(id, out var stalePreview) && stalePreview != null)
                 {
                     Destroy(stalePreview.gameObject);
@@ -419,6 +442,8 @@ namespace TAD.UI
 
                 allQueuedRoutePreviews.Remove(id);
             }
+
+            staleRoutePreviewIds.Clear();
         }
 
         private void ClearAllQueuedRoutePreviews()
@@ -432,6 +457,7 @@ namespace TAD.UI
             }
 
             allQueuedRoutePreviews.Clear();
+            staleRoutePreviewIds.Clear();
         }
 
         private void ClearButtons()
@@ -447,6 +473,11 @@ namespace TAD.UI
             groupButtons.Clear();
             staleGroupIds.Clear();
             displayGroups.Clear();
+        }
+
+        private void ScheduleRefresh()
+        {
+            isRefreshQueued = true;
         }
     }
 }

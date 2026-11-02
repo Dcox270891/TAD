@@ -11,9 +11,10 @@ namespace TAD.Environment
     public static class SpritePhysicsFootprint2D
     {
         // Unity collider and sprite APIs are main-thread-only. Reusing these buffers avoids garbage
-        // every time an animated attacker changes its displayed movement frame.
+        // whenever a displayed sprite footprint needs to refresh.
         private static readonly List<Vector2> SourcePathBuffer = new();
         private static readonly List<Vector2> ConvertedPathBuffer = new();
+        private static readonly Vector2[] BoundsPathBuffer = new Vector2[4];
 
         /// <summary>
         /// Rebuilds a polygon collider from every generated physics path on the supplied sprite.
@@ -31,8 +32,7 @@ namespace TAD.Environment
             var pathCount = sprite.GetPhysicsShapeCount();
             if (pathCount <= 0)
             {
-                collider.pathCount = 1;
-                collider.SetPath(0, CreateBoundsPath(collider.transform, visual));
+                SetBoundsPath(collider, visual);
                 return true;
             }
 
@@ -44,8 +44,7 @@ namespace TAD.Environment
                 sprite.GetPhysicsShape(pathIndex, SourcePathBuffer);
                 if (SourcePathBuffer.Count < 3)
                 {
-                    collider.pathCount = 1;
-                    collider.SetPath(0, CreateBoundsPath(collider.transform, visual));
+                    SetBoundsPath(collider, visual);
                     return true;
                 }
 
@@ -61,16 +60,15 @@ namespace TAD.Environment
             return true;
         }
 
-        private static Vector2[] CreateBoundsPath(Transform colliderTransform, SpriteRenderer visual)
+        private static void SetBoundsPath(PolygonCollider2D collider, SpriteRenderer visual)
         {
             var bounds = visual.sprite.bounds;
-            return new[]
-            {
-                ToColliderPoint(colliderTransform, visual, new Vector2(bounds.min.x, bounds.min.y)),
-                ToColliderPoint(colliderTransform, visual, new Vector2(bounds.min.x, bounds.max.y)),
-                ToColliderPoint(colliderTransform, visual, new Vector2(bounds.max.x, bounds.max.y)),
-                ToColliderPoint(colliderTransform, visual, new Vector2(bounds.max.x, bounds.min.y))
-            };
+            BoundsPathBuffer[0] = ToColliderPoint(collider.transform, visual, new Vector2(bounds.min.x, bounds.min.y));
+            BoundsPathBuffer[1] = ToColliderPoint(collider.transform, visual, new Vector2(bounds.min.x, bounds.max.y));
+            BoundsPathBuffer[2] = ToColliderPoint(collider.transform, visual, new Vector2(bounds.max.x, bounds.max.y));
+            BoundsPathBuffer[3] = ToColliderPoint(collider.transform, visual, new Vector2(bounds.max.x, bounds.min.y));
+            collider.pathCount = 1;
+            collider.SetPath(0, BoundsPathBuffer);
         }
 
         private static Vector2 ToColliderPoint(Transform colliderTransform, SpriteRenderer visual, Vector2 spritePoint)

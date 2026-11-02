@@ -431,6 +431,10 @@ namespace TAD.Tests.PlayMode
 
             var defenderObject = pool.Spawn(PooledObjectType.Defender, Vector3.zero, Quaternion.identity);
             var defender = defenderObject.GetComponent<FarmHand>();
+            var defenderBody = defenderObject.GetComponent<Rigidbody2D>();
+            Assert.That(defenderBody, Is.Not.Null);
+            Assert.That(defenderBody.interpolation, Is.EqualTo(RigidbodyInterpolation2D.Interpolate),
+                "A pooled farmhand must interpolate its FixedUpdate relocation movement.");
             var defenderBaseScale = defender.transform.localScale;
             var progressionDefinition = ScriptableObject.CreateInstance<AttackerDefinition>();
             var progressionAttacker = GameBasicsTestSupport.CreateAttacker(progressionDefinition);

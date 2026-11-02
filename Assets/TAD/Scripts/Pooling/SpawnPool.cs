@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using TAD.Attackers;
 using TAD.Navigation;
@@ -7,8 +8,9 @@ using UnityEngine;
 namespace TAD.Pooling
 {
     /// <summary>
-    /// Reuses attacker, defender, and projectile prefabs. Each configured gameplay prefab is prewarmed.
-    /// Additional attacker prefabs are addressed by their shared Attacker Definition.
+    /// Reuses attacker, defender, and projectile prefabs. Core gameplay prefabs are immediately
+    /// prewarmed; the much larger optional attacker and projectile roster is warmed in small batches
+    /// after level startup. Additional attacker prefabs are addressed by their shared definition.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(FarmRouteMapper))]
@@ -53,6 +55,18 @@ namespace TAD.Pooling
             public readonly Transform InactiveContainer;
         }
 
+        private sealed class DeferredPrewarmRequest
+        {
+            public DeferredPrewarmRequest(PoolBucket pool, int targetInstanceCount)
+            {
+                Pool = pool;
+                TargetInstanceCount = targetInstanceCount;
+            }
+
+            public PoolBucket Pool { get; }
+            public int TargetInstanceCount { get; }
+        }
+
         [SerializeField] private PoolSettings[] poolSettings =
         {
             new PoolSettings(PooledObjectType.Attacker),
@@ -84,12 +98,18 @@ namespace TAD.Pooling
 
         // Shared by every pool so IDs stay unique across all pooled gameplay types for one play session.
         private static long nextRuntimeInstanceId;
+        // Two instances per frame keeps level entry responsive on lower-end mobile devices while the
+        // five-second preparation phase normally completes the full configured roster before combat.
+        private const int DeferredAdditionalPrewarmInstancesPerFrame = 2;
 
         private readonly Dictionary<PooledObjectType, PoolBucket> pools = new();
         private readonly Dictionary<AttackerDefinition, PoolBucket> attackerPoolsByDefinition = new();
         private readonly Dictionary<GameObject, PoolBucket> projectilePoolsByPrefab = new();
         private readonly Dictionary<PooledInstance, PoolBucket> instanceBuckets = new();
+        private readonly Queue<DeferredPrewarmRequest> deferredPrewarmRequests = new();
+        private Coroutine deferredPrewarmCoroutine;
         private bool isInitialized;
+        private bool hasStartedDeferredPrewarm;
 
         public FarmRouteMapper RouteMapper
         {
@@ -97,6 +117,24 @@ namespace TAD.Pooling
             {
                 routeMapper ??= GetComponent<FarmRouteMapper>();
                 return routeMapper;
+            }
+        }
+
+        /// <summary>Number of additional optional-pool instances still scheduled for staged warmup.</summary>
+        public int PendingDeferredPrewarmObjectCount
+        {
+            get
+            {
+                var pendingCount = 0;
+                foreach (var request in deferredPrewarmRequests)
+                {
+                    if (request.Pool != null)
+                    {
+                        pendingCount += Mathf.Max(0, request.TargetInstanceCount - request.Pool.Instances.Count);
+                    }
+                }
+
+                return pendingCount;
             }
         }
 
@@ -262,6 +300,31 @@ namespace TAD.Pooling
             Initialize();
         }
 
+        private void Start()
+        {
+            hasStartedDeferredPrewarm = true;
+            BeginDeferredPrewarm();
+        }
+
+        private void OnEnable()
+        {
+            if (hasStartedDeferredPrewarm)
+            {
+                BeginDeferredPrewarm();
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (deferredPrewarmCoroutine == null)
+            {
+                return;
+            }
+
+            StopCoroutine(deferredPrewarmCoroutine);
+            deferredPrewarmCoroutine = null;
+        }
+
         private void EnsurePortraitOrientationController()
         {
             var orientationController = GetComponent<GameplayPortraitOrientationController>();
@@ -400,7 +463,11 @@ namespace TAD.Pooling
 
                 var pool = CreateBucket(attackerPrefab, PooledObjectType.Attacker, $"Attacker Pool ({attackerPrefab.name})");
                 RegisterAttackerPool(attackerPrefab, pool);
-                Prewarm(pool, additionalAttackerInitialCapacity);
+                // A card dispatches its authored Send Size at once. Ensure the staged warmup
+                // reaches at least that count so the first use of a six-animal roster member
+                // cannot synchronously Instantiate on the player's send-button press.
+                var groupCapacity = Mathf.Max(1, attacker.Definition.SendSize);
+                QueueDeferredPrewarm(pool, Mathf.Max(additionalAttackerInitialCapacity, groupCapacity));
             }
 
             if (additionalProjectilePrefabs == null)
@@ -423,7 +490,7 @@ namespace TAD.Pooling
 
                 var projectilePool = CreateBucket(projectilePrefab, PooledObjectType.Projectile, $"Projectile Pool ({projectilePrefab.name})");
                 RegisterProjectilePool(projectilePrefab, projectilePool);
-                Prewarm(projectilePool, additionalProjectileInitialCapacity);
+                QueueDeferredPrewarm(projectilePool, additionalProjectileInitialCapacity);
             }
         }
 
@@ -450,6 +517,8 @@ namespace TAD.Pooling
                 Debug.LogWarning($"{name} has more than one pooled prefab for attacker definition {attacker.Definition.DisplayName}. The later prefab is ignored.", this);
                 return;
             }
+
+            routeMapper?.RegisterPooledAttackerDefinition(attacker.Definition);
         }
 
         private bool TryResolveAttackerPool(AttackerDefinition definition, out PoolBucket pool)
@@ -570,6 +639,53 @@ namespace TAD.Pooling
             {
                 CreateInstance(pool);
             }
+        }
+
+        private void QueueDeferredPrewarm(PoolBucket pool, int targetInstanceCount)
+        {
+            if (pool == null || targetInstanceCount <= pool.Instances.Count)
+            {
+                return;
+            }
+
+            deferredPrewarmRequests.Enqueue(new DeferredPrewarmRequest(pool, targetInstanceCount));
+        }
+
+        private void BeginDeferredPrewarm()
+        {
+            if (deferredPrewarmCoroutine != null || deferredPrewarmRequests.Count == 0)
+            {
+                return;
+            }
+
+            deferredPrewarmCoroutine = StartCoroutine(PrewarmAdditionalPoolsOverFrames());
+        }
+
+        private IEnumerator PrewarmAdditionalPoolsOverFrames()
+        {
+            while (deferredPrewarmRequests.Count > 0)
+            {
+                var remainingFrameBudget = DeferredAdditionalPrewarmInstancesPerFrame;
+                while (remainingFrameBudget > 0 && deferredPrewarmRequests.Count > 0)
+                {
+                    var request = deferredPrewarmRequests.Peek();
+                    if (request.Pool == null || request.Pool.Instances.Count >= request.TargetInstanceCount)
+                    {
+                        deferredPrewarmRequests.Dequeue();
+                        continue;
+                    }
+
+                    CreateInstance(request.Pool);
+                    remainingFrameBudget--;
+                }
+
+                if (deferredPrewarmRequests.Count > 0)
+                {
+                    yield return null;
+                }
+            }
+
+            deferredPrewarmCoroutine = null;
         }
 
         private GameObject SpawnFromBucket(PoolBucket pool, Vector3 position, Quaternion rotation, Transform parent)

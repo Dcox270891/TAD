@@ -43,6 +43,11 @@ namespace TAD.Attackers
         private bool hasBasePresentation;
         private int lastAppliedDirectionIndex = -1;
         private int lastAppliedMovementFrameIndex = -1;
+        // Physics uses the stable animal footprint. The procedural atlas only changes cosmetic
+        // bob/squash between walk frames, so rebuilding a PolygonCollider2D for every frame adds
+        // broadphase work without changing gameplay geometry.
+        private int lastHitColliderDirectionIndex = -1;
+        private bool hitColliderNeedsSynchronization = true;
 
         private void Awake()
         {
@@ -165,7 +170,9 @@ namespace TAD.Attackers
             var poseChanged = visuals.UsesProceduralDirectionalAnimation
                 ? ApplyProceduralMovementPose(visuals, frameIndex)
                 : RestoreSpriteSheetMovementPose();
-            if (SetSprite(visuals.GetMovementSprite(lastDirectionIndex, frameIndex)) || poseChanged)
+            var spriteChanged = SetSprite(visuals.GetMovementSprite(lastDirectionIndex, frameIndex));
+            if (hitColliderNeedsSynchronization || lastHitColliderDirectionIndex != lastDirectionIndex ||
+                (!visuals.UsesProceduralDirectionalAnimation && (spriteChanged || poseChanged)))
             {
                 SynchronizeHitColliderToVisibleSprite();
             }
@@ -185,7 +192,6 @@ namespace TAD.Attackers
             ResetVisualPresentation();
             RefreshDisplayScale();
             RefreshMovementSprite();
-            SynchronizeHitColliderToVisibleSprite();
         }
 
         private AttackerVisualDefinition GetVisualDefinition()
@@ -219,7 +225,7 @@ namespace TAD.Attackers
             transform.localScale = displayLocalScale;
             lastAppliedDirectionIndex = -1;
             lastAppliedMovementFrameIndex = -1;
-            SynchronizeHitColliderToVisibleSprite();
+            hitColliderNeedsSynchronization = true;
         }
 
         private void CacheBasePresentation()
@@ -265,6 +271,8 @@ namespace TAD.Attackers
             ClearDeathEffect();
             lastAppliedDirectionIndex = -1;
             lastAppliedMovementFrameIndex = -1;
+            lastHitColliderDirectionIndex = -1;
+            hitColliderNeedsSynchronization = true;
         }
 
         private bool ApplyProceduralMovementPose(AttackerVisualDefinition visuals, int frameIndex)
@@ -281,9 +289,11 @@ namespace TAD.Attackers
             var stepScale = isLiftedStep
                 ? new Vector3(1.035f, 0.965f, 1f)
                 : new Vector3(0.97f, 1.04f, 1f);
-            var stepOffset = isLiftedStep ? 0.018f : -0.012f;
             return ApplyVisualTransform(
-                baseLocalPosition + Vector3.up * stepOffset,
+                // The original two-frame vertical offset read as a visible hop on small mobile
+                // displays. Keep the gentle squash/stretch life in the sprite without moving its
+                // visual centre away from the interpolated physics body.
+                baseLocalPosition,
                 GetDirectionalRotation(visuals),
                 Vector3.Scale(displayLocalScale, stepScale));
         }
@@ -394,6 +404,8 @@ namespace TAD.Attackers
             }
 
             attacker.SynchronizeHitColliderToVisual(spriteRenderer);
+            lastHitColliderDirectionIndex = lastDirectionIndex;
+            hitColliderNeedsSynchronization = false;
         }
 
         private bool SetSprite(Sprite sprite)

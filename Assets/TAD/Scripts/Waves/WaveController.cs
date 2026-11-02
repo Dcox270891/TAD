@@ -233,6 +233,11 @@ namespace TAD.Waves
         private bool isPlayerSpawnSequenceRunning;
         private bool playerWaveRunAggregateFailed;
         private bool isSubscribedToFoodStore;
+        // The attacker tray asks whether it can accept an order once per card. Preserve the
+        // authoritative check in TryQueueAttackers, but share the camera/route readiness work
+        // between every card queried during the same rendered frame.
+        private int routeMapCheckFrame = -1;
+        private bool routeMapCheckResult;
 
         public int CurrentWaveNumber => currentWaveNumber;
         public int TotalWaveCount => waves?.Length ?? 0;
@@ -276,6 +281,7 @@ namespace TAD.Waves
         {
             StopWaves();
             UnsubscribeFromFoodStore();
+            InvalidateRouteMapCheck();
         }
 
         public void RequireManualStart()
@@ -773,9 +779,11 @@ namespace TAD.Waves
                 return false;
             }
 
-            attacker.SetRouteMapper(routeMapper);
-            if (!attacker.TryClampToVisibleMap() ||
-                !routeMapper.TryGetNextDirection(attacker.CurrentPosition, attacker.Definition, out _))
+            // SetRouteMapper builds (or reuses) the exact waypoint route this instance will
+            // follow. Using that result avoids immediately rebuilding/smoothing the same path
+            // through TryGetNextDirection for every animal in a dispatched group.
+            var hasRoute = attacker.SetRouteMapper(routeMapper);
+            if (!hasRoute || !attacker.TryClampToVisibleMap())
             {
                 Debug.LogWarning(attackerObject.name + " was returned to the pool because the visible spawn area has no route to the Food Store for size " + attacker.Size + " and profile " + attacker.TraversalProfile + ".", this);
                 ReturnSpawnedAttacker(attackerObject);
@@ -860,16 +868,31 @@ namespace TAD.Waves
                 return false;
             }
 
+            if (routeMapCheckFrame == Time.frameCount)
+            {
+                return routeMapCheckResult;
+            }
+
+            routeMapCheckFrame = Time.frameCount;
+
             // When the camera has to widen, all flow fields are based on stale visible bounds.
             // Rebuild them after physics has caught up with the current level geometry.
             var cameraFramingChanged = EnsureGameplayCameraFramesRouteEndpoints();
             if (cameraFramingChanged || routeMapper.CachedRouteFieldCount == 0)
             {
                 Physics2D.SyncTransforms();
-                return routeMapper.RebuildRoutes();
+                routeMapCheckResult = routeMapper.RebuildRoutes();
+                return routeMapCheckResult;
             }
 
-            return true;
+            routeMapCheckResult = true;
+            return routeMapCheckResult;
+        }
+
+        private void InvalidateRouteMapCheck()
+        {
+            routeMapCheckFrame = -1;
+            routeMapCheckResult = false;
         }
 
         /// <summary>
@@ -878,6 +901,7 @@ namespace TAD.Waves
         /// </summary>
         public bool RefreshRouteMapForCurrentViewport()
         {
+            InvalidateRouteMapCheck();
             return TryResolveDependencies() && EnsureRouteMap();
         }
 

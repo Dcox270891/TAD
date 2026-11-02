@@ -37,6 +37,33 @@ namespace TAD.Tests.Editor
         }
 
         [Test]
+        public void ProceduralAnimalRoster_ReusesOneStaticSpriteAcrossItsWalkFrames()
+        {
+            var attackers = AssetDatabase.FindAssets("t:AttackerDefinition", new[] { AttackerFolder })
+                .Select(AssetDatabase.GUIDToAssetPath)
+                .Select(AssetDatabase.LoadAssetAtPath<AttackerDefinition>)
+                .Where(definition => definition != null)
+                .ToArray();
+
+            foreach (var attacker in attackers)
+            {
+                var visuals = attacker.VisualDefinition;
+                Assert.That(visuals, Is.Not.Null, attacker.DisplayName + " is missing visual data.");
+                var atlasSprite = visuals.GetMovementSprite(0, 0);
+                Assert.That(atlasSprite, Is.Not.Null, attacker.DisplayName + " is missing its atlas sprite.");
+
+                for (var direction = 0; direction < AttackerVisualDefinition.DirectionCount; direction++)
+                {
+                    for (var frame = 0; frame < AttackerVisualDefinition.MovementFrameCount; frame++)
+                    {
+                        Assert.That(visuals.GetMovementSprite(direction, frame), Is.SameAs(atlasSprite),
+                            attacker.DisplayName + " procedural walk frames must share one static atlas sprite.");
+                    }
+                }
+            }
+        }
+
+        [Test]
         public void SharedDeathEffectSheet_ProvidesFourDistinctFrames()
         {
             var frames = AssetDatabase.LoadAllAssetsAtPath(DeathEffectPath)

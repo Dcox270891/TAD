@@ -14,6 +14,11 @@ namespace TAD.Defenders
     {
         private const int LineOfSightHitCapacity = 16;
         private const float WallEdgeInset = 0.015f;
+        // A placement ghost can move every rendered frame. Re-casting every radial line at that
+        // rate is wasteful on a touch drag, while ten visual updates per second remains smooth
+        // enough for a non-authoritative placement preview.
+        private const float PreviewMotionRebuildInterval = 0.1f;
+        private const float PreviewMotionRebuildDistance = 0.025f;
 
         private static Material sharedMaterial;
 
@@ -27,6 +32,9 @@ namespace TAD.Defenders
         private MeshFilter meshFilter;
         private MeshRenderer meshRenderer;
         private Mesh rangeMesh;
+        private Vector3[] meshVertices;
+        private int[] meshTriangles;
+        private int meshBufferSampleCount;
         private bool usesPreviewSettings;
         private float previewRange;
         private ProjectileType previewProjectileType;
@@ -40,6 +48,7 @@ namespace TAD.Defenders
         private int lastSortingLayerId;
         private int lastSortingOrder;
         private Vector3 lastPosition;
+        private float nextPreviewMotionRebuildAt;
 
         private void Awake()
         {
@@ -105,6 +114,7 @@ namespace TAD.Defenders
                     name = "TAD Defender Targetable Range",
                     hideFlags = HideFlags.DontSave
                 };
+                rangeMesh.MarkDynamic();
             }
 
             if (meshFilter != null)
@@ -139,14 +149,19 @@ namespace TAD.Defenders
 
             ConfigureRenderer();
             var currentPosition = (Vector3)origin;
-            var presentationChanged = forceRebuild || !wasVisible ||
-                                      lastUsedPreviewSettings != usesPreviewSettings ||
-                                      !Mathf.Approximately(lastRange, range) ||
-                                      lastWeapon != weapon ||
-                                      lastProjectileType != projectileType ||
-                                      lastSortingLayerId != GetSortingLayerId() ||
-                                      lastSortingOrder != GetSortingOrder() ||
-                                      (currentPosition - lastPosition).sqrMagnitude > 0.000001f;
+            var presentationSettingsChanged = forceRebuild || !wasVisible ||
+                                              lastUsedPreviewSettings != usesPreviewSettings ||
+                                              !Mathf.Approximately(lastRange, range) ||
+                                              lastWeapon != weapon ||
+                                              lastProjectileType != projectileType ||
+                                              lastSortingLayerId != GetSortingLayerId() ||
+                                              lastSortingOrder != GetSortingOrder();
+            var positionChanged = (currentPosition - lastPosition).sqrMagnitude > 0.000001f;
+            var canRebuildPreviewMotion = !usesPreviewSettings ||
+                                          (currentPosition - lastPosition).sqrMagnitude >=
+                                          PreviewMotionRebuildDistance * PreviewMotionRebuildDistance &&
+                                          Time.unscaledTime >= nextPreviewMotionRebuildAt;
+            var presentationChanged = presentationSettingsChanged || (positionChanged && canRebuildPreviewMotion);
             if (presentationChanged)
             {
                 RebuildMesh(origin, range, projectileType);
@@ -157,6 +172,7 @@ namespace TAD.Defenders
                 lastSortingLayerId = GetSortingLayerId();
                 lastSortingOrder = GetSortingOrder();
                 lastPosition = currentPosition;
+                nextPreviewMotionRebuildAt = Time.unscaledTime + PreviewMotionRebuildInterval;
             }
 
             SetVisible(true);
@@ -234,30 +250,40 @@ namespace TAD.Defenders
             }
 
             var sampleCount = Mathf.Max(24, radialSamples);
-            var vertices = new Vector3[sampleCount + 2];
-            var triangles = new int[sampleCount * 3];
-            vertices[0] = transform.InverseTransformPoint(origin);
+            EnsureMeshBuffers(sampleCount);
+            meshVertices[0] = transform.InverseTransformPoint(origin);
 
             for (var index = 0; index <= sampleCount; index++)
             {
                 var angle = (Mathf.PI * 2f * index) / sampleCount;
                 var direction = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
                 var targetableDistance = GetTargetableDistance(origin, direction, range, projectileType);
-                vertices[index + 1] = transform.InverseTransformPoint(origin + (direction * targetableDistance));
-            }
-
-            for (var index = 0; index < sampleCount; index++)
-            {
-                var triangleIndex = index * 3;
-                triangles[triangleIndex] = 0;
-                triangles[triangleIndex + 1] = index + 1;
-                triangles[triangleIndex + 2] = index + 2;
+                meshVertices[index + 1] = transform.InverseTransformPoint(origin + (direction * targetableDistance));
             }
 
             rangeMesh.Clear();
-            rangeMesh.vertices = vertices;
-            rangeMesh.triangles = triangles;
+            rangeMesh.vertices = meshVertices;
+            rangeMesh.triangles = meshTriangles;
             rangeMesh.RecalculateBounds();
+        }
+
+        private void EnsureMeshBuffers(int sampleCount)
+        {
+            if (meshVertices != null && meshBufferSampleCount == sampleCount)
+            {
+                return;
+            }
+
+            meshBufferSampleCount = sampleCount;
+            meshVertices = new Vector3[sampleCount + 2];
+            meshTriangles = new int[sampleCount * 3];
+            for (var index = 0; index < sampleCount; index++)
+            {
+                var triangleIndex = index * 3;
+                meshTriangles[triangleIndex] = 0;
+                meshTriangles[triangleIndex + 1] = index + 1;
+                meshTriangles[triangleIndex + 2] = index + 2;
+            }
         }
 
         // Mirrors FarmHand's live firing rule so the visual never claims an unreachable portion of the map.

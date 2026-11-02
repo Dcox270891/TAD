@@ -95,6 +95,48 @@ namespace TAD.Tests.Editor
         }
 
         [Test]
+        public void PortraitNestedHierarchyChange_RefreshesNewCardContentWithoutContinuousHierarchyPolling()
+        {
+            var canvasRoot = new GameObject(
+                "PortraitHierarchyRefreshTest",
+                typeof(Canvas),
+                typeof(CanvasScaler),
+                typeof(FarmUiSkin),
+                typeof(MobileUiLayoutController));
+            var queueContainer = new GameObject("QueuedAttackers", typeof(RectTransform));
+            var textObject = new GameObject("DynamicDescription", typeof(RectTransform), typeof(CanvasRenderer), typeof(Text));
+            try
+            {
+                var controller = canvasRoot.GetComponent<MobileUiLayoutController>();
+                queueContainer.transform.SetParent(canvasRoot.transform, false);
+                controller.SetPortraitTestOverride(true);
+
+                // The container already existed when the portrait profile was applied. The next
+                // card is therefore a nested hierarchy change, which used to be found only by
+                // the controller's per-frame descendant count scan.
+                textObject.transform.SetParent(queueContainer.transform, false);
+                var text = textObject.GetComponent<Text>();
+                text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                text.fontSize = 14;
+
+                var lateUpdate = typeof(MobileUiLayoutController).GetMethod(
+                    "LateUpdate",
+                    BindingFlags.Instance | BindingFlags.NonPublic);
+                Assert.That(lateUpdate, Is.Not.Null);
+                lateUpdate.Invoke(controller, null);
+
+                Assert.That(text.fontSize, Is.GreaterThanOrEqualTo(26));
+                Assert.That(text.resizeTextForBestFit, Is.True);
+            }
+            finally
+            {
+                Object.DestroyImmediate(textObject);
+                Object.DestroyImmediate(queueContainer);
+                Object.DestroyImmediate(canvasRoot);
+            }
+        }
+
+        [Test]
         public void MainMenuPortraitProfile_UsesLargeStackedTouchTargets()
         {
             const string scenePath = "Assets/Scenes/MainMenu.unity";

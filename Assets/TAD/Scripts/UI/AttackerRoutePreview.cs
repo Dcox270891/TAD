@@ -13,6 +13,10 @@ namespace TAD.UI
         private readonly List<Vector3> routePoints = new();
         private LineRenderer lineRenderer;
         private Material lineMaterial;
+        private FarmRouteMapper lastMapper;
+        private AttackerDefinition lastDefinition;
+        private Vector3 lastSpawnPosition;
+        private int lastRouteRevision = -1;
 
         private void Awake()
         {
@@ -55,9 +59,20 @@ namespace TAD.UI
         /// <summary>Shows the mapper's precomputed fastest route for this attacker's size and traversal profile.</summary>
         public bool Show(FarmRouteMapper routeMapper, Vector3 spawnPosition, AttackerDefinition definition)
         {
+            // Count changes while a wave is active should not redraw every visible route. A
+            // mapper revision covers level re-frames/rebuilds, while the exact spawn position
+            // preserves the initial wall-clearance segment for the selected animal.
+            if (lineRenderer != null && lineRenderer.enabled &&
+                lastMapper == routeMapper && lastDefinition == definition &&
+                lastSpawnPosition == spawnPosition &&
+                lastRouteRevision == (routeMapper != null ? routeMapper.RouteRevision : -1))
+            {
+                return true;
+            }
+
             routePoints.Clear();
             if (routeMapper == null || definition == null ||
-                !routeMapper.TryGetFastestRoute(spawnPosition, definition, routePoints) ||
+                !routeMapper.TryGetFastestRouteWaypoints(spawnPosition, definition, routePoints) ||
                 routePoints.Count < 2)
             {
                 Hide();
@@ -73,6 +88,10 @@ namespace TAD.UI
             }
 
             lineRenderer.enabled = true;
+            lastMapper = routeMapper;
+            lastDefinition = definition;
+            lastSpawnPosition = spawnPosition;
+            lastRouteRevision = routeMapper.RouteRevision;
             return true;
         }
 
